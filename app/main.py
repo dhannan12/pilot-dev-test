@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from app.routes.health import router as health_router
+from app.controllers.product_controller import router as product_router
 from app.utils.uptime import get_start_time
 
 # Initialize application and capture start time
@@ -10,6 +11,9 @@ _ = get_start_time()
 
 # Register health check router
 app.include_router(health_router)
+
+# Register product router
+app.include_router(product_router)
 
 
 @app.get("/health")
