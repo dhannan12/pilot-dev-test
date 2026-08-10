@@ -1,92 +1,107 @@
-export const menuMockData = [
+export const menuSections = [
   {
-    id: '1',
-    name: 'Bruschetta',
-    description: 'Toasted bread with tomato, garlic, and basil',
-    price: 8.99,
-    category: 'Starters' as const,
-    isVegan: true,
-    isSpicy: false,
+    id: 'starters',
+    title: 'Starters',
+    description: 'Begin your meal with our delightful appetizers',
+    items: [
+      {
+        id: 'starter-1',
+        name: 'Bruschetta al Pomodoro',
+        description: 'Toasted bread with fresh tomatoes, garlic, and basil',
+        price: 8.99,
+        allergens: ['Gluten', 'Garlic']
+      },
+      {
+        id: 'starter-2',
+        name: 'Calamari Fritti',
+        description: 'Crispy fried squid served with lemon aioli',
+        price: 12.99,
+        allergens: ['Seafood', 'Gluten']
+      },
+      {
+        id: 'starter-3',
+        name: 'Caprese Salad',
+        description: 'Fresh mozzarella, tomatoes, and basil with balsamic glaze',
+        price: 10.99,
+        allergens: ['Dairy']
+      },
+      {
+        id: 'starter-4',
+        name: 'Garlic Bread',
+        description: 'Warm ciabatta bread with roasted garlic and herbs',
+        price: 6.99,
+        allergens: ['Gluten', 'Dairy']
+      }
+    ]
   },
   {
-    id: '2',
-    name: 'Calamari Fritti',
-    description: 'Crispy fried squid with lemon aioli',
-    price: 12.99,
-    category: 'Starters' as const,
-    isVegan: false,
-    isSpicy: false,
+    id: 'mains',
+    title: 'Main Courses',
+    description: 'Our signature dishes prepared with premium ingredients',
+    items: [
+      {
+        id: 'main-1',
+        name: 'Spaghetti Carbonara',
+        description: 'Classic Italian pasta with pancetta, eggs, and Pecorino Romano',
+        price: 16.99,
+        allergens: ['Gluten', 'Dairy', 'Eggs']
+      },
+      {
+        id: 'main-2',
+        name: 'Grilled Salmon',
+        description: 'Atlantic salmon fillet with seasonal vegetables and lemon butter',
+        price: 24.99,
+        allergens: ['Seafood', 'Dairy']
+      },
+      {
+        id: 'main-3',
+        name: 'Beef Ribeye Steak',
+        description: '12oz prime cut with truffle mashed potatoes and asparagus',
+        price: 32.99,
+        allergens: ['Dairy']
+      },
+      {
+        id: 'main-4',
+        name: 'Vegetarian Risotto',
+        description: 'Creamy Arborio rice with mushrooms, peas, and Parmesan',
+        price: 18.99,
+        allergens: ['Dairy', 'Gluten']
+      }
+    ]
   },
   {
-    id: '3',
-    name: 'Caprese Salad',
-    description: 'Fresh mozzarella, tomato, and basil with balsamic glaze',
-    price: 10.99,
-    category: 'Starters' as const,
-    isVegan: true,
-    isSpicy: false,
-  },
-  {
-    id: '4',
-    name: 'Grilled Salmon',
-    description: 'Atlantic salmon fillet with seasonal vegetables and lemon butter',
-    price: 24.99,
-    category: 'Main' as const,
-    isVegan: false,
-    isSpicy: false,
-  },
-  {
-    id: '5',
-    name: 'Pasta Carbonara',
-    description: 'Creamy pasta with pancetta, egg, and Pecorino Romano',
-    price: 16.99,
-    category: 'Main' as const,
-    isVegan: false,
-    isSpicy: false,
-  },
-  {
-    id: '6',
-    name: 'Vegetable Risotto',
-    description: 'Creamy arborio rice with seasonal vegetables and truffle oil',
-    price: 18.99,
-    category: 'Main' as const,
-    isVegan: true,
-    isSpicy: false,
-  },
-  {
-    id: '7',
-    name: 'Thai Green Curry',
-    description: 'Chicken in aromatic green curry with coconut milk and basil',
-    price: 17.99,
-    category: 'Main' as const,
-    isVegan: false,
-    isSpicy: true,
-  },
-  {
-    id: '8',
-    name: 'Chocolate Lava Cake',
-    description: 'Warm chocolate cake with molten center, served with vanilla ice cream',
-    price: 9.99,
-    category: 'Desserts' as const,
-    isVegan: false,
-    isSpicy: false,
-  },
-  {
-    id: '9',
-    name: 'Tiramisu',
-    description: 'Classic Italian dessert with mascarpone, espresso, and cocoa',
-    price: 8.99,
-    category: 'Desserts' as const,
-    isVegan: false,
-    isSpicy: false,
-  },
-  {
-    id: '10',
-    name: 'Vegan Cheesecake',
-    description: 'Creamy cashew-based cheesecake with berry compote',
-    price: 10.99,
-    category: 'Desserts' as const,
-    isVegan: true,
-    isSpicy: false,
-  },
+    id: 'desserts',
+    title: 'Desserts',
+    description: 'Sweet endings to complete your dining experience',
+    items: [
+      {
+        id: 'dessert-1',
+        name: 'Tiramisu',
+        description: 'Classic Italian dessert with mascarpone, coffee, and cocoa',
+        price: 7.99,
+        allergens: ['Dairy', 'Eggs', 'Gluten']
+      },
+      {
+        id: 'dessert-2',
+        name: 'Chocolate Lava Cake',
+        description: 'Warm chocolate cake with molten center, served with vanilla ice cream',
+        price: 8.99,
+        allergens: ['Dairy', 'Eggs', 'Gluten']
+      },
+      {
+        id: 'dessert-3',
+        name: 'Panna Cotta',
+        description: 'Silky Italian cream dessert with berry compote',
+        price: 7.99,
+        allergens: ['Dairy']
+      },
+      {
+        id: 'dessert-4',
+        name: 'Gelato Selection',
+        description: 'Three scoops of our homemade gelato in assorted flavors',
+        price: 6.99,
+        allergens: ['Dairy']
+      }
+    ]
+  }
 ];
