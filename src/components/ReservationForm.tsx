@@ -5,7 +5,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Calendar, Clock, Users, MapPin } from 'lucide-react';
+import { Calendar, Clock, Users } from 'lucide-react';
 
 interface ReservationFormData {
   name: string;
@@ -14,7 +14,6 @@ interface ReservationFormData {
   date: string;
   time: string;
   guests: string;
-  location: string;
   specialRequests: string;
 }
 
@@ -25,8 +24,7 @@ const ReservationForm: React.FC = () => {
     phone: '',
     date: '',
     time: '',
-    guests: '',
-    location: '',
+    guests: '2',
     specialRequests: '',
   });
 
@@ -34,8 +32,7 @@ const ReservationForm: React.FC = () => {
   const [errors, setErrors] = useState<Partial<ReservationFormData>>({});
 
   const timeSlots = ['11:00 AM', '11:30 AM', '12:00 PM', '12:30 PM', '1:00 PM', '1:30 PM', '2:00 PM', '5:00 PM', '5:30 PM', '6:00 PM', '6:30 PM', '7:00 PM', '7:30 PM', '8:00 PM', '8:30 PM', '9:00 PM'];
-  const guestCounts = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10+'];
-  const locations = ['Downtown', 'Uptown', 'Waterfront', 'Airport', 'Mall District'];
+  const guestOptions = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10+'];
 
   const validateForm = (): boolean => {
     const newErrors: Partial<ReservationFormData> = {};
@@ -46,8 +43,6 @@ const ReservationForm: React.FC = () => {
     if (!formData.phone.trim()) newErrors.phone = 'Phone is required';
     if (!formData.date) newErrors.date = 'Date is required';
     if (!formData.time) newErrors.time = 'Time is required';
-    if (!formData.guests) newErrors.guests = 'Number of guests is required';
-    if (!formData.location) newErrors.location = 'Location is required';
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -68,7 +63,7 @@ const ReservationForm: React.FC = () => {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (validateForm()) {
       setSubmitted(true);
@@ -80,8 +75,7 @@ const ReservationForm: React.FC = () => {
           phone: '',
           date: '',
           time: '',
-          guests: '',
-          location: '',
+          guests: '2',
           specialRequests: '',
         });
         setSubmitted(false);
@@ -89,179 +83,160 @@ const ReservationForm: React.FC = () => {
     }
   };
 
-  if (submitted) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4">
-        <Card className="w-full max-w-md border-green-200 bg-green-50">
-          <CardHeader>
-            <CardTitle className="text-green-700">Reservation Confirmed!</CardTitle>
-            <CardDescription className="text-green-600">Thank you for your reservation</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2 text-sm text-green-700">
-              <p><strong>Name:</strong> {formData.name}</p>
-              <p><strong>Date:</strong> {formData.date}</p>
-              <p><strong>Time:</strong> {formData.time}</p>
-              <p><strong>Guests:</strong> {formData.guests}</p>
-              <p><strong>Location:</strong> {formData.location}</p>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4 py-12">
-      <div className="mx-auto max-w-2xl">
-        <Card className="border-slate-200 shadow-lg">
-          <CardHeader className="bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-t-lg">
-            <CardTitle className="text-2xl">Make a Reservation</CardTitle>
-            <CardDescription className="text-blue-100">Book your table at our restaurant</CardDescription>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-2xl mx-auto">
+        <Card className="shadow-lg border-0">
+          <CardHeader className="bg-gradient-to-r from-amber-600 to-amber-700 text-white rounded-t-lg">
+            <CardTitle className="text-3xl font-bold">Make a Reservation</CardTitle>
+            <CardDescription className="text-amber-100">Book your table at our restaurant</CardDescription>
           </CardHeader>
-          <CardContent className="p-6">
-            <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Personal Information */}
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold text-slate-800">Personal Information</h3>
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <CardContent className="pt-8">
+            {submitted ? (
+              <div className="text-center py-12">
+                <div className="inline-flex items-center justify-center w-16 h-16 bg-green-100 rounded-full mb-4">
+                  <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+                <h3 className="text-2xl font-bold text-gray-900 mb-2">Reservation Confirmed!</h3>
+                <p className="text-gray-600 mb-4">Thank you for your reservation. We look forward to seeing you on {formData.date} at {formData.time}.</p>
+                <p className="text-sm text-gray-500">A confirmation email has been sent to {formData.email}</p>
+              </div>
+            ) : (
+              <form onSubmit={handleSubmit} className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
-                    <Label htmlFor="name" className="text-slate-700">Full Name *</Label>
+                    <Label htmlFor="name" className="text-gray-700 font-semibold">Full Name *</Label>
                     <Input
                       id="name"
                       name="name"
+                      type="text"
+                      placeholder="John Doe"
                       value={formData.name}
                       onChange={handleChange}
-                      placeholder="John Doe"
-                      className={`${errors.name ? 'border-red-500' : 'border-slate-300'}`}
+                      className={`border-2 ${errors.name ? 'border-red-500' : 'border-gray-200'} focus:border-amber-500`}
                     />
-                    {errors.name && <p className="text-sm text-red-500">{errors.name}</p>}
+                    {errors.name && <p className="text-red-500 text-sm">{errors.name}</p>}
                   </div>
+
                   <div className="space-y-2">
-                    <Label htmlFor="email" className="text-slate-700">Email *</Label>
+                    <Label htmlFor="email" className="text-gray-700 font-semibold">Email *</Label>
                     <Input
                       id="email"
                       name="email"
                       type="email"
+                      placeholder="john@example.com"
                       value={formData.email}
                       onChange={handleChange}
-                      placeholder="john@example.com"
-                      className={`${errors.email ? 'border-red-500' : 'border-slate-300'}`}
+                      className={`border-2 ${errors.email ? 'border-red-500' : 'border-gray-200'} focus:border-amber-500`}
                     />
-                    {errors.email && <p className="text-sm text-red-500">{errors.email}</p>}
+                    {errors.email && <p className="text-red-500 text-sm">{errors.email}</p>}
                   </div>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="phone" className="text-slate-700">Phone Number *</Label>
-                  <Input
-                    id="phone"
-                    name="phone"
-                    type="tel"
-                    value={formData.phone}
-                    onChange={handleChange}
-                    placeholder="(555) 123-4567"
-                    className={`${errors.phone ? 'border-red-500' : 'border-slate-300'}`}
-                  />
-                  {errors.phone && <p className="text-sm text-red-500">{errors.phone}</p>}
-                </div>
-              </div>
 
-              {/* Reservation Details */}
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold text-slate-800">Reservation Details</h3>
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
-                    <Label htmlFor="date" className="text-slate-700 flex items-center gap-2">
-                      <Calendar className="w-4 h-4" /> Date *
-                    </Label>
+                    <Label htmlFor="phone" className="text-gray-700 font-semibold">Phone Number *</Label>
+                    <Input
+                      id="phone"
+                      name="phone"
+                      type="tel"
+                      placeholder="(555) 123-4567"
+                      value={formData.phone}
+                      onChange={handleChange}
+                      className={`border-2 ${errors.phone ? 'border-red-500' : 'border-gray-200'} focus:border-amber-500`}
+                    />
+                    {errors.phone && <p className="text-red-500 text-sm">{errors.phone}</p>}
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="date" className="text-gray-700 font-semibold flex items-center gap-2"><Calendar className="w-4 h-4" /> Date *</Label>
                     <Input
                       id="date"
                       name="date"
                       type="date"
                       value={formData.date}
                       onChange={handleChange}
-                      className={`${errors.date ? 'border-red-500' : 'border-slate-300'}`}
+                      className={`border-2 ${errors.date ? 'border-red-500' : 'border-gray-200'} focus:border-amber-500`}
                     />
-                    {errors.date && <p className="text-sm text-red-500">{errors.date}</p>}
+                    {errors.date && <p className="text-red-500 text-sm">{errors.date}</p>}
                   </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
-                    <Label htmlFor="time" className="text-slate-700 flex items-center gap-2">
-                      <Clock className="w-4 h-4" /> Time *
-                    </Label>
+                    <Label htmlFor="time" className="text-gray-700 font-semibold flex items-center gap-2"><Clock className="w-4 h-4" /> Time *</Label>
                     <Select value={formData.time} onValueChange={(value) => handleSelectChange('time', value)}>
-                      <SelectTrigger className={`${errors.time ? 'border-red-500' : 'border-slate-300'}`}>
-                        <SelectValue placeholder="Select time" />
+                      <SelectTrigger className={`border-2 ${errors.time ? 'border-red-500' : 'border-gray-200'}`}>
+                        <SelectValue placeholder="Select a time" />
                       </SelectTrigger>
                       <SelectContent>
                         {timeSlots.map((slot) => (
-                          <SelectItem key={slot} value={slot}>
-                            {slot}
-                          </SelectItem>
+                          <SelectItem key={slot} value={slot}>{slot}</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
-                    {errors.time && <p className="text-sm text-red-500">{errors.time}</p>}
+                    {errors.time && <p className="text-red-500 text-sm">{errors.time}</p>}
                   </div>
-                </div>
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+
                   <div className="space-y-2">
-                    <Label htmlFor="guests" className="text-slate-700 flex items-center gap-2">
-                      <Users className="w-4 h-4" /> Number of Guests *
-                    </Label>
+                    <Label htmlFor="guests" className="text-gray-700 font-semibold flex items-center gap-2"><Users className="w-4 h-4" /> Number of Guests</Label>
                     <Select value={formData.guests} onValueChange={(value) => handleSelectChange('guests', value)}>
-                      <SelectTrigger className={`${errors.guests ? 'border-red-500' : 'border-slate-300'}`}>
-                        <SelectValue placeholder="Select guests" />
+                      <SelectTrigger className="border-2 border-gray-200">
+                        <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        {guestCounts.map((count) => (
-                          <SelectItem key={count} value={count}>
-                            {count} {count === '1' ? 'Guest' : 'Guests'}
-                          </SelectItem>
+                        {guestOptions.map((option) => (
+                          <SelectItem key={option} value={option}>{option} {option === '1' ? 'Guest' : 'Guests'}</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
-                    {errors.guests && <p className="text-sm text-red-500">{errors.guests}</p>}
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="location" className="text-slate-700 flex items-center gap-2">
-                      <MapPin className="w-4 h-4" /> Location *
-                    </Label>
-                    <Select value={formData.location} onValueChange={(value) => handleSelectChange('location', value)}>
-                      <SelectTrigger className={`${errors.location ? 'border-red-500' : 'border-slate-300'}`}>
-                        <SelectValue placeholder="Select location" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {locations.map((loc) => (
-                          <SelectItem key={loc} value={loc}>
-                            {loc}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    {errors.location && <p className="text-sm text-red-500">{errors.location}</p>}
                   </div>
                 </div>
-              </div>
 
-              {/* Special Requests */}
-              <div className="space-y-2">
-                <Label htmlFor="specialRequests" className="text-slate-700">Special Requests</Label>
-                <Textarea
-                  id="specialRequests"
-                  name="specialRequests"
-                  value={formData.specialRequests}
-                  onChange={handleChange}
-                  placeholder="Any special requests or dietary requirements?"
-                  className="border-slate-300 resize-none"
-                  rows={4}
-                />
-              </div>
+                <div className="space-y-2">
+                  <Label htmlFor="specialRequests" className="text-gray-700 font-semibold">Special Requests</Label>
+                  <Textarea
+                    id="specialRequests"
+                    name="specialRequests"
+                    placeholder="Any dietary restrictions, allergies, or special occasions?"
+                    value={formData.specialRequests}
+                    onChange={handleChange}
+                    rows={4}
+                    className="border-2 border-gray-200 focus:border-amber-500 resize-none"
+                  />
+                </div>
 
-              {/* Submit Button */}
-              <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg font-semibold transition-colors">
-                Complete Reservation
-              </Button>
-            </form>
+                <div className="flex gap-4 pt-4">
+                  <Button
+                    type="submit"
+                    className="flex-1 bg-amber-600 hover:bg-amber-700 text-white font-semibold py-3 rounded-lg transition-colors"
+                  >
+                    Confirm Reservation
+                  </Button>
+                  <Button
+                    type="reset"
+                    variant="outline"
+                    className="flex-1 border-2 border-gray-300 text-gray-700 font-semibold py-3 rounded-lg hover:bg-gray-50"
+                    onClick={() => {
+                      setFormData({
+                        name: '',
+                        email: '',
+                        phone: '',
+                        date: '',
+                        time: '',
+                        guests: '2',
+                        specialRequests: '',
+                      });
+                      setErrors({});
+                    }}
+                  >
+                    Clear
+                  </Button>
+                </div>
+              </form>
+            )}
           </CardContent>
         </Card>
       </div>
