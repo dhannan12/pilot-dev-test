@@ -1,3 +1,200 @@
-{
-  "component_code": "import React, { useState } from 'react';\nimport { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';\nimport { Button } from '@/components/ui/button';\nimport { Input } from '@/components/ui/input';\nimport { Label } from '@/components/ui/label';\nimport { Checkbox } from '@/components/ui/checkbox';\nimport { Alert, AlertDescription } from '@/components/ui/alert';\nimport { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';\nimport { Badge } from '@/components/ui/badge';\nimport { CheckCircle2, AlertCircle, Shield, Users } from 'lucide-react';\nimport { mockAuthProviders, mockRoles, mockPermissions } from './SetupAuthenticationAnd.mock';\n\ninterface AuthProvider {\n  id: string;\n  name: string;\n  type: string;\n  enabled: boolean;\n  configured: boolean;\n}\n\ninterface Role {\n  id: string;\n  name: string;\n  description: string;\n  permissions: string[];\n  userCount: number;\n}\n\ninterface Permission {\n  id: string;\n  name: string;\n  description: string;\n  category: string;\n}\n\nconst SetupAuthenticationAnd: React.FC = () => {\n  const [providers, setProviders] = useState<AuthProvider[]>(mockAuthProviders);\n  const [roles, setRoles] = useState<Role[]>(mockRoles);\n  const [selectedRole, setSelectedRole] = useState<string | null>(null);\n  const [newRoleName, setNewRoleName] = useState('');\n  const [selectedPermissions, setSelectedPermissions] = useState<string[]>([]);\n\n  const handleProviderToggle = (id: string) => {\n    setProviders(providers.map(p => \n      p.id === id ? { ...p, enabled: !p.enabled } : p\n    ));\n  };\n\n  const handlePermissionToggle = (permissionId: string) => {\n    setSelectedPermissions(prev =>\n      prev.includes(permissionId)\n        ? prev.filter(p => p !== permissionId)\n        : [...prev, permissionId]\n    );\n  };\n\n  const handleCreateRole = () => {\n    if (newRoleName.trim() && selectedPermissions.length > 0) {\n      const newRole: Role = {\n        id: `role_${Date.now()}`,\n        name: newRoleName,\n        description: `Custom role created for ${newRoleName}`,\n        permissions: selectedPermissions,\n        userCount: 0\n      };\n      setRoles([...roles, newRole]);\n      setNewRoleName('');\n      setSelectedPermissions([]);\n    }\n  };\n\n  const handleDeleteRole = (id: string) => {\n    setRoles(roles.filter(r => r.id !== id));\n    if (selectedRole === id) setSelectedRole(null);\n  };\n\n  const selectedRoleData = roles.find(r => r.id === selectedRole);\n\n  return (\n    <div className=\"w-full max-w-6xl mx-auto p-6 space-y-6\">\n      <div className=\"space-y-2\">\n        <h1 className=\"text-3xl font-bold tracking-tight\">Authentication & RBAC Setup</h1>\n        <p className=\"text-gray-600\">Configure authentication providers and manage role-based access control</p>\n      </div>\n\n      <Tabs defaultValue=\"providers\" className=\"w-full\">\n        <TabsList className=\"grid w-full grid-cols-3\">\n          <TabsTrigger value=\"providers\" className=\"flex items-center gap-2\">\n            <Shield className=\"w-4 h-4\" />\n            Auth Providers\n          </TabsTrigger>\n          <TabsTrigger value=\"roles\" className=\"flex items-center gap-2\">\n            <Users className=\"w-4 h-4\" />\n            Roles\n          </TabsTrigger>\n          <TabsTrigger value=\"permissions\">Permissions</TabsTrigger>\n        </TabsList>\n\n        {/* Auth Providers Tab */}\n        <TabsContent value=\"providers\" className=\"space-y-4\">\n          <Card>\n            <CardHeader>\n              <CardTitle>Authentication Providers</CardTitle>\n              <CardDescription>Enable and configure authentication methods</CardDescription>\n            </CardHeader>\n            <CardContent className=\"space-y-4\">\n              {providers.map(provider => (\n                <div key={provider.id} className=\"flex items-center justify-between p-4 border rounded-lg\">\n                  <div className=\"space-y-1\">\n                    <p className=\"font-medium\">{provider.name}</p>\n                    <p className=\"text-sm text-gray-600\">{provider.type}</p>\n                  </div>\n                  <div className=\"flex items-center gap-3\">\n                    {provider.configured && (\n                      <Badge variant=\"outline\" className=\"bg-green-50\">\n                        <CheckCircle2 className=\"w-3 h-3 mr-1\" />\n                        Configured\n                      </Badge>\n                    )}\n                    {!provider.configured && (\n                      <Badge variant=\"outline\" className=\"bg-yellow-50\">\n                        <AlertCircle className=\"w-3 h-3 mr-1\" />\n                        Pending\n                      </Badge>\n                    )}\n                    <Checkbox\n                      checked={provider.enabled}\n                      onCheckedChange={() => handleProviderToggle(provider.id)}\n                    />\n                  </div>\n                </div>\n              ))}\n            </CardContent>\n          </Card>\n        </TabsContent>\n\n        {/* Roles Tab */}\n        <TabsContent value=\"roles\" className=\"space-y-4\">\n          <div className=\"grid grid-cols-1 lg:grid-cols-3 gap-4\">\n            {/* Create Role Card */}\n            <Card className=\"lg:col-span-1\">\n              <CardHeader>\n                <CardTitle className=\"text-lg\">Create New Role</CardTitle>\n              </CardHeader>\n              <CardContent className=\"space-y-4\">\n                <div className=\"space-y-2\">\n                  <Label htmlFor=\"role-name\">Role Name</Label>\n                  <Input\n                    id=\"role-name\"\n                    placeholder=\"e.g., Content Editor\"\n                    value={newRoleName}\n                    onChange={(e) => setNewRoleName(e.target.value)}\n                  />\n                </div>\n                <div className=\"space-y-2\">\n                  <Label>Select Permissions</Label>\n                  <div className=\"space-y-2 max-h-48 overflow-y-auto\">\n                    {mockPermissions.map(perm => (\n                      <div key={perm.id} className=\"flex items-center space-x-2\">\n                        <Checkbox\n                          id={perm.id}\n                          checked={selectedPermissions.includes(perm.id)}\n                          onCheckedChange={() => handlePermissionToggle(perm.id)}\n                        />\n                        <label htmlFor={perm.id} className=\"text-sm cursor-pointer\">\n                          {perm.name}\n                        </label>\n                      </div>\n                    ))}\n                  </div>\n                </div>\n                <Button\n                  onClick={handleCreateRole}\n                  disabled={!newRoleName.trim() || selectedPermissions.length === 0}\n                  className=\"w-full\"\n                >\n                  Create Role\n                </Button>\n              </CardContent>\n            </Card>\n\n            {/* Roles List */}\n            <Card className=\"lg:col-span-2\">\n              <CardHeader>\n                <CardTitle>Existing Roles</CardTitle>\n                <CardDescription>{roles.length} role(s) configured</CardDescription>\n              </CardHeader>\n              <CardContent className=\"space-y-3\">\n                {roles.length === 0 ? (\n                  <Alert>\n                    <AlertCircle className=\"h-4 w-4\" />\n                    <AlertDescription>No roles created yet. Create your first role to get started.</AlertDescription>\n                  </Alert>\n                ) : (\n                  roles.map(role => (\n                    <div\n                      key={role.id}\n                      onClick={() => setSelectedRole(role.id)}\n                      className={`p-4 border rounded-lg cursor-pointer transition-colors ${\n                        selectedRole === role.id\n                          ? 'bg-blue-50 border-blue-300'\n                          : 'hover:bg-gray-50'\n                      }`}\n                    >\n                      <div className=\"flex items-start justify-between\">\n                        <div className=\"space-y-1 flex-1\">\n                          <p className=\"font-medium\">{role.name}</p>\n                          <p className=\"text-sm text-gray-600\">{role.description}</p>\n                          <div className=\"flex gap-2 mt-2\">\n                            <Badge variant=\"secondary\" className=\"text-xs\">\n                              {role.permissions.length} permissions\n                            </Badge>\n                            <Badge variant=\"outline\" className=\"text-xs\">\n                              {role.userCount} users\n                            </Badge>\n                          </div>\n                        </div>\n                        <Button\n                          variant=\"ghost\"\n                          size=\"sm\"\n                          onClick={(e) => {\n                            e.stopPropagation();\n                            handleDeleteRole(role.id);\n                          }}\n                          className=\"text-red-600 hover:text-red-700 hover:bg-red-50\"\n                        >\n                          Delete\n                        </Button>\n                      </div>\n                    </div>\n                  ))\n                )}\n              </CardContent>\n            </Card>\n          </div>\n\n          {/* Role Details */}\n          {selectedRoleData && (\n            <Card>\n              <CardHeader>\n                <CardTitle>{selectedRoleData.name} - Permissions</CardTitle>\n              </CardHeader>\n              <CardContent>\n                <div className=\"grid grid-cols-1 md:grid-cols-2 gap-3\">\n                  {mockPermissions\n                    .filter(p => selectedRoleData.permissions.includes(p.id))\n                    .map(perm => (\n                      <div key={perm.id} className=\"p-3 border rounded-lg\">\n                        <p className=\"font-medium text-sm\">{perm.name}</p>\n                        <p className=\"text-xs text-gray-600 mt-1\">{perm.description}</p>\n                        <Badge variant=\"outline\" className=\"mt-2 text-xs\">\n                          {perm.category}\n                        </Badge>\n                      </div>\n                    ))}\n                </div>\n              </CardContent>\n            </Card>\n          )}\n        </TabsContent>\n\n        {/* Permissions Tab */}\n        <TabsContent value=\"permissions\" className=\"space-y-4\">\n          <Card>\n            <CardHeader>\n              <CardTitle>Available Permissions</CardTitle>\n              <CardDescription>All permissions that can be assigned to roles</CardDescription>\n            </CardHeader>\n            <CardContent>\n              <div className=\"space-y-3\">\n                {mockPermissions.map(permission => (\n                  <div key={permission.id} className=\"p-4 border rounded-lg\">\n                    <div className=\"flex items-start justify-between\">\n                      <div className=\"space-y-1 flex-1\">\n                        <p className=\"font-medium\">{permission.name}</p>\n                        <p className=\"text-sm text-gray-600\">{permission.description}</p>\n                      </div>\n                      <Badge>{permission.category}</Badge>\n                    </div>\n                  </div>\n                ))}\n              </div>\n            </CardContent>\n          </Card>\n        </TabsContent>\n      </Tabs>\n    </div>\n  );\n};\n\nexport default SetupAuthenticationAnd;",
-  "mock_data_code": "export const mockAuthProviders = [\n  {\n    id: 'auth_local',\n    name: 'Local Authentication',\n    type: 'Username & Password',\n    enabled: true,\n    configured: true\n  },\n  {\n    id: 'auth_oauth_google',\n    name: 'Google OAuth',\n    type: 'OAuth 2.0',\n    enabled: true,\n    configured: true\n  },\n  {\n    id: 'auth_oauth_github',\n    name: 'GitHub OAuth',\n    type: 'OAuth 2.0',\n    enabled: false,\n    configured: false\n  },\n  {\n    id: 'auth_saml',\n    name: 'SAML 2.0',\n    type: 'Enterprise SSO',\n    enabled: false,\n    configured: false\n  },\n  {\n    id: 'auth_ldap',\n    name: 'LDAP',\n    type: 'Directory Service',\n    enabled: false,\n    configured: false\n  }\n];\n\nexport const mockRoles = [\n  {\n    id: 'role_admin',\n    name: 'Administrator',\n    description: 'Full system access with all permissions',\n    permissions: ['perm_user_create', 'perm_user_read', 'perm_user_update', 'perm_user_delete', 'perm_role_manage', 'perm_settings_manage', 'perm_audit_view'],\n    userCount: 2\n  },\n  {\n    id: 'role_editor',\n    name: 'Content Editor',\n    description: 'Can create, read, and update content',\n    permissions: ['perm_content_create', 'perm_content_read', 'perm_content_update', 'perm_user_read'],\n    userCount: 5\n  },\n  {\n    id: 'role_viewer',\n    name: 'Viewer',\n    description: 'Read-only access to content',\n    permissions: ['perm_content_read', 'perm_user_read'],\n    userCount: 12\n  }\n];\n\nexport const mockPermissions = [\n  {\n    id: 'perm_user_create',\n    name: 'Create Users',\n    description: 'Ability to create new user accounts',\n    category: 'User Management'\n  },\n  {\n    id: 'perm_user_read',\n    name: 'View Users',\n    description: 'Ability to view user information',\n    category: 'User Management'\n  },\n  {\n    id: 'perm_user_update',\n    name: 'Update Users',\n    description: 'Ability to modify user information',\n    category: 'User Management'\n  },\n  {\n    id: 'perm_user_delete',\n    name: 'Delete Users
+import React, { useState } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { mockAuthProviders, mockRoles, mockPermissions } from './SetupAuthenticationAnd.mock';
+import { AlertCircle, CheckCircle2, Shield, Users } from 'lucide-react';
+
+interface SelectedPermissions {
+  [key: string]: boolean;
+}
+
+interface SelectedRoles {
+  [key: string]: boolean;
+}
+
+const SetupAuthenticationAnd: React.FC = () => {
+  const [selectedProviders, setSelectedProviders] = useState<string[]>([]);
+  const [selectedRoles, setSelectedRoles] = useState<SelectedRoles>({});
+  const [selectedPermissions, setSelectedPermissions] = useState<SelectedPermissions>({});
+  const [setupComplete, setSetupComplete] = useState(false);
+  const [adminEmail, setAdminEmail] = useState('');
+
+  const handleProviderToggle = (providerId: string) => {
+    setSelectedProviders((prev) =>
+      prev.includes(providerId)
+        ? prev.filter((id) => id !== providerId)
+        : [...prev, providerId]
+    );
+  };
+
+  const handleRoleToggle = (roleId: string) => {
+    setSelectedRoles((prev) => ({
+      ...prev,
+      [roleId]: !prev[roleId],
+    }));
+  };
+
+  const handlePermissionToggle = (permissionId: string) => {
+    setSelectedPermissions((prev) => ({
+      ...prev,
+      [permissionId]: !prev[permissionId],
+    }));
+  };
+
+  const handleCompleteSetup = () => {
+    if (selectedProviders.length > 0 && adminEmail) {
+      setSetupComplete(true);
+    }
+  };
+
+  const selectedRoleCount = Object.values(selectedRoles).filter(Boolean).length;
+  const selectedPermissionCount = Object.values(selectedPermissions).filter(Boolean).length;
+
+  return (
+    <div className="w-full max-w-4xl mx-auto p-4 space-y-6">
+      <div className="space-y-2">
+        <h1 className="text-3xl font-bold tracking-tight">Authentication & RBAC Setup</h1>
+        <p className="text-gray-600">Configure authentication providers and role-based access control</p>
+      </div>
+
+      {setupComplete && (
+        <Alert className="border-green-200 bg-green-50">
+          <CheckCircle2 className="h-4 w-4 text-green-600" />
+          <AlertDescription className="text-green-800">
+            Authentication and RBAC setup completed successfully!
+          </AlertDescription>
+        </Alert>
+      )}
+
+      <Tabs defaultValue="providers" className="w-full">
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="providers">Auth Providers</TabsTrigger>
+          <TabsTrigger value="roles">Roles</TabsTrigger>
+          <TabsTrigger value="permissions">Permissions</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="providers" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Shield className="h-5 w-5" />
+                Authentication Providers
+              </CardTitle>
+              <CardDescription>
+                Select authentication providers to enable ({selectedProviders.length} selected)
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-3">
+                {mockAuthProviders.map((provider) => (
+                  <div key={provider.id} className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-gray-50">
+                    <Checkbox
+                      id={provider.id}
+                      checked={selectedProviders.includes(provider.id)}
+                      onCheckedChange={() => handleProviderToggle(provider.id)}
+                    />
+                    <Label htmlFor={provider.id} className="flex-1 cursor-pointer">
+                      <div className="font-medium">{provider.name}</div>
+                      <div className="text-sm text-gray-600">{provider.description}</div>
+                    </Label>
+                  </div>
+                ))}
+              </div>
+
+              <div className="pt-4 border-t space-y-3">
+                <Label htmlFor="admin-email" className="text-base font-medium">
+                  Admin Email
+                </Label>
+                <Input
+                  id="admin-email"
+                  type="email"
+                  placeholder="admin@example.com"
+                  value={adminEmail}
+                  onChange={(e) => setAdminEmail(e.target.value)}
+                />
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="roles" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Users className="h-5 w-5" />
+                User Roles
+              </CardTitle>
+              <CardDescription>
+                Define roles for your application ({selectedRoleCount} selected)
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {mockRoles.map((role) => (
+                  <div key={role.id} className="flex items-start space-x-3 p-3 border rounded-lg hover:bg-gray-50">
+                    <Checkbox
+                      id={role.id}
+                      checked={selectedRoles[role.id] || false}
+                      onCheckedChange={() => handleRoleToggle(role.id)}
+                    />
+                    <Label htmlFor={role.id} className="flex-1 cursor-pointer">
+                      <div className="font-medium">{role.name}</div>
+                      <div className="text-sm text-gray-600">{role.description}</div>
+                      <div className="text-xs text-gray-500 mt-1">Level: {role.level}</div>
+                    </Label>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="permissions" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Permissions</CardTitle>
+              <CardDescription>
+                Configure granular permissions ({selectedPermissionCount} selected)
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {mockPermissions.map((permission) => (
+                  <div key={permission.id} className="flex items-start space-x-3 p-3 border rounded-lg hover:bg-gray-50">
+                    <Checkbox
+                      id={permission.id}
+                      checked={selectedPermissions[permission.id] || false}
+                      onCheckedChange={() => handlePermissionToggle(permission.id)}
+                    />
+                    <Label htmlFor={permission.id} className="flex-1 cursor-pointer">
+                      <div className="font-medium">{permission.name}</div>
+                      <div className="text-sm text-gray-600">{permission.description}</div>
+                      <div className="text-xs text-gray-500 mt-1">Resource: {permission.resource}</div>
+                    </Label>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+
+      <div className="flex gap-3 justify-end pt-4">
+        <Button variant="outline">Cancel</Button>
+        <Button
+          onClick={handleCompleteSetup}
+          disabled={selectedProviders.length === 0 || !adminEmail}
+        >
+          Complete Setup
+        </Button>
+      </div>
+    </div>
+  );
+};
+
+export default SetupAuthenticationAnd;
