@@ -1,66 +1,59 @@
-export const mockMenuItems = [
+export interface MenuItem {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  isChefRecommendation: boolean;
+  category: string;
+}
+
+export const mockChefRecommendations: MenuItem[] = [
   {
     id: '1',
     name: 'Pan-Seared Salmon',
-    description: 'Fresh Atlantic salmon with lemon butter sauce and seasonal vegetables',
+    description: 'Fresh Atlantic salmon with lemon butter sauce, served with seasonal vegetables and roasted potatoes',
     price: 28.99,
-    category: 'Main Course',
     isChefRecommendation: true,
+    category: 'Main Course',
   },
   {
     id: '2',
     name: 'Truffle Risotto',
-    description: 'Creamy Arborio rice with black truffle, parmesan, and wild mushrooms',
+    description: 'Creamy Arborio rice with black truffle, Parmesan cheese, and wild mushrooms',
     price: 24.99,
-    category: 'Main Course',
     isChefRecommendation: true,
+    category: 'Main Course',
   },
   {
     id: '3',
-    name: 'Grilled Ribeye Steak',
-    description: '16oz premium cut with herb butter and roasted garlic potatoes',
-    price: 42.99,
+    name: 'Beef Tenderloin',
+    description: 'Prime cut beef tenderloin with red wine reduction, asparagus, and truffle mashed potatoes',
+    price: 34.99,
+    isChefRecommendation: true,
     category: 'Main Course',
-    isChefRecommendation: false,
   },
   {
     id: '4',
-    name: 'Burrata Salad',
-    description: 'Fresh burrata cheese with heirloom tomatoes, basil, and balsamic glaze',
+    name: 'Lobster Bisque',
+    description: 'Silky smooth lobster soup with fresh cream, garnished with lobster meat and croutons',
     price: 16.99,
-    category: 'Appetizer',
     isChefRecommendation: true,
+    category: 'Appetizer',
   },
   {
     id: '5',
-    name: 'Shrimp Tempura',
-    description: 'Crispy battered shrimp with sweet chili sauce and wasabi mayo',
-    price: 14.99,
-    category: 'Appetizer',
-    isChefRecommendation: false,
+    name: 'Chocolate Lava Cake',
+    description: 'Warm chocolate cake with molten center, served with vanilla ice cream and fresh berries',
+    price: 12.99,
+    isChefRecommendation: true,
+    category: 'Dessert',
   },
   {
     id: '6',
-    name: 'Chocolate Lava Cake',
-    description: 'Warm chocolate cake with molten center, served with vanilla ice cream',
-    price: 12.99,
-    category: 'Dessert',
-    isChefRecommendation: false,
-  },
-  {
-    id: '7',
     name: 'Herb-Crusted Lamb Chops',
-    description: 'Rosemary and thyme crusted lamb with mint jus and root vegetables',
-    price: 38.99,
-    category: 'Main Course',
-    isChefRecommendation: false,
-  },
-  {
-    id: '8',
-    name: 'Saffron Panna Cotta',
-    description: 'Silky saffron-infused panna cotta with pistachio crumble and berry compote',
-    price: 11.99,
-    category: 'Dessert',
+    description: 'Tender lamb chops with rosemary and thyme crust, served with mint jelly and grilled vegetables',
+    price: 32.99,
     isChefRecommendation: true,
+    category: 'Main Course',
   },
 ];
