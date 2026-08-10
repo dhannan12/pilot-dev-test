@@ -19,213 +19,232 @@ interface EmailTemplate {
   id: string;
   name: string;
   subject: string;
-  type: 'confirmation' | 'reminder' | 'cancellation';
+  type: 'confirmation' | 'cancellation' | 'reminder';
   enabled: boolean;
 }
 
 interface ReservationSettings {
   id: string;
-  setting: string;
-  value: string;
-  description: string;
+  sendConfirmation: boolean;
+  sendReminder: boolean;
+  reminderHoursBefore: number;
+  fromEmail: string;
+  replyToEmail: string;
 }
 
 const SetupEmailService: React.FC = () => {
+  const [providers, setProviders] = useState<EmailProvider[]>(mockEmailProviders);
+  const [templates, setTemplates] = useState<EmailTemplate[]>(mockEmailTemplates);
+  const [settings, setSettings] = useState<ReservationSettings>(mockReservationSettings);
   const [selectedProvider, setSelectedProvider] = useState<string>('');
-  const [apiKey, setApiKey] = useState<string>('');
-  const [senderEmail, setSenderEmail] = useState<string>('');
-  const [providers] = useState<EmailProvider[]>(mockEmailProviders);
-  const [templates] = useState<EmailTemplate[]>(mockEmailTemplates);
-  const [settings] = useState<ReservationSettings[]>(mockReservationSettings);
-  const [savedSuccess, setSavedSuccess] = useState<boolean>(false);
-  const [activeTab, setActiveTab] = useState<'provider' | 'templates' | 'settings'>('provider');
+  const [fromEmail, setFromEmail] = useState<string>(settings.fromEmail);
+  const [replyToEmail, setReplyToEmail] = useState<string>(settings.replyToEmail);
+  const [reminderHours, setReminderHours] = useState<number>(settings.reminderHoursBefore);
+  const [successMessage, setSuccessMessage] = useState<string>('');
 
-  const handleSaveProvider = () => {
-    if (selectedProvider && apiKey && senderEmail) {
-      setSavedSuccess(true);
-      setTimeout(() => setSavedSuccess(false), 3000);
-    }
+  const handleProviderSelect = (providerId: string) => {
+    setSelectedProvider(providerId);
+    setProviders(
+      providers.map((p) =>
+        p.id === providerId ? { ...p, configured: true } : p
+      )
+    );
+    setSuccessMessage(`${providers.find((p) => p.id === providerId)?.name} configured successfully!`);
+    setTimeout(() => setSuccessMessage(''), 3000);
   };
 
-  const configuredProvider = providers.find(p => p.configured);
+  const handleTemplateToggle = (templateId: string) => {
+    setTemplates(
+      templates.map((t) =>
+        t.id === templateId ? { ...t, enabled: !t.enabled } : t
+      )
+    );
+  };
+
+  const handleSettingsSave = () => {
+    setSettings({
+      ...settings,
+      fromEmail,
+      replyToEmail,
+      reminderHoursBefore: reminderHours,
+    });
+    setSuccessMessage('Email settings saved successfully!');
+    setTimeout(() => setSuccessMessage(''), 3000);
+  };
+
+  const configuredProvider = providers.find((p) => p.configured);
 
   return (
-    <div className="w-full max-w-4xl mx-auto p-6 space-y-6">
-      <div className="space-y-2">
-        <h1 className="text-3xl font-bold tracking-tight">Email Service Setup</h1>
-        <p className="text-gray-600">Configure email provider for reservation confirmations</p>
-      </div>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-6">
+      <div className="max-w-6xl mx-auto space-y-6">
+        {/* Header */}
+        <div className="space-y-2">
+          <div className="flex items-center gap-2">
+            <Mail className="w-8 h-8 text-blue-600" />
+            <h1 className="text-3xl font-bold text-slate-900">Email Service Setup</h1>
+          </div>
+          <p className="text-slate-600">Configure email providers and templates for reservation confirmations</p>
+        </div>
 
-      {/* Tab Navigation */}
-      <div className="flex gap-2 border-b">
-        <button
-          onClick={() => setActiveTab('provider')}
-          className={`px-4 py-2 font-medium border-b-2 transition-colors ${
-            activeTab === 'provider'
-              ? 'border-blue-600 text-blue-600'
-              : 'border-transparent text-gray-600 hover:text-gray-900'
-          }`}
-        >
-          <Mail className="inline mr-2 h-4 w-4" />
-          Provider
-        </button>
-        <button
-          onClick={() => setActiveTab('templates')}
-          className={`px-4 py-2 font-medium border-b-2 transition-colors ${
-            activeTab === 'templates'
-              ? 'border-blue-600 text-blue-600'
-              : 'border-transparent text-gray-600 hover:text-gray-900'
-          }`}
-        >
-          Templates
-        </button>
-        <button
-          onClick={() => setActiveTab('settings')}
-          className={`px-4 py-2 font-medium border-b-2 transition-colors ${
-            activeTab === 'settings'
-              ? 'border-blue-600 text-blue-600'
-              : 'border-transparent text-gray-600 hover:text-gray-900'
-          }`}
-        >
-          <Settings className="inline mr-2 h-4 w-4" />
-          Settings
-        </button>
-      </div>
+        {/* Success Alert */}
+        {successMessage && (
+          <Alert className="bg-green-50 border-green-200">
+            <CheckCircle2 className="h-4 w-4 text-green-600" />
+            <AlertDescription className="text-green-800">{successMessage}</AlertDescription>
+          </Alert>
+        )}
 
-      {/* Provider Configuration */}
-      {activeTab === 'provider' && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Email Provider Configuration</CardTitle>
-            <CardDescription>Select and configure your email service provider</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            {configuredProvider && (
-              <Alert className="border-green-200 bg-green-50">
-                <CheckCircle2 className="h-4 w-4 text-green-600" />
-                <AlertDescription className="text-green-800">
-                  {configuredProvider.name} is currently configured
-                </AlertDescription>
-              </Alert>
-            )}
-
-            <div className="space-y-2">
-              <Label htmlFor="provider-select">Email Provider</Label>
-              <Select value={selectedProvider} onValueChange={setSelectedProvider}>
-                <SelectTrigger id="provider-select">
-                  <SelectValue placeholder="Select an email provider" />
-                </SelectTrigger>
-                <SelectContent>
-                  {providers.map(provider => (
-                    <SelectItem key={provider.id} value={provider.id}>
-                      {provider.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <p className="text-sm text-gray-500">
-                {providers.find(p => p.id === selectedProvider)?.description}
-              </p>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="sender-email">Sender Email Address</Label>
-              <Input
-                id="sender-email"
-                type="email"
-                placeholder="noreply@reservations.com"
-                value={senderEmail}
-                onChange={e => setSenderEmail(e.target.value)}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="api-key">API Key</Label>
-              <Input
-                id="api-key"
-                type="password"
-                placeholder="Enter your API key"
-                value={apiKey}
-                onChange={e => setApiKey(e.target.value)}
-              />
-              <p className="text-sm text-gray-500">Your API key is encrypted and stored securely</p>
-            </div>
-
-            {savedSuccess && (
-              <Alert className="border-green-200 bg-green-50">
-                <CheckCircle2 className="h-4 w-4 text-green-600" />
-                <AlertDescription className="text-green-800">
-                  Configuration saved successfully
-                </AlertDescription>
-              </Alert>
-            )}
-
-            <Button onClick={handleSaveProvider} className="w-full">Save Configuration</Button>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Email Templates */}
-      {activeTab === 'templates' && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Email Templates</CardTitle>
-            <CardDescription>Manage email templates for reservation communications</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {templates.map(template => (
-                <div key={template.id} className="border rounded-lg p-4 space-y-3">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <h3 className="font-semibold">{template.name}</h3>
-                      <p className="text-sm text-gray-600">Subject: {template.subject}</p>
-                      <span className="inline-block mt-2 px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded">
-                        {template.type}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      {template.enabled ? (
-                        <CheckCircle2 className="h-5 w-5 text-green-600" />
-                      ) : (
-                        <AlertCircle className="h-5 w-5 text-gray-400" />
-                      )}
-                    </div>
-                  </div>
-                  <Button variant="outline" size="sm">Edit Template</Button>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Reservation Settings */}
-      {activeTab === 'settings' && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Reservation Settings</CardTitle>
-            <CardDescription>Configure email behavior for reservations</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {settings.map(setting => (
-                <div key={setting.id} className="border rounded-lg p-4 space-y-2">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Email Providers */}
+          <Card className="lg:col-span-1">
+            <CardHeader>
+              <CardTitle className="text-lg">Email Providers</CardTitle>
+              <CardDescription>Select and configure your email service</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {providers.map((provider) => (
+                <button
+                  key={provider.id}
+                  onClick={() => handleProviderSelect(provider.id)}
+                  className={`w-full p-3 rounded-lg border-2 transition-all text-left ${
+                    provider.configured
+                      ? 'border-blue-500 bg-blue-50'
+                      : 'border-slate-200 bg-white hover:border-slate-300'
+                  }`}
+                >
                   <div className="flex items-center justify-between">
                     <div>
-                      <h3 className="font-semibold">{setting.setting}</h3>
-                      <p className="text-sm text-gray-600">{setting.description}</p>
+                      <p className="font-medium text-slate-900">{provider.name}</p>
+                      <p className="text-xs text-slate-500">{provider.description}</p>
                     </div>
+                    {provider.configured && <CheckCircle2 className="w-5 h-5 text-blue-600" />}
                   </div>
-                  <div className="bg-gray-50 p-2 rounded text-sm font-mono text-gray-700">
-                    {setting.value}
+                </button>
+              ))}
+            </CardContent>
+          </Card>
+
+          {/* Email Templates */}
+          <Card className="lg:col-span-1">
+            <CardHeader>
+              <CardTitle className="text-lg">Email Templates</CardTitle>
+              <CardDescription>Enable/disable email types</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {templates.map((template) => (
+                <div
+                  key={template.id}
+                  className="flex items-center justify-between p-3 rounded-lg bg-slate-50 border border-slate-200"
+                >
+                  <div className="flex-1">
+                    <p className="font-medium text-slate-900">{template.name}</p>
+                    <p className="text-xs text-slate-500">{template.subject}</p>
                   </div>
+                  <button
+                    onClick={() => handleTemplateToggle(template.id)}
+                    className={`px-3 py-1 rounded text-xs font-medium transition-all ${
+                      template.enabled
+                        ? 'bg-green-100 text-green-700 hover:bg-green-200'
+                        : 'bg-slate-200 text-slate-600 hover:bg-slate-300'
+                    }`}
+                  >
+                    {template.enabled ? 'Enabled' : 'Disabled'}
+                  </button>
                 </div>
               ))}
+            </CardContent>
+          </Card>
+
+          {/* Settings */}
+          <Card className="lg:col-span-1">
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Settings className="w-5 h-5" />
+                Settings
+              </CardTitle>
+              <CardDescription>Configure email preferences</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="from-email" className="text-sm font-medium">
+                  From Email
+                </Label>
+                <Input
+                  id="from-email"
+                  type="email"
+                  value={fromEmail}
+                  onChange={(e) => setFromEmail(e.target.value)}
+                  placeholder="noreply@example.com"
+                  className="text-sm"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="reply-email" className="text-sm font-medium">
+                  Reply-To Email
+                </Label>
+                <Input
+                  id="reply-email"
+                  type="email"
+                  value={replyToEmail}
+                  onChange={(e) => setReplyToEmail(e.target.value)}
+                  placeholder="support@example.com"
+                  className="text-sm"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="reminder-hours" className="text-sm font-medium">
+                  Reminder Hours Before
+                </Label>
+                <Input
+                  id="reminder-hours"
+                  type="number"
+                  value={reminderHours}
+                  onChange={(e) => setReminderHours(parseInt(e.target.value))}
+                  min="1"
+                  max="72"
+                  className="text-sm"
+                />
+              </div>
+
+              <Button
+                onClick={handleSettingsSave}
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+              >
+                Save Settings
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Status Summary */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Configuration Status</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="p-4 rounded-lg bg-slate-50 border border-slate-200">
+                <p className="text-sm text-slate-600 mb-1">Email Provider</p>
+                <p className="text-lg font-semibold text-slate-900">
+                  {configuredProvider?.name || 'Not configured'}
+                </p>
+              </div>
+              <div className="p-4 rounded-lg bg-slate-50 border border-slate-200">
+                <p className="text-sm text-slate-600 mb-1">Active Templates</p>
+                <p className="text-lg font-semibold text-slate-900">
+                  {templates.filter((t) => t.enabled).length} of {templates.length}
+                </p>
+              </div>
+              <div className="p-4 rounded-lg bg-slate-50 border border-slate-200">
+                <p className="text-sm text-slate-600 mb-1">Reminder Timing</p>
+                <p className="text-lg font-semibold text-slate-900">{reminderHours} hours before</p>
+              </div>
             </div>
           </CardContent>
         </Card>
-      )}
+      </div>
     </div>
   );
 };
