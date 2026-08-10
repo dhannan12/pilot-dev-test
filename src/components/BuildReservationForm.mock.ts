@@ -16,7 +16,11 @@ export const mockReservationData = {
     '8:30 PM',
     '9:00 PM',
   ],
-  guestCounts: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
-  cuisineTypes: ['Italian', 'French', 'Asian', 'American', 'Mediterranean'],
-  specialOccasions: ['Birthday', 'Anniversary', 'Business Meeting', 'Casual Dining', 'Other'],
+  partySizes: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '12', '15', '20'],
+  restaurants: [
+    { id: 1, name: 'The Golden Fork', cuisine: 'French', rating: 4.8 },
+    { id: 2, name: 'Sakura Sushi', cuisine: 'Japanese', rating: 4.7 },
+    { id: 3, name: 'La Bella Vita', cuisine: 'Italian', rating: 4.6 },
+    { id: 4, name: 'Spice Route', cuisine: 'Indian', rating: 4.5 },
+  ],
 };
