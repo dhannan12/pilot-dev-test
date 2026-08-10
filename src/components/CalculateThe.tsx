@@ -21,6 +21,7 @@ const CalculateThe: React.FC = () => {
 
   const handleCalculate = (): void => {
     if (!selectedDate) {
+      alert('Please select a date');
       return;
     }
 
@@ -40,23 +41,24 @@ const CalculateThe: React.FC = () => {
     setHasSearched(false);
   };
 
-  const confirmedCount = filteredReservations.filter(
-    (r: Reservation) => r.status === 'confirmed'
-  ).length;
-
-  const pendingCount = filteredReservations.filter(
-    (r: Reservation) => r.status === 'pending'
-  ).length;
-
-  const cancelledCount = filteredReservations.filter(
-    (r: Reservation) => r.status === 'cancelled'
-  ).length;
+  const getStatusColor = (status: string): string => {
+    switch (status) {
+      case 'confirmed':
+        return 'bg-green-100 text-green-800';
+      case 'pending':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'cancelled':
+        return 'bg-red-100 text-red-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
 
   return (
     <div className="w-full max-w-4xl mx-auto p-4">
       <Card>
         <CardHeader>
-          <CardTitle>Reservation Calculator</CardTitle>
+          <CardTitle>Calculate Reservations</CardTitle>
           <CardDescription>
             Calculate the total number of reservations for a specific date
           </CardDescription>
@@ -70,25 +72,16 @@ const CalculateThe: React.FC = () => {
                 id="date-input"
                 type="date"
                 value={selectedDate}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                  setSelectedDate(e.target.value)
-                }
+                onChange={(e) => setSelectedDate(e.target.value)}
                 className="w-full"
               />
             </div>
+
             <div className="flex gap-2">
-              <Button
-                onClick={handleCalculate}
-                disabled={!selectedDate}
-                className="flex-1"
-              >
+              <Button onClick={handleCalculate} className="flex-1">
                 Calculate
               </Button>
-              <Button
-                onClick={handleReset}
-                variant="outline"
-                className="flex-1"
-              >
+              <Button onClick={handleReset} variant="outline" className="flex-1">
                 Reset
               </Button>
             </div>
@@ -97,77 +90,38 @@ const CalculateThe: React.FC = () => {
           {/* Results Section */}
           {hasSearched && (
             <div className="space-y-4 border-t pt-6">
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <Card className="bg-blue-50">
-                  <CardContent className="pt-6">
-                    <div className="text-center">
-                      <p className="text-sm text-gray-600 mb-2">Total Reservations</p>
-                      <p className="text-3xl font-bold text-blue-600">
-                        {totalReservations}
-                      </p>
-                    </div>
-                  </CardContent>
-                </Card>
-                <Card className="bg-green-50">
-                  <CardContent className="pt-6">
-                    <div className="text-center">
-                      <p className="text-sm text-gray-600 mb-2">Confirmed</p>
-                      <p className="text-3xl font-bold text-green-600">
-                        {confirmedCount}
-                      </p>
-                    </div>
-                  </CardContent>
-                </Card>
-                <Card className="bg-yellow-50">
-                  <CardContent className="pt-6">
-                    <div className="text-center">
-                      <p className="text-sm text-gray-600 mb-2">Pending</p>
-                      <p className="text-3xl font-bold text-yellow-600">
-                        {pendingCount}
-                      </p>
-                    </div>
-                  </CardContent>
-                </Card>
-                <Card className="bg-red-50">
-                  <CardContent className="pt-6">
-                    <div className="text-center">
-                      <p className="text-sm text-gray-600 mb-2">Cancelled</p>
-                      <p className="text-3xl font-bold text-red-600">
-                        {cancelledCount}
-                      </p>
-                    </div>
-                  </CardContent>
-                </Card>
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <p className="text-sm text-blue-600 mb-1">Total Reservations</p>
+                <p className="text-3xl font-bold text-blue-900">{totalReservations}</p>
+                <p className="text-xs text-blue-500 mt-1">for {selectedDate}</p>
               </div>
 
               {/* Reservations List */}
               {filteredReservations.length > 0 ? (
-                <div className="space-y-2">
-                  <h3 className="font-semibold text-lg">Reservations for {selectedDate}</h3>
+                <div className="space-y-3">
+                  <h3 className="font-semibold text-lg">Reservation Details</h3>
                   <div className="space-y-2 max-h-96 overflow-y-auto">
                     {filteredReservations.map((reservation: Reservation) => (
                       <div
                         key={reservation.id}
-                        className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50"
+                        className="border rounded-lg p-3 hover:bg-gray-50 transition-colors"
                       >
-                        <div className="flex-1">
-                          <p className="font-medium">{reservation.guestName}</p>
-                          <p className="text-sm text-gray-600">
-                            Room {reservation.roomNumber}
-                          </p>
+                        <div className="flex justify-between items-start">
+                          <div className="space-y-1">
+                            <p className="font-medium">{reservation.guestName}</p>
+                            <p className="text-sm text-gray-600">
+                              Room {reservation.roomNumber}
+                            </p>
+                          </div>
+                          <span
+                            className={`px-2 py-1 rounded text-xs font-medium ${getStatusColor(
+                              reservation.status
+                            )}`}
+                          >
+                            {reservation.status.charAt(0).toUpperCase() +
+                              reservation.status.slice(1)}
+                          </span>
                         </div>
-                        <span
-                          className={`px-3 py-1 rounded-full text-sm font-medium ${
-                            reservation.status === 'confirmed'
-                              ? 'bg-green-100 text-green-800'
-                              : reservation.status === 'pending'
-                              ? 'bg-yellow-100 text-yellow-800'
-                              : 'bg-red-100 text-red-800'
-                          }`}
-                        >
-                          {reservation.status.charAt(0).toUpperCase() +
-                            reservation.status.slice(1)}
-                        </span>
                       </div>
                     ))}
                   </div>
@@ -177,6 +131,13 @@ const CalculateThe: React.FC = () => {
                   <p className="text-gray-500">No reservations found for this date</p>
                 </div>
               )}
+            </div>
+          )}
+
+          {/* Empty State */}
+          {!hasSearched && (
+            <div className="text-center py-8 text-gray-500">
+              <p>Select a date and click Calculate to view reservations</p>
             </div>
           )}
         </CardContent>
