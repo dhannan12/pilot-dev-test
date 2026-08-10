@@ -2,25 +2,19 @@ export const mockEmailProviders = [
   {
     id: 'sendgrid',
     name: 'SendGrid',
-    description: 'Industry-leading email delivery platform with excellent deliverability',
-    configured: true,
+    description: 'Cloud-based email service',
+    configured: false,
   },
   {
     id: 'mailgun',
     name: 'Mailgun',
-    description: 'Powerful email API for developers with detailed analytics',
+    description: 'Email API for developers',
     configured: false,
   },
   {
     id: 'aws-ses',
     name: 'AWS SES',
-    description: 'Amazon Simple Email Service for reliable email sending',
-    configured: false,
-  },
-  {
-    id: 'smtp',
-    name: 'Custom SMTP',
-    description: 'Configure your own SMTP server',
+    description: 'Amazon Simple Email Service',
     configured: false,
   },
 ];
@@ -28,50 +22,32 @@ export const mockEmailProviders = [
 export const mockEmailTemplates = [
   {
     id: 'confirmation',
-    name: 'Reservation Confirmation',
+    name: 'Confirmation Email',
     subject: 'Your reservation has been confirmed',
     type: 'confirmation' as const,
     enabled: true,
   },
   {
-    id: 'reminder',
-    name: 'Reservation Reminder',
-    subject: 'Reminder: Your reservation is coming up',
-    type: 'reminder' as const,
-    enabled: true,
-  },
-  {
     id: 'cancellation',
-    name: 'Cancellation Notice',
+    name: 'Cancellation Email',
     subject: 'Your reservation has been cancelled',
     type: 'cancellation' as const,
     enabled: true,
   },
+  {
+    id: 'reminder',
+    name: 'Reminder Email',
+    subject: 'Reminder: Your reservation is coming up',
+    type: 'reminder' as const,
+    enabled: true,
+  },
 ];
 
-export const mockReservationSettings = [
-  {
-    id: 'send-confirmation',
-    setting: 'Send Confirmation Email',
-    value: 'Enabled - Sent immediately after booking',
-    description: 'Automatically send confirmation email to customers',
-  },
-  {
-    id: 'reminder-hours',
-    setting: 'Reminder Email Timing',
-    value: '24 hours before reservation',
-    description: 'When to send reminder emails to customers',
-  },
-  {
-    id: 'reply-to',
-    setting: 'Reply-To Address',
-    value: 'support@reservations.com',
-    description: 'Email address for customer replies',
-  },
-  {
-    id: 'bcc-address',
-    setting: 'BCC Address',
-    value: 'archive@reservations.com',
-    description: 'Archive copy of all reservation emails',
-  },
-];
+export const mockReservationSettings = {
+  id: 'settings-001',
+  sendConfirmation: true,
+  sendReminder: true,
+  reminderHoursBefore: 24,
+  fromEmail: 'noreply@reservations.com',
+  replyToEmail: 'support@reservations.com',
+};
