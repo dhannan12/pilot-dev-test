@@ -16,6 +16,7 @@ interface Dish {
   ingredients: Ingredient[];
   category: string;
   prepTime: string;
+  servings: number;
 }
 
 const EachDish: React.FC = () => {
@@ -31,37 +32,43 @@ const EachDish: React.FC = () => {
           {mockDishes.map((dish: Dish) => (
             <Card key={dish.id} className="hover:shadow-lg transition-shadow duration-300 overflow-hidden">
               <CardHeader className="bg-gradient-to-r from-orange-50 to-amber-50 pb-4">
-                <div className="flex items-start justify-between gap-2 mb-2">
-                  <CardTitle className="text-xl text-slate-900">{dish.name}</CardTitle>
-                  <Badge variant="secondary" className="whitespace-nowrap">
+                <div className="flex items-start justify-between mb-2">
+                  <CardTitle className="text-2xl text-slate-900">{dish.name}</CardTitle>
+                  <Badge variant="secondary" className="ml-2">
                     {dish.category}
                   </Badge>
                 </div>
-                <CardDescription className="text-slate-600">
-                  ⏱️ {dish.prepTime}
+                <CardDescription className="text-base text-slate-700 mt-2">
+                  {dish.description}
                 </CardDescription>
               </CardHeader>
 
               <CardContent className="pt-6">
-                <div className="mb-6">
-                  <h3 className="text-sm font-semibold text-slate-700 mb-2">Description</h3>
-                  <p className="text-sm text-slate-600 leading-relaxed">
-                    {dish.description}
-                  </p>
+                <div className="mb-4">
+                  <div className="flex gap-4 text-sm text-slate-600 mb-4">
+                    <span className="flex items-center gap-1">
+                      <span className="font-semibold">⏱️</span> {dish.prepTime}
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <span className="font-semibold">👥</span> {dish.servings} servings
+                    </span>
+                  </div>
                 </div>
 
                 <div>
-                  <h3 className="text-sm font-semibold text-slate-700 mb-3">Ingredients</h3>
+                  <h3 className="font-semibold text-slate-900 mb-3 text-sm uppercase tracking-wide">
+                    Ingredients
+                  </h3>
                   <ul className="space-y-2">
                     {dish.ingredients.map((ingredient: Ingredient) => (
                       <li
                         key={ingredient.id}
-                        className="flex items-center gap-2 text-sm text-slate-600"
+                        className="flex items-start gap-2 text-sm text-slate-700 bg-slate-50 p-2 rounded"
                       >
-                        <span className="w-1.5 h-1.5 rounded-full bg-orange-400 flex-shrink-0" />
+                        <span className="text-orange-500 font-bold mt-0.5">•</span>
                         <span>
-                          <span className="font-medium text-slate-700">{ingredient.name}</span>
-                          <span className="text-slate-500"> - {ingredient.quantity}</span>
+                          <span className="font-medium">{ingredient.name}</span>
+                          <span className="text-slate-500 ml-1">({ingredient.quantity})</span>
                         </span>
                       </li>
                     ))}
