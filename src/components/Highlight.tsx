@@ -1,84 +1,159 @@
-import React from 'react';
-import { Star, ChefHat } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
+import React, { useState } from 'react';
+import { Star, Check } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { mockChefRecommendations } from './Highlight.mock';
+import { Badge } from '@/components/ui/badge';
+import { mockMenuItems } from './Highlight.mock';
 
 interface MenuItem {
   id: string;
   name: string;
   description: string;
   price: number;
-  isChefRecommendation: boolean;
   category: string;
+  isChefRecommendation: boolean;
 }
 
 const Highlight: React.FC = () => {
-  const recommendations: MenuItem[] = mockChefRecommendations;
+  const [menuItems, setMenuItems] = useState<MenuItem[]>(mockMenuItems);
+  const [isChef] = useState<boolean>(true);
+
+  const handleToggleRecommendation = (id: string): void => {
+    setMenuItems((prevItems) =>
+      prevItems.map((item) =>
+        item.id === id
+          ? { ...item, isChefRecommendation: !item.isChefRecommendation }
+          : item
+      )
+    );
+  };
+
+  const recommendedItems = menuItems.filter((item) => item.isChefRecommendation);
+  const nonRecommendedItems = menuItems.filter((item) => !item.isChefRecommendation);
 
   return (
-    <div className="w-full max-w-6xl mx-auto p-6">
-      <div className="mb-8">
-        <h1 className="text-4xl font-bold text-gray-900 mb-2 flex items-center gap-2">
-          <ChefHat className="w-8 h-8 text-orange-600" />
-          Chef's Recommendations
-        </h1>
-        <p className="text-gray-600">Handpicked dishes selected by our culinary team</p>
+    <div className="w-full max-w-6xl mx-auto p-6 space-y-8">
+      {/* Header */}
+      <div className="space-y-2">
+        <h1 className="text-4xl font-bold text-gray-900">Menu Management</h1>
+        <p className="text-gray-600">Highlight your chef's recommendations</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {recommendations.map((item) => (
-          <Card
-            key={item.id}
-            className={`relative overflow-hidden transition-all duration-300 hover:shadow-lg ${
-              item.isChefRecommendation
-                ? 'border-2 border-orange-500 bg-gradient-to-br from-orange-50 to-white'
-                : 'border border-gray-200'
-            }`}
-          >
-            {item.isChefRecommendation && (
-              <div className="absolute top-0 right-0 bg-gradient-to-l from-orange-600 to-orange-500 text-white px-4 py-2 rounded-bl-lg flex items-center gap-1 shadow-md">
-                <Star className="w-4 h-4 fill-white" />
-                <span className="text-sm font-semibold">Chef Pick</span>
-              </div>
-            )}
-
-            <CardHeader className="pb-3">
-              <div className="flex items-start justify-between gap-2">
-                <div className="flex-1">
-                  <CardTitle className="text-xl text-gray-900">{item.name}</CardTitle>
-                  <CardDescription className="text-sm text-gray-500 mt-1">
-                    {item.category}
-                  </CardDescription>
+      {/* Chef Recommendations Section */}
+      <Card className="border-2 border-amber-200 bg-amber-50">
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <Star className="w-5 h-5 text-amber-600" />
+            <CardTitle className="text-amber-900">Chef's Recommendations</CardTitle>
+            <Badge variant="secondary" className="ml-auto">
+              {recommendedItems.length}
+            </Badge>
+          </div>
+          <CardDescription className="text-amber-700">
+            Items highlighted as chef's special picks
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {recommendedItems.length === 0 ? (
+            <p className="text-gray-500 text-center py-8">No recommendations yet</p>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {recommendedItems.map((item) => (
+                <div
+                  key={item.id}
+                  className="bg-white rounded-lg p-4 border border-amber-200 flex justify-between items-start"
+                >
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-semibold text-gray-900">{item.name}</h3>
+                      <Star className="w-4 h-4 text-amber-500 fill-amber-500" />
+                    </div>
+                    <p className="text-sm text-gray-600 mt-1">{item.description}</p>
+                    <div className="flex items-center gap-2 mt-2">
+                      <Badge variant="outline" className="text-xs">
+                        {item.category}
+                      </Badge>
+                      <span className="text-sm font-semibold text-gray-900">${item.price.toFixed(2)}</span>
+                    </div>
+                  </div>
+                  {isChef && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleToggleRecommendation(item.id)}
+                      className="ml-2 text-amber-600 hover:text-amber-700 hover:bg-amber-100"
+                    >
+                      <Check className="w-4 h-4" />
+                    </Button>
+                  )}
                 </div>
-              </div>
-            </CardHeader>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
-            <CardContent className="space-y-4">
-              <p className="text-gray-700 text-sm leading-relaxed">{item.description}</p>
+      {/* Available Items Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Available Menu Items</CardTitle>
+          <CardDescription>Click to add items to chef's recommendations</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {nonRecommendedItems.length === 0 ? (
+            <p className="text-gray-500 text-center py-8">All items are highlighted</p>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {nonRecommendedItems.map((item) => (
+                <Card key={item.id} className="hover:shadow-md transition-shadow">
+                  <CardContent className="pt-6">
+                    <h3 className="font-semibold text-gray-900 mb-2">{item.name}</h3>
+                    <p className="text-sm text-gray-600 mb-3">{item.description}</p>
+                    <div className="flex items-center justify-between mb-4">
+                      <Badge variant="outline" className="text-xs">
+                        {item.category}
+                      </Badge>
+                      <span className="text-sm font-semibold text-gray-900">${item.price.toFixed(2)}</span>
+                    </div>
+                    {isChef && (
+                      <Button
+                        onClick={() => handleToggleRecommendation(item.id)}
+                        className="w-full bg-amber-600 hover:bg-amber-700 text-white"
+                        size="sm"
+                      >
+                        <Star className="w-4 h-4 mr-2" />
+                        Add to Recommendations
+                      </Button>
+                    )}
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
-              <div className="flex items-center justify-between pt-2 border-t border-gray-200">
-                <span className="text-2xl font-bold text-orange-600">${item.price.toFixed(2)}</span>
-                {item.isChefRecommendation && (
-                  <Badge
-                    variant="secondary"
-                    className="bg-orange-100 text-orange-800 hover:bg-orange-100"
-                  >
-                    Recommended
-                  </Badge>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      {recommendations.filter((item) => item.isChefRecommendation).length === 0 && (
-        <div className="text-center py-12">
-          <ChefHat className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-          <p className="text-gray-500 text-lg">No chef recommendations available at the moment</p>
-        </div>
-      )}
+      {/* Summary Stats */}
+      <Card className="bg-gray-50">
+        <CardContent className="pt-6">
+          <div className="grid grid-cols-3 gap-4 text-center">
+            <div>
+              <p className="text-2xl font-bold text-gray-900">{menuItems.length}</p>
+              <p className="text-sm text-gray-600">Total Items</p>
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-amber-600">{recommendedItems.length}</p>
+              <p className="text-sm text-gray-600">Recommendations</p>
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-gray-900">
+                {((recommendedItems.length / menuItems.length) * 100).toFixed(0)}%
+              </p>
+              <p className="text-sm text-gray-600">Highlighted</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };
