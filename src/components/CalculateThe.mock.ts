@@ -1,94 +1,72 @@
-export interface Reservation {
-  id: string;
-  date: string;
-  guestName: string;
-  roomNumber: number;
-  status: 'confirmed' | 'pending' | 'cancelled';
-}
-
-export const mockReservations: Reservation[] = [
+export const mockReservations = [
   {
-    id: 'RES001',
+    id: 'RES-001',
     date: '2024-01-15',
     guestName: 'John Smith',
     roomNumber: 101,
-    status: 'confirmed',
+    status: 'confirmed' as const,
   },
   {
-    id: 'RES002',
+    id: 'RES-002',
     date: '2024-01-15',
     guestName: 'Sarah Johnson',
     roomNumber: 102,
-    status: 'confirmed',
+    status: 'confirmed' as const,
   },
   {
-    id: 'RES003',
+    id: 'RES-003',
     date: '2024-01-15',
     guestName: 'Michael Brown',
     roomNumber: 103,
-    status: 'pending',
+    status: 'pending' as const,
   },
   {
-    id: 'RES004',
+    id: 'RES-004',
     date: '2024-01-15',
     guestName: 'Emily Davis',
     roomNumber: 104,
-    status: 'confirmed',
+    status: 'confirmed' as const,
   },
   {
-    id: 'RES005',
-    date: '2024-01-15',
-    guestName: 'Robert Wilson',
-    roomNumber: 105,
-    status: 'cancelled',
-  },
-  {
-    id: 'RES006',
+    id: 'RES-005',
     date: '2024-01-16',
-    guestName: 'Jessica Martinez',
+    guestName: 'Robert Wilson',
     roomNumber: 201,
-    status: 'confirmed',
+    status: 'confirmed' as const,
   },
   {
-    id: 'RES007',
+    id: 'RES-006',
+    date: '2024-01-16',
+    guestName: 'Jennifer Martinez',
+    roomNumber: 202,
+    status: 'cancelled' as const,
+  },
+  {
+    id: 'RES-007',
     date: '2024-01-16',
     guestName: 'David Anderson',
-    roomNumber: 202,
-    status: 'pending',
-  },
-  {
-    id: 'RES008',
-    date: '2024-01-16',
-    guestName: 'Lisa Taylor',
     roomNumber: 203,
-    status: 'confirmed',
+    status: 'confirmed' as const,
   },
   {
-    id: 'RES009',
+    id: 'RES-008',
+    date: '2024-01-17',
+    guestName: 'Lisa Taylor',
+    roomNumber: 301,
+    status: 'pending' as const,
+  },
+  {
+    id: 'RES-009',
     date: '2024-01-17',
     guestName: 'James Thomas',
-    roomNumber: 301,
-    status: 'confirmed',
-  },
-  {
-    id: 'RES010',
-    date: '2024-01-17',
-    guestName: 'Patricia Jackson',
     roomNumber: 302,
-    status: 'confirmed',
+    status: 'confirmed' as const,
   },
   {
-    id: 'RES011',
-    date: '2024-01-17',
-    guestName: 'Christopher White',
-    roomNumber: 303,
-    status: 'pending',
-  },
-  {
-    id: 'RES012',
-    date: '2024-01-17',
-    guestName: 'Jennifer Harris',
-    roomNumber: 304,
-    status: 'confirmed',
+    id: 'RES-010',
+    date: '2024-01-18',
+    guestName: 'Patricia Jackson',
+    roomNumber: 401,
+    status: 'confirmed' as const,
   },
 ];
