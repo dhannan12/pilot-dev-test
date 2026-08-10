@@ -1,0 +1,22 @@
+export const mockReservationData = {
+  availableTimes: [
+    '11:00 AM',
+    '11:30 AM',
+    '12:00 PM',
+    '12:30 PM',
+    '1:00 PM',
+    '1:30 PM',
+    '5:00 PM',
+    '5:30 PM',
+    '6:00 PM',
+    '6:30 PM',
+    '7:00 PM',
+    '7:30 PM',
+    '8:00 PM',
+    '8:30 PM',
+    '9:00 PM',
+  ],
+  guestCounts: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+  cuisineTypes: ['Italian', 'French', 'Asian', 'American', 'Mediterranean'],
+  specialOccasions: ['Birthday', 'Anniversary', 'Business Meeting', 'Casual Dining', 'Other'],
+};
