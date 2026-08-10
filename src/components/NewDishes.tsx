@@ -21,31 +21,32 @@ const NewDishes: React.FC = () => {
       <div className="max-w-7xl mx-auto">
         <div className="mb-12">
           <h1 className="text-4xl font-bold text-slate-900 mb-2">New Dishes</h1>
-          <p className="text-lg text-slate-600">Discover our latest culinary creations</p>
+          <p className="text-lg text-slate-600">Check out our latest culinary creations</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {dishes.map((dish) => (
             <Card
               key={dish.id}
-              className={`overflow-hidden transition-all duration-300 hover:shadow-lg hover:scale-105 ${
-                dish.isNew ? 'ring-2 ring-amber-400 shadow-lg' : ''
+              className={`overflow-hidden transition-all duration-300 hover:shadow-lg ${
+                dish.isNew ? 'ring-2 ring-amber-400 shadow-md' : ''
               }`}
             >
               <div className="relative h-48 bg-slate-200 overflow-hidden">
                 <img
                   src={dish.image}
                   alt={dish.name}
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
                 />
                 {dish.isNew && (
                   <div className="absolute top-3 right-3">
-                    <Badge className="bg-amber-500 hover:bg-amber-600 text-white font-semibold px-3 py-1 animate-pulse">
-                      ✨ NEW
+                    <Badge className="bg-amber-500 hover:bg-amber-600 text-white font-semibold animate-pulse">
+                      NEW
                     </Badge>
                   </div>
                 )}
               </div>
+
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex-1">
@@ -56,13 +57,14 @@ const NewDishes: React.FC = () => {
                   </div>
                 </div>
               </CardHeader>
+
               <CardContent>
-                <p className="text-slate-600 text-sm mb-4">{dish.description}</p>
+                <p className="text-slate-600 text-sm mb-4 line-clamp-2">{dish.description}</p>
                 <div className="flex items-center justify-between">
                   <span className="text-2xl font-bold text-amber-600">${dish.price.toFixed(2)}</span>
                   {dish.isNew && (
                     <span className="text-xs font-semibold text-amber-600 bg-amber-50 px-2 py-1 rounded">
-                      Limited Time
+                      Just Added
                     </span>
                   )}
                 </div>
