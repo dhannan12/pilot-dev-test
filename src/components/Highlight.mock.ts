@@ -1,59 +1,66 @@
-export interface MenuItem {
-  id: string;
-  name: string;
-  description: string;
-  price: number;
-  isChefRecommendation: boolean;
-  category: string;
-}
-
-export const mockChefRecommendations: MenuItem[] = [
+export const mockMenuItems = [
   {
     id: '1',
     name: 'Pan-Seared Salmon',
-    description: 'Fresh Atlantic salmon with lemon butter sauce, served with seasonal vegetables and roasted potatoes',
+    description: 'Fresh Atlantic salmon with lemon butter sauce',
     price: 28.99,
-    isChefRecommendation: true,
     category: 'Main Course',
+    isChefRecommendation: true,
   },
   {
     id: '2',
     name: 'Truffle Risotto',
-    description: 'Creamy Arborio rice with black truffle, Parmesan cheese, and wild mushrooms',
+    description: 'Creamy arborio rice with black truffle and parmesan',
     price: 24.99,
-    isChefRecommendation: true,
     category: 'Main Course',
+    isChefRecommendation: true,
   },
   {
     id: '3',
-    name: 'Beef Tenderloin',
-    description: 'Prime cut beef tenderloin with red wine reduction, asparagus, and truffle mashed potatoes',
-    price: 34.99,
-    isChefRecommendation: true,
+    name: 'Grilled Ribeye Steak',
+    description: '16oz prime cut with roasted vegetables',
+    price: 42.99,
     category: 'Main Course',
+    isChefRecommendation: false,
   },
   {
     id: '4',
-    name: 'Lobster Bisque',
-    description: 'Silky smooth lobster soup with fresh cream, garnished with lobster meat and croutons',
+    name: 'Burrata Salad',
+    description: 'Fresh burrata cheese with heirloom tomatoes and basil',
     price: 16.99,
-    isChefRecommendation: true,
     category: 'Appetizer',
+    isChefRecommendation: true,
   },
   {
     id: '5',
-    name: 'Chocolate Lava Cake',
-    description: 'Warm chocolate cake with molten center, served with vanilla ice cream and fresh berries',
-    price: 12.99,
-    isChefRecommendation: true,
-    category: 'Dessert',
+    name: 'Shrimp Scampi',
+    description: 'Gulf shrimp in garlic white wine sauce with pasta',
+    price: 26.99,
+    category: 'Main Course',
+    isChefRecommendation: false,
   },
   {
     id: '6',
-    name: 'Herb-Crusted Lamb Chops',
-    description: 'Tender lamb chops with rosemary and thyme crust, served with mint jelly and grilled vegetables',
+    name: 'Chocolate Lava Cake',
+    description: 'Warm chocolate cake with molten center and vanilla ice cream',
+    price: 12.99,
+    category: 'Dessert',
+    isChefRecommendation: false,
+  },
+  {
+    id: '7',
+    name: 'Beef Carpaccio',
+    description: 'Thinly sliced raw beef with capers and arugula',
+    price: 18.99,
+    category: 'Appetizer',
+    isChefRecommendation: false,
+  },
+  {
+    id: '8',
+    name: 'Duck Confit',
+    description: 'Slow-cooked duck leg with cherry gastrique',
     price: 32.99,
-    isChefRecommendation: true,
     category: 'Main Course',
+    isChefRecommendation: true,
   },
 ];
