@@ -19,13 +19,13 @@ const MOCK_DATA: MenuSection[] = [
       {
         id: 'starter-1',
         name: 'Bruschetta',
-        description: 'Toasted bread with tomatoes and garlic',
+        description: 'Toasted bread with tomatoes, garlic, and basil',
         price: 8.99
       },
       {
         id: 'starter-2',
         name: 'Calamari Fritti',
-        description: 'Crispy fried squid with marinara sauce',
+        description: 'Crispy fried squid with lemon aioli',
         price: 10.99
       },
       {
@@ -41,27 +41,27 @@ const MOCK_DATA: MenuSection[] = [
     items: [
       {
         id: 'main-1',
-        name: 'Spaghetti Carbonara',
-        description: 'Classic Italian pasta with eggs and pancetta',
-        price: 16.99
+        name: 'Grilled Salmon',
+        description: 'Atlantic salmon with seasonal vegetables and lemon butter',
+        price: 24.99
       },
       {
         id: 'main-2',
-        name: 'Grilled Salmon',
-        description: 'Fresh salmon fillet with lemon butter sauce',
-        price: 22.99
+        name: 'Ribeye Steak',
+        description: '12oz prime cut with garlic mashed potatoes',
+        price: 32.99
       },
       {
         id: 'main-3',
-        name: 'Risotto Mushroom',
-        description: 'Creamy arborio rice with wild mushrooms',
+        name: 'Pasta Carbonara',
+        description: 'Classic Italian pasta with pancetta and parmesan',
         price: 18.99
       },
       {
         id: 'main-4',
-        name: 'Beef Tenderloin',
-        description: 'Prime cut with roasted vegetables',
-        price: 28.99
+        name: 'Chicken Piccata',
+        description: 'Pan-seared chicken with capers and white wine sauce',
+        price: 19.99
       }
     ]
   },
@@ -71,35 +71,31 @@ const MOCK_DATA: MenuSection[] = [
       {
         id: 'dessert-1',
         name: 'Tiramisu',
-        description: 'Classic Italian dessert with mascarpone and espresso',
+        description: 'Traditional Italian dessert with mascarpone and espresso',
         price: 7.99
       },
       {
         id: 'dessert-2',
-        name: 'Panna Cotta',
-        description: 'Silky smooth vanilla cream with berry compote',
+        name: 'Chocolate Lava Cake',
+        description: 'Warm chocolate cake with molten center and vanilla ice cream',
         price: 8.99
       },
       {
         id: 'dessert-3',
-        name: 'Chocolate Lava Cake',
-        description: 'Warm chocolate cake with molten center',
-        price: 9.99
+        name: 'Panna Cotta',
+        description: 'Silky Italian cream dessert with berry compote',
+        price: 7.99
       }
     ]
   }
 ]
 
 export default function MenuMust() {
-  const [expandedSection, setExpandedSection] = useState<string | null>('Starters')
-
-  const toggleSection = (sectionTitle: string) => {
-    setExpandedSection(expandedSection === sectionTitle ? null : sectionTitle)
-  }
+  const [selectedItem, setSelectedItem] = useState<string | null>(null)
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-2xl mx-auto">
+      <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="text-center mb-12">
           <h1 className="text-4xl sm:text-5xl font-bold text-slate-900 mb-2">Our Menu</h1>
@@ -107,41 +103,56 @@ export default function MenuMust() {
         </div>
 
         {/* Menu Sections */}
-        <div className="space-y-6">
+        <div className="space-y-12">
           {MOCK_DATA.map((section) => (
-            <div key={section.title} className="bg-white rounded-lg shadow-md overflow-hidden">
+            <div key={section.title} className="bg-white rounded-lg shadow-lg overflow-hidden">
               {/* Section Header */}
-              <button
-                onClick={() => toggleSection(section.title)}
-                className="w-full px-6 py-4 flex items-center justify-between bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 transition-all duration-200"
-              >
-                <h2 className="text-2xl font-bold text-white">{section.title}</h2>
-                <span className={`text-white text-2xl transition-transform duration-300 ${expandedSection === section.title ? 'rotate-180' : ''}`}>
-                  ▼
-                </span>
-              </button>
+              <div className="bg-gradient-to-r from-amber-600 to-amber-700 px-6 sm:px-8 py-4">
+                <h2 className="text-2xl sm:text-3xl font-bold text-white">{section.title}</h2>
+              </div>
 
               {/* Section Items */}
-              {expandedSection === section.title && (
-                <div className="divide-y divide-slate-200">
-                  {section.items.map((item) => (
-                    <div key={item.id} className="px-6 py-5 hover:bg-slate-50 transition-colors duration-150">
-                      <div className="flex items-start justify-between mb-2">
-                        <h3 className="text-lg font-semibold text-slate-900">{item.name}</h3>
-                        <span className="text-lg font-bold text-blue-600 ml-4 flex-shrink-0">${item.price.toFixed(2)}</span>
+              <div className="divide-y divide-slate-200">
+                {section.items.map((item) => (
+                  <div
+                    key={item.id}
+                    onClick={() => setSelectedItem(selectedItem === item.id ? null : item.id)}
+                    className="px-6 sm:px-8 py-6 hover:bg-slate-50 transition-colors cursor-pointer"
+                  >
+                    <div className="flex justify-between items-start gap-4">
+                      <div className="flex-1">
+                        <h3 className="text-lg sm:text-xl font-semibold text-slate-900 mb-1">
+                          {item.name}
+                        </h3>
+                        <p className="text-slate-600 text-sm sm:text-base">{item.description}</p>
                       </div>
-                      <p className="text-slate-600 text-sm">{item.description}</p>
+                      <div className="text-right flex-shrink-0">
+                        <p className="text-xl sm:text-2xl font-bold text-amber-600">
+                          ${item.price.toFixed(2)}
+                        </p>
+                      </div>
                     </div>
-                  ))}
-                </div>
-              )}
+
+                    {/* Expanded Details */}
+                    {selectedItem === item.id && (
+                      <div className="mt-4 pt-4 border-t border-slate-200">
+                        <button className="w-full bg-amber-600 hover:bg-amber-700 text-white font-semibold py-2 px-4 rounded transition-colors">
+                          Add to Cart
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
             </div>
           ))}
         </div>
 
         {/* Footer Note */}
         <div className="mt-12 text-center">
-          <p className="text-slate-600 text-sm">All prices are in USD. Please inform us of any dietary restrictions.</p>
+          <p className="text-slate-600 text-sm">
+            Click on any item to add it to your cart
+          </p>
         </div>
       </div>
     </div>
