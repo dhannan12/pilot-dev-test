@@ -36,3 +36,11 @@ interface FormData {
   phone: string;
   specialRequests: string;
 }
+
+export default function ReservationForm() {
+  return (
+    <div className="p-6 rounded-lg border border-gray-200 bg-white">
+      <h2 className="text-xl font-semibold text-gray-900">ReservationForm</h2>
+    </div>
+  )
+}
