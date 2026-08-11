@@ -60,7 +60,7 @@ const MOCK_DATA: MenuSection[] = [
       {
         id: 'main-4',
         name: 'Beef Tenderloin',
-        description: 'Prime cut with roasted vegetables',
+        description: 'Prime cut with roasted vegetables and red wine reduction',
         price: 28.99
       }
     ]
@@ -91,15 +91,7 @@ const MOCK_DATA: MenuSection[] = [
 ]
 
 export default function MenuMust() {
-  const [selectedItems, setSelectedItems] = useState<string[]>([])
-
-  const toggleItemSelection = (itemId: string) => {
-    setSelectedItems(prev =>
-      prev.includes(itemId)
-        ? prev.filter(id => id !== itemId)
-        : [...prev, itemId]
-    )
-  }
+  const [selectedItem, setSelectedItem] = useState<string | null>(null)
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-amber-50 to-orange-50 py-12 px-4 sm:px-6 lg:px-8">
@@ -112,49 +104,36 @@ export default function MenuMust() {
 
         {/* Menu Sections */}
         <div className="space-y-12">
-          {MOCK_DATA.map((section, sectionIndex) => (
-            <div key={sectionIndex} className="bg-white rounded-lg shadow-lg overflow-hidden">
-              {/* Section Header */}
-              <div className="bg-gradient-to-r from-amber-600 to-orange-600 px-6 sm:px-8 py-6">
-                <h2 className="text-2xl sm:text-3xl font-bold text-white">{section.title}</h2>
+          {MOCK_DATA.map((section) => (
+            <div key={section.title} className="">
+              {/* Section Title */}
+              <div className="mb-6">
+                <h2 className="text-3xl font-bold text-gray-900 pb-3 border-b-4 border-orange-500 inline-block">
+                  {section.title}
+                </h2>
               </div>
 
-              {/* Menu Items */}
-              <div className="divide-y divide-gray-200">
+              {/* Menu Items Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {section.items.map((item) => (
                   <div
                     key={item.id}
-                    onClick={() => toggleItemSelection(item.id)}
-                    className={`p-6 sm:p-8 cursor-pointer transition-all duration-200 ${
-                      selectedItems.includes(item.id)
-                        ? 'bg-amber-50 border-l-4 border-amber-600'
-                        : 'bg-white hover:bg-gray-50'
+                    onClick={() => setSelectedItem(selectedItem === item.id ? null : item.id)}
+                    className={`p-6 rounded-lg cursor-pointer transition-all duration-300 ${
+                      selectedItem === item.id
+                        ? 'bg-orange-500 text-white shadow-lg scale-105'
+                        : 'bg-white text-gray-900 shadow-md hover:shadow-lg hover:scale-102'
                     }`}
                   >
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex-1">
-                        <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2">
-                          {item.name}
-                        </h3>
-                        <p className="text-gray-600 text-sm sm:text-base">{item.description}</p>
-                      </div>
-                      <div className="flex items-center gap-4">
-                        <span className="text-xl sm:text-2xl font-bold text-amber-600 whitespace-nowrap">
-                          ${item.price.toFixed(2)}
-                        </span>
-                        <div
-                          className={`w-6 h-6 rounded border-2 flex items-center justify-center transition-all ${
-                            selectedItems.includes(item.id)
-                              ? 'bg-amber-600 border-amber-600'
-                              : 'border-gray-300 hover:border-amber-600'
-                          }`}
-                        >
-                          {selectedItems.includes(item.id) && (
-                            <span className="text-white text-sm font-bold">✓</span>
-                          )}
-                        </div>
-                      </div>
+                    <div className="flex justify-between items-start mb-2">
+                      <h3 className="text-xl font-semibold">{item.name}</h3>
+                      <span className="text-lg font-bold ml-2">${item.price.toFixed(2)}</span>
                     </div>
+                    <p className={`text-sm ${
+                      selectedItem === item.id ? 'text-orange-100' : 'text-gray-600'
+                    }`}>
+                      {item.description}
+                    </p>
                   </div>
                 ))}
               </div>
@@ -163,11 +142,9 @@ export default function MenuMust() {
         </div>
 
         {/* Footer Info */}
-        <div className="mt-12 text-center">
+        <div className="mt-16 text-center">
           <p className="text-gray-600 text-sm">
-            {selectedItems.length > 0
-              ? `You have selected ${selectedItems.length} item${selectedItems.length !== 1 ? 's' : ''}`
-              : 'Click on any item to select it'}
+            Click on any item to see more details
           </p>
         </div>
       </div>
