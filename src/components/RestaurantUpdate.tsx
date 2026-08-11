@@ -15,3 +15,11 @@ interface Restaurant {
   manager: string;
   menuItems: MenuItem[];
 }
+
+export default function RestaurantUpdate() {
+  return (
+    <div className="p-6 rounded-lg border border-gray-200 bg-white">
+      <h2 className="text-xl font-semibold text-gray-900">RestaurantUpdate</h2>
+    </div>
+  )
+}
