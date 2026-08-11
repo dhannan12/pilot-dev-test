@@ -1,2 +1,286 @@
-{
-  "component_code": "import React, { useState } from 'react';\n\nconst MOCK_RESTAURANTS = [\n  { id: 1, name: 'The Italian Kitchen', cuisine: 'Italian', maxGuests: 8 },\n  { id: 2, name: 'Sakura Sushi', cuisine: 'Japanese', maxGuests: 10 },\n  { id: 3, name: 'Le Petit Bistro', cuisine: 'French', maxGuests: 6 },\n  { id: 4, name: 'Spice Route', cuisine: 'Indian', maxGuests: 12 },\n  { id: 5, name: 'El Mariachi', cuisine: 'Mexican', maxGuests: 8 },\n];\n\nconst MOCK_TIME_SLOTS = [\n  '11:00 AM',\n  '11:30 AM',\n  '12:00 PM',\n  '12:30 PM',\n  '1:00 PM',\n  '1:30 PM',\n  '5:00 PM',\n  '5:30 PM',\n  '6:00 PM',\n  '6:30 PM',\n  '7:00 PM',\n  '7:30 PM',\n  '8:00 PM',\n  '8:30 PM',\n  '9:00 PM',\n];\n\ninterface FormData {\n  restaurantId: string;\n  date: string;\n  time: string;\n  guests: string;\n  name: string;\n  email: string;\n  phone: string;\n  specialRequests: string;\n}\n\ninterface FormErrors {\n  [key: string]: string;\n}\n\nexport default function ReservationForm() {\n  const [formData, setFormData] = useState<FormData>({\n    restaurantId: '',\n    date: '',\n    time: '',\n    guests: '',\n    name: '',\n    email: '',\n    phone: '',\n    specialRequests: '',\n  });\n\n  const [errors, setErrors] = useState<FormErrors>({});\n  const [submitted, setSubmitted] = useState(false);\n  const [loading, setLoading] = useState(false);\n\n  const validateForm = (): boolean => {\n    const newErrors: FormErrors = {};\n\n    if (!formData.restaurantId) newErrors.restaurantId = 'Please select a restaurant';\n    if (!formData.date) newErrors.date = 'Please select a date';\n    if (!formData.time) newErrors.time = 'Please select a time';\n    if (!formData.guests) newErrors.guests = 'Please select number of guests';\n    if (parseInt(formData.guests) < 1 || parseInt(formData.guests) > 12) {\n      newErrors.guests = 'Guests must be between 1 and 12';\n    }\n    if (!formData.name.trim()) newErrors.name = 'Name is required';\n    if (!formData.email.trim()) newErrors.email = 'Email is required';\n    if (!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(formData.email)) {\n      newErrors.email = 'Please enter a valid email';\n    }\n    if (!formData.phone.trim()) newErrors.phone = 'Phone number is required';\n    if (!/^[\\d\\s\\-\\+\\(\\)]+$/.test(formData.phone) || formData.phone.replace(/\\D/g, '').length < 10) {\n      newErrors.phone = 'Please enter a valid phone number';\n    }\n\n    setErrors(newErrors);\n    return Object.keys(newErrors).length === 0;\n  };\n\n  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {\n    const { name, value } = e.target;\n    setFormData(prev => ({\n      ...prev,\n      [name]: value,\n    }));\n    if (errors[name]) {\n      setErrors(prev => ({\n        ...prev,\n        [name]: '',\n      }));\n    }\n  };\n\n  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {\n    e.preventDefault();\n\n    if (!validateForm()) {\n      return;\n    }\n\n    setLoading(true);\n    setTimeout(() => {\n      setLoading(false);\n      setSubmitted(true);\n      setFormData({\n        restaurantId: '',\n        date: '',\n        time: '',\n        guests: '',\n        name: '',\n        email: '',\n        phone: '',\n        specialRequests: '',\n      });\n      setTimeout(() => setSubmitted(false), 5000);\n    }, 1000);\n  };\n\n  const selectedRestaurant = MOCK_RESTAURANTS.find(r => r.id.toString() === formData.restaurantId);\n  const minDate = new Date().toISOString().split('T')[0];\n  const maxDate = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];\n\n  return (\n    <div className=\"min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 py-12 px-4 sm:px-6 lg:px-8\">\n      <div className=\"max-w-2xl mx-auto\">\n        <div className=\"bg-white rounded-lg shadow-lg p-8\">\n          <h1 className=\"text-4xl font-bold text-slate-900 mb-2\">Make a Reservation</h1>\n          <p className=\"text-slate-600 mb-8\">Book your table at one of our finest restaurants</p>\n\n          {submitted && (\n            <div className=\"mb-6 p-4 bg-green-50 border border-green-200 rounded-lg\">\n              <p className=\"text-green-800 font-semibold\">✓ Reservation request submitted successfully!</p>\n              <p className=\"text-green-700 text-sm mt-1\">We'll confirm your reservation shortly.</p>\n            </div>\n          )}\n\n          <form onSubmit={handleSubmit} className=\"space-y-6\">\n            {/* Restaurant Selection */}\n            <div>\n              <label htmlFor=\"restaurantId\" className=\"block text-sm font-semibold text-slate-700 mb-2\">\n                Restaurant *\n              </label>\n              <select\n                id=\"restaurantId\"\n                name=\"restaurantId\"\n                value={formData.restaurantId}\n                onChange={handleChange}\n                className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition ${\n                  errors.restaurantId ? 'border-red-500' : 'border-slate-300'\n                }`}\n              >\n                <option value=\"\">Select a restaurant</option>\n                {MOCK_RESTAURANTS.map(restaurant => (\n                  <option key={restaurant.id} value={restaurant.id}>\n                    {restaurant.name} - {restaurant.cuisine}\n                  </option>\n                ))}\n              </select>\n              {errors.restaurantId && <p className=\"text-red-500 text-sm mt-1\">{errors.restaurantId}</p>}\n            </div>\n\n            {/* Date Selection */}\n            <div>\n              <label htmlFor=\"date\" className=\"block text-sm font-semibold text-slate-700 mb-2\">\n                Date *\n              </label>\n              <input\n                type=\"date\"\n                id=\"date\"\n                name=\"date\"\n                value={formData.date}\n                onChange={handleChange}\n                min={minDate}\n                max={maxDate}\n                className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition ${\n                  errors.date ? 'border-red-500' : 'border-slate-300'\n                }`}\n              />\n              {errors.date && <p className=\"text-red-500 text-sm mt-1\">{errors.date}</p>}\n            </div>\n\n            {/* Time and Guests Row */}\n            <div className=\"grid grid-cols-2 gap-4\">\n              <div>\n                <label htmlFor=\"time\" className=\"block text-sm font-semibold text-slate-700 mb-2\">\n                  Time *\n                </label>\n                <select\n                  id=\"time\"\n                  name=\"time\"\n                  value={formData.time}\n                  onChange={handleChange}\n                  className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition ${\n                    errors.time ? 'border-red-500' : 'border-slate-300'\n                  }`}\n                >\n                  <option value=\"\">Select time</option>\n                  {MOCK_TIME_SLOTS.map(slot => (\n                    <option key={slot} value={slot}>\n                      {slot}\n                    </option>\n                  ))}\n                </select>\n                {errors.time && <p className=\"text-red-500 text-sm mt-1\">{errors.time}</p>}\n              </div>\n\n              <div>\n                <label htmlFor=\"guests\" className=\"block text-sm font-semibold text-slate-700 mb-2\">\n                  Guests *\n                </label>\n                <select\n                  id=\"guests\"\n                  name=\"guests\"\n                  value={formData.guests}\n                  onChange={handleChange}\n                  className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition ${\n                    errors.guests ? 'border-red-500' : 'border-slate-300'\n                  }`}\n                >\n                  <option value=\"\">Select guests</option>\n                  {Array.from({ length: 12 }, (_, i) => i + 1).map(num => (\n                    <option key={num} value={num}>\n                      {num} {num === 1 ? 'Guest' : 'Guests'}\n                    </option>\n                  ))}\n                </select>\n                {errors.guests && <p className=\"text-red-500 text-sm mt-1\">{errors.guests}</p>}\n              </div>\n            </div>\n\n            {/* Name */}\n            <div>\n              <label htmlFor=\"name\" className=\"block text-sm font-semibold text-slate-700 mb-2\">\n                Full Name *\n              </label>\n              <input\n                type=\"text\"\n                id=\"name\"\n                name=\"name\"\n                value={formData.name}\n                onChange={handleChange}\n                placeholder=\"John Doe\"\n                className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition ${\n                  errors.name ? 'border-red-500' : 'border-slate-300'\n                }`}\n              />\n              {errors.name && <p className=\"text-red-500 text-sm mt-1\">{errors.name}</p>}\n            </div>\n\n            {/* Email and Phone Row */}\n            <div className=\"grid grid-cols-2 gap-4\">\n              <div>\n                <label htmlFor=\"email\" className=\"block text-sm font-semibold text-slate-700 mb-2\">\n                  Email *\n                </label>\n                <input\n                  type=\"email\"\n                  id=\"email\"\n                  name=\"email\"\n                  value={formData.email}\n                  onChange={handleChange}\n                  placeholder=\"john@example.com\"\n                  className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition ${\n                    errors.email ? 'border-red-500' : 'border-slate-300'\n                  }`}\n                />\n                {errors.email && <p className=\"text-red-500 text-sm mt-1\">{errors.email}</p>}\n              </div>\n\n              <div>\n                <label htmlFor=\"phone\" className=\"block text-sm font-semibold text-slate-700 mb-2\">\n                  Phone *\n                </label>\n                <input\n                  type=\"tel\"\n                  id=\"phone\"\n                  name=\"phone\"\n                  value={formData.phone}\n                  onChange={handleChange}\n                  placeholder=\"(555) 123-4567\"\n                  className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition ${\n                    errors.phone ? 'border-red-500' : 'border-slate-300'\n                  }`}\n                />\n                {errors.phone && <p className=\"text-red-500 text-sm mt-1\">{errors.phone}</p>}\n              </div>\n            </div>\n\n            {/* Special Requests */}\n            <div>\n              <label htmlFor=\"specialRequests\" className=\"block text-sm font-semibold text-slate-700 mb-2\">\n                Special Requests\n              </label>\n              <textarea\n                id=\"specialRequests\"\n                name=\"specialRequests\"\n                value={formData.specialRequests}\n                onChange={handleChange}\n                placeholder=\"Any dietary restrictions, allergies, or special occasions?\"\n                rows={4}\n                className=\"w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition resize-none\"\n              />\n            </div>\n\n            {/* Reservation Summary */}\n            {selectedRestaurant && formData.date && formData.time && formData.guests && (\n              <div className=\"bg-blue-50 border border-blue-200 rounded-lg p-4\">\n                <h3 className=\"font-semibold text-blue-900 mb-2\">Reservation Summary</h3>\n                <div className=\"text-sm text-blue-800 space-y-1\">\n                  <p><span className=\"font-medium\">Restaurant:</span> {selectedRestaurant.name}</p>\n                  <p><span className=\"font-medium\">Date:</span> {new Date(formData.date).toLocaleDateString()}</p>\n                  <p><span className=\"font-medium\">Time:</span> {formData.time}</p>\n                  <p><span className=\"font-medium\">Guests:</span> {formData.guests}</p>\n                </div>\n              </div>\n            )}\n\n            {/* Submit Button */}\n            <button\n              type=\"submit\"\n              disabled={loading}\n              className=\"w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-semibold py
+import React, { useState } from 'react';
+
+const MOCK_RESTAURANTS = [
+  { id: 1, name: 'The Italian Kitchen', cuisine: 'Italian', maxGuests: 12 },
+  { id: 2, name: 'Sakura Sushi', cuisine: 'Japanese', maxGuests: 8 },
+  { id: 3, name: 'Le Petit Bistro', cuisine: 'French', maxGuests: 10 },
+  { id: 4, name: 'Spice Route', cuisine: 'Indian', maxGuests: 15 },
+  { id: 5, name: 'El Mariachi', cuisine: 'Mexican', maxGuests: 20 },
+];
+
+const MOCK_TIME_SLOTS = [
+  '11:00 AM',
+  '11:30 AM',
+  '12:00 PM',
+  '12:30 PM',
+  '1:00 PM',
+  '1:30 PM',
+  '5:00 PM',
+  '5:30 PM',
+  '6:00 PM',
+  '6:30 PM',
+  '7:00 PM',
+  '7:30 PM',
+  '8:00 PM',
+  '8:30 PM',
+  '9:00 PM',
+];
+
+export default function ReservationForm() {
+  const [formData, setFormData] = useState({
+    restaurantId: '',
+    date: '',
+    time: '',
+    guests: '2',
+    name: '',
+    email: '',
+    phone: '',
+    specialRequests: '',
+  });
+
+  const [submitted, setSubmitted] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const validateForm = () => {
+    const newErrors: Record<string, string> = {};
+
+    if (!formData.restaurantId) newErrors.restaurantId = 'Please select a restaurant';
+    if (!formData.date) newErrors.date = 'Please select a date';
+    if (!formData.time) newErrors.time = 'Please select a time';
+    if (!formData.guests) newErrors.guests = 'Please select number of guests';
+    if (!formData.name.trim()) newErrors.name = 'Name is required';
+    if (!formData.email.trim()) newErrors.email = 'Email is required';
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) newErrors.email = 'Invalid email';
+    if (!formData.phone.trim()) newErrors.phone = 'Phone is required';
+    if (!/^[\d\s\-\+\(\)]+$/.test(formData.phone)) newErrors.phone = 'Invalid phone number';
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+    if (errors[name]) {
+      setErrors(prev => ({ ...prev, [name]: '' }));
+    }
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (validateForm()) {
+      setSubmitted(true);
+      console.log('Reservation submitted:', formData);
+      setTimeout(() => {
+        setSubmitted(false);
+        setFormData({
+          restaurantId: '',
+          date: '',
+          time: '',
+          guests: '2',
+          name: '',
+          email: '',
+          phone: '',
+          specialRequests: '',
+        });
+      }, 3000);
+    }
+  };
+
+  const selectedRestaurant = MOCK_RESTAURANTS.find(r => r.id === parseInt(formData.restaurantId));
+  const maxGuests = selectedRestaurant?.maxGuests || 20;
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-2xl mx-auto">
+        <div className="bg-white rounded-lg shadow-lg p-8">
+          <h1 className="text-4xl font-bold text-slate-900 mb-2">Make a Reservation</h1>
+          <p className="text-slate-600 mb-8">Book your table at one of our finest restaurants</p>
+
+          {submitted && (
+            <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
+              <p className="text-green-800 font-semibold">✓ Reservation confirmed! Check your email for details.</p>
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Restaurant Selection */}
+            <div>
+              <label htmlFor="restaurantId" className="block text-sm font-semibold text-slate-700 mb-2">
+                Select Restaurant *
+              </label>
+              <select
+                id="restaurantId"
+                name="restaurantId"
+                value={formData.restaurantId}
+                onChange={handleChange}
+                className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                  errors.restaurantId ? 'border-red-500' : 'border-slate-300'
+                }`}
+              >
+                <option value="">Choose a restaurant...</option>
+                {MOCK_RESTAURANTS.map(restaurant => (
+                  <option key={restaurant.id} value={restaurant.id}>
+                    {restaurant.name} - {restaurant.cuisine}
+                  </option>
+                ))}
+              </select>
+              {errors.restaurantId && <p className="text-red-500 text-sm mt-1">{errors.restaurantId}</p>}
+            </div>
+
+            {/* Date and Time Row */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label htmlFor="date" className="block text-sm font-semibold text-slate-700 mb-2">
+                  Date *
+                </label>
+                <input
+                  type="date"
+                  id="date"
+                  name="date"
+                  value={formData.date}
+                  onChange={handleChange}
+                  min={new Date().toISOString().split('T')[0]}
+                  className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                    errors.date ? 'border-red-500' : 'border-slate-300'
+                  }`}
+                />
+                {errors.date && <p className="text-red-500 text-sm mt-1">{errors.date}</p>}
+              </div>
+
+              <div>
+                <label htmlFor="time" className="block text-sm font-semibold text-slate-700 mb-2">
+                  Time *
+                </label>
+                <select
+                  id="time"
+                  name="time"
+                  value={formData.time}
+                  onChange={handleChange}
+                  className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                    errors.time ? 'border-red-500' : 'border-slate-300'
+                  }`}
+                >
+                  <option value="">Select time...</option>
+                  {MOCK_TIME_SLOTS.map(slot => (
+                    <option key={slot} value={slot}>
+                      {slot}
+                    </option>
+                  ))}
+                </select>
+                {errors.time && <p className="text-red-500 text-sm mt-1">{errors.time}</p>}
+              </div>
+            </div>
+
+            {/* Guests */}
+            <div>
+              <label htmlFor="guests" className="block text-sm font-semibold text-slate-700 mb-2">
+                Number of Guests * (Max: {maxGuests})
+              </label>
+              <select
+                id="guests"
+                name="guests"
+                value={formData.guests}
+                onChange={handleChange}
+                className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                  errors.guests ? 'border-red-500' : 'border-slate-300'
+                }`}
+              >
+                {Array.from({ length: maxGuests }, (_, i) => i + 1).map(num => (
+                  <option key={num} value={num}>
+                    {num} {num === 1 ? 'Guest' : 'Guests'}
+                  </option>
+                ))}
+              </select>
+              {errors.guests && <p className="text-red-500 text-sm mt-1">{errors.guests}</p>}
+            </div>
+
+            {/* Name and Email Row */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label htmlFor="name" className="block text-sm font-semibold text-slate-700 mb-2">
+                  Full Name *
+                </label>
+                <input
+                  type="text"
+                  id="name"
+                  name="name"
+                  value={formData.name}
+                  onChange={handleChange}
+                  placeholder="John Doe"
+                  className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                    errors.name ? 'border-red-500' : 'border-slate-300'
+                  }`}
+                />
+                {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name}</p>}
+              </div>
+
+              <div>
+                <label htmlFor="email" className="block text-sm font-semibold text-slate-700 mb-2">
+                  Email *
+                </label>
+                <input
+                  type="email"
+                  id="email"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleChange}
+                  placeholder="john@example.com"
+                  className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                    errors.email ? 'border-red-500' : 'border-slate-300'
+                  }`}
+                />
+                {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
+              </div>
+            </div>
+
+            {/* Phone */}
+            <div>
+              <label htmlFor="phone" className="block text-sm font-semibold text-slate-700 mb-2">
+                Phone Number *
+              </label>
+              <input
+                type="tel"
+                id="phone"
+                name="phone"
+                value={formData.phone}
+                onChange={handleChange}
+                placeholder="(555) 123-4567"
+                className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                  errors.phone ? 'border-red-500' : 'border-slate-300'
+                }`}
+              />
+              {errors.phone && <p className="text-red-500 text-sm mt-1">{errors.phone}</p>}
+            </div>
+
+            {/* Special Requests */}
+            <div>
+              <label htmlFor="specialRequests" className="block text-sm font-semibold text-slate-700 mb-2">
+                Special Requests
+              </label>
+              <textarea
+                id="specialRequests"
+                name="specialRequests"
+                value={formData.specialRequests}
+                onChange={handleChange}
+                placeholder="Any dietary restrictions, allergies, or special occasions?"
+                rows={4}
+                className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+
+            {/* Submit Button */}
+            <button
+              type="submit"
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition duration-200 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+            >
+              Confirm Reservation
+            </button>
+          </form>
+
+          <p className="text-slate-500 text-sm text-center mt-6">* Required fields</p>
+        </div>
+      </div>
+    </div>
+  );
+}
