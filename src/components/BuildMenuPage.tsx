@@ -1,17 +1,17 @@
 import React, { useState } from 'react'
 
 const MOCK_MENU_ITEMS = [
-  { id: 1, name: 'Margherita Pizza', category: 'Pizza', price: 12.99, description: 'Classic pizza with tomato and mozzarella', available: true },
-  { id: 2, name: 'Pepperoni Pizza', category: 'Pizza', price: 14.99, description: 'Pizza with pepperoni and cheese', available: true },
-  { id: 3, name: 'Caesar Salad', category: 'Salad', price: 8.99, description: 'Fresh romaine with parmesan and croutons', available: true },
-  { id: 4, name: 'Greek Salad', category: 'Salad', price: 9.99, description: 'Tomatoes, cucumbers, olives, and feta', available: false },
-  { id: 5, name: 'Spaghetti Carbonara', category: 'Pasta', price: 13.99, description: 'Creamy pasta with bacon and eggs', available: true },
-  { id: 6, name: 'Fettuccine Alfredo', category: 'Pasta', price: 12.99, description: 'Pasta in rich cream sauce', available: true },
-  { id: 7, name: 'Tiramisu', category: 'Dessert', price: 6.99, description: 'Classic Italian dessert', available: true },
-  { id: 8, name: 'Panna Cotta', category: 'Dessert', price: 5.99, description: 'Silky smooth Italian cream dessert', available: true },
+  { id: 1, name: 'Margherita Pizza', category: 'Pizza', price: 12.99, description: 'Classic tomato, mozzarella, basil' },
+  { id: 2, name: 'Pepperoni Pizza', category: 'Pizza', price: 14.99, description: 'Tomato, mozzarella, pepperoni' },
+  { id: 3, name: 'Caesar Salad', category: 'Salad', price: 9.99, description: 'Romaine, parmesan, croutons, dressing' },
+  { id: 4, name: 'Greek Salad', category: 'Salad', price: 10.99, description: 'Mixed greens, feta, olives, tomatoes' },
+  { id: 5, name: 'Garlic Bread', category: 'Appetizer', price: 5.99, description: 'Toasted bread with garlic butter' },
+  { id: 6, name: 'Bruschetta', category: 'Appetizer', price: 7.99, description: 'Toasted bread with tomato and basil' },
+  { id: 7, name: 'Tiramisu', category: 'Dessert', price: 6.99, description: 'Classic Italian dessert' },
+  { id: 8, name: 'Panna Cotta', category: 'Dessert', price: 7.99, description: 'Creamy Italian custard' }
 ]
 
-const CATEGORIES = ['All', 'Pizza', 'Salad', 'Pasta', 'Dessert']
+const CATEGORIES = ['All', 'Pizza', 'Salad', 'Appetizer', 'Dessert']
 
 interface MenuItem {
   id: number
@@ -19,51 +19,44 @@ interface MenuItem {
   category: string
   price: number
   description: string
-  available: boolean
 }
 
 export default function BuildMenuPage() {
   const [selectedCategory, setSelectedCategory] = useState('All')
-  const [searchTerm, setSearchTerm] = useState('')
-  const [cartItems, setCartItems] = useState<MenuItem[]>([])
+  const [cart, setCart] = useState<MenuItem[]>([])
   const [showCart, setShowCart] = useState(false)
 
-  const filteredItems = MOCK_MENU_ITEMS.filter(item => {
-    const matchesCategory = selectedCategory === 'All' || item.category === selectedCategory
-    const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                         item.description.toLowerCase().includes(searchTerm.toLowerCase())
-    return matchesCategory && matchesSearch
-  })
+  const filteredItems = selectedCategory === 'All'
+    ? MOCK_MENU_ITEMS
+    : MOCK_MENU_ITEMS.filter(item => item.category === selectedCategory)
 
   const addToCart = (item: MenuItem) => {
-    setCartItems([...cartItems, item])
+    setCart([...cart, item])
   }
 
   const removeFromCart = (index: number) => {
-    setCartItems(cartItems.filter((_, i) => i !== index))
+    setCart(cart.filter((_, i) => i !== index))
   }
 
-  const totalPrice = cartItems.reduce((sum, item) => sum + item.price, 0)
+  const cartTotal = cart.reduce((sum, item) => sum + item.price, 0)
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 to-amber-50">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
       {/* Header */}
       <header className="bg-white shadow-md sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex justify-between items-center">
-            <h1 className="text-3xl font-bold text-orange-600">Build Your Menu</h1>
-            <button
-              onClick={() => setShowCart(!showCart)}
-              className="relative bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg font-semibold transition-colors"
-            >
-              🛒 Cart
-              {cartItems.length > 0 && (
-                <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center">
-                  {cartItems.length}
-                </span>
-              )}
-            </button>
-          </div>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
+          <h1 className="text-3xl font-bold text-slate-900">Build Your Menu</h1>
+          <button
+            onClick={() => setShowCart(!showCart)}
+            className="relative bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-semibold transition-colors"
+          >
+            Cart
+            {cart.length > 0 && (
+              <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center">
+                {cart.length}
+              </span>
+            )}
+          </button>
         </div>
       </header>
 
@@ -71,108 +64,92 @@ export default function BuildMenuPage() {
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
           {/* Main Content */}
           <div className="lg:col-span-3">
-            {/* Search Bar */}
-            <div className="mb-8">
-              <input
-                type="text"
-                placeholder="Search menu items..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full px-4 py-3 border-2 border-orange-200 rounded-lg focus:outline-none focus:border-orange-500 text-gray-700"
-              />
-            </div>
-
             {/* Category Filter */}
-            <div className="mb-8 flex flex-wrap gap-2">
-              {CATEGORIES.map(category => (
-                <button
-                  key={category}
-                  onClick={() => setSelectedCategory(category)}
-                  className={`px-4 py-2 rounded-full font-semibold transition-all ${
-                    selectedCategory === category
-                      ? 'bg-orange-500 text-white shadow-lg'
-                      : 'bg-white text-orange-600 border-2 border-orange-200 hover:border-orange-500'
-                  }`}
-                >
-                  {category}
-                </button>
-              ))}
+            <div className="mb-8">
+              <h2 className="text-xl font-semibold text-slate-900 mb-4">Categories</h2>
+              <div className="flex flex-wrap gap-3">
+                {CATEGORIES.map(category => (
+                  <button
+                    key={category}
+                    onClick={() => setSelectedCategory(category)}
+                    className={`px-4 py-2 rounded-lg font-medium transition-all ${
+                      selectedCategory === category
+                        ? 'bg-blue-600 text-white shadow-lg'
+                        : 'bg-white text-slate-700 border border-slate-300 hover:border-blue-400'
+                    }`}
+                  >
+                    {category}
+                  </button>
+                ))}
+              </div>
             </div>
 
             {/* Menu Items Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {filteredItems.length > 0 ? (
-                filteredItems.map(item => (
-                  <div
-                    key={item.id}
-                    className="bg-white rounded-lg shadow-md hover:shadow-xl transition-shadow overflow-hidden border-l-4 border-orange-400"
-                  >
-                    <div className="p-6">
-                      <div className="flex justify-between items-start mb-2">
-                        <h3 className="text-xl font-bold text-gray-800">{item.name}</h3>
-                        <span className="text-2xl font-bold text-orange-500">${item.price.toFixed(2)}</span>
-                      </div>
-                      <p className="text-sm text-gray-500 mb-2">{item.category}</p>
-                      <p className="text-gray-600 text-sm mb-4">{item.description}</p>
+              {filteredItems.map(item => (
+                <div
+                  key={item.id}
+                  className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow overflow-hidden border border-slate-200"
+                >
+                  <div className="bg-gradient-to-r from-blue-400 to-blue-600 h-32 flex items-center justify-center">
+                    <span className="text-white text-4xl">🍽️</span>
+                  </div>
+                  <div className="p-4">
+                    <div className="flex justify-between items-start mb-2">
+                      <h3 className="text-lg font-bold text-slate-900">{item.name}</h3>
+                      <span className="text-lg font-bold text-blue-600">${item.price.toFixed(2)}</span>
+                    </div>
+                    <p className="text-sm text-slate-600 mb-3">{item.description}</p>
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">{item.category}</span>
                       <button
                         onClick={() => addToCart(item)}
-                        disabled={!item.available}
-                        className={`w-full py-2 rounded-lg font-semibold transition-colors ${
-                          item.available
-                            ? 'bg-orange-500 hover:bg-orange-600 text-white cursor-pointer'
-                            : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                        }`}
+                        className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded font-semibold text-sm transition-colors"
                       >
-                        {item.available ? 'Add to Cart' : 'Out of Stock'}
+                        Add
                       </button>
                     </div>
                   </div>
-                ))
-              ) : (
-                <div className="col-span-full text-center py-12">
-                  <p className="text-gray-500 text-lg">No items found matching your search.</p>
                 </div>
-              )}
+              ))}
             </div>
           </div>
 
           {/* Cart Sidebar */}
           {showCart && (
             <div className="lg:col-span-1">
-              <div className="bg-white rounded-lg shadow-lg p-6 sticky top-24">
-                <h2 className="text-2xl font-bold text-gray-800 mb-4">Your Cart</h2>
-                
-                {cartItems.length > 0 ? (
+              <div className="bg-white rounded-lg shadow-lg p-6 sticky top-24 border border-slate-200">
+                <h2 className="text-2xl font-bold text-slate-900 mb-4">Your Cart</h2>
+                {cart.length === 0 ? (
+                  <p className="text-slate-500 text-center py-8">Cart is empty</p>
+                ) : (
                   <>
                     <div className="space-y-3 mb-6 max-h-96 overflow-y-auto">
-                      {cartItems.map((item, index) => (
-                        <div key={index} className="flex justify-between items-center bg-orange-50 p-3 rounded-lg">
+                      {cart.map((item, index) => (
+                        <div key={index} className="flex justify-between items-start bg-slate-50 p-3 rounded border border-slate-200">
                           <div className="flex-1">
-                            <p className="font-semibold text-gray-800 text-sm">{item.name}</p>
-                            <p className="text-orange-600 font-bold">${item.price.toFixed(2)}</p>
+                            <p className="font-semibold text-slate-900 text-sm">{item.name}</p>
+                            <p className="text-blue-600 font-bold text-sm">${item.price.toFixed(2)}</p>
                           </div>
                           <button
                             onClick={() => removeFromCart(index)}
-                            className="ml-2 text-red-500 hover:text-red-700 font-bold text-lg"
+                            className="text-red-500 hover:text-red-700 font-bold ml-2"
                           >
                             ✕
                           </button>
                         </div>
                       ))}
                     </div>
-                    
-                    <div className="border-t-2 border-orange-200 pt-4">
+                    <div className="border-t border-slate-200 pt-4">
                       <div className="flex justify-between items-center mb-4">
-                        <span className="text-lg font-bold text-gray-800">Total:</span>
-                        <span className="text-2xl font-bold text-orange-600">${totalPrice.toFixed(2)}</span>
+                        <span className="text-lg font-bold text-slate-900">Total:</span>
+                        <span className="text-2xl font-bold text-blue-600">${cartTotal.toFixed(2)}</span>
                       </div>
-                      <button className="w-full bg-orange-500 hover:bg-orange-600 text-white py-3 rounded-lg font-bold transition-colors">
+                      <button className="w-full bg-green-600 hover:bg-green-700 text-white py-2 rounded-lg font-bold transition-colors">
                         Checkout
                       </button>
                     </div>
                   </>
-                ) : (
-                  <p className="text-gray-500 text-center py-8">Your cart is empty</p>
                 )}
               </div>
             </div>
