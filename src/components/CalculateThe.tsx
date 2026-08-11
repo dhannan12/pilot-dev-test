@@ -1,149 +1,99 @@
 import React, { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { mockReservations } from './CalculateThe.mock';
 
 interface Reservation {
   id: string;
   date: string;
   guestName: string;
-  roomNumber: number;
-  status: 'confirmed' | 'pending' | 'cancelled';
+  time: string;
 }
 
-const CalculateThe: React.FC = () => {
-  const [selectedDate, setSelectedDate] = useState<string>('');
-  const [totalReservations, setTotalReservations] = useState<number>(0);
-  const [filteredReservations, setFilteredReservations] = useState<Reservation[]>([]);
-  const [hasSearched, setHasSearched] = useState<boolean>(false);
+const MOCK_RESERVATIONS: Reservation[] = [
+  { id: '1', date: '2024-01-15', guestName: 'John Doe', time: '18:00' },
+  { id: '2', date: '2024-01-15', guestName: 'Jane Smith', time: '19:00' },
+  { id: '3', date: '2024-01-15', guestName: 'Bob Johnson', time: '20:00' },
+  { id: '4', date: '2024-01-16', guestName: 'Alice Williams', time: '18:30' },
+  { id: '5', date: '2024-01-16', guestName: 'Charlie Brown', time: '19:30' },
+  { id: '6', date: '2024-01-17', guestName: 'Diana Prince', time: '17:00' },
+  { id: '7', date: '2024-01-15', guestName: 'Eve Davis', time: '21:00' },
+];
 
-  const handleCalculate = (): void => {
-    if (!selectedDate) {
-      alert('Please select a date');
-      return;
-    }
+export default function CalculateThe() {
+  const [selectedDate, setSelectedDate] = useState<string>('2024-01-15');
 
-    const filtered = mockReservations.filter(
-      (reservation: Reservation) => reservation.date === selectedDate
-    );
-
-    setFilteredReservations(filtered);
-    setTotalReservations(filtered.length);
-    setHasSearched(true);
+  const calculateReservations = (date: string): number => {
+    return MOCK_RESERVATIONS.filter(reservation => reservation.date === date).length;
   };
 
-  const handleReset = (): void => {
-    setSelectedDate('');
-    setTotalReservations(0);
-    setFilteredReservations([]);
-    setHasSearched(false);
+  const getReservationsForDate = (date: string): Reservation[] => {
+    return MOCK_RESERVATIONS.filter(reservation => reservation.date === date);
   };
 
-  const getStatusColor = (status: string): string => {
-    switch (status) {
-      case 'confirmed':
-        return 'bg-green-100 text-green-800';
-      case 'pending':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'cancelled':
-        return 'bg-red-100 text-red-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  };
+  const totalReservations = calculateReservations(selectedDate);
+  const reservationsForDate = getReservationsForDate(selectedDate);
+  const allDates = Array.from(new Set(MOCK_RESERVATIONS.map(r => r.date))).sort();
 
   return (
-    <div className="w-full max-w-4xl mx-auto p-4">
-      <Card>
-        <CardHeader>
-          <CardTitle>Calculate Reservations</CardTitle>
-          <CardDescription>
-            Calculate the total number of reservations for a specific date
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          {/* Input Section */}
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="date-input">Select Date</Label>
-              <Input
-                id="date-input"
-                type="date"
-                value={selectedDate}
-                onChange={(e) => setSelectedDate(e.target.value)}
-                className="w-full"
-              />
-            </div>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-8">
+      <div className="max-w-2xl mx-auto">
+        <div className="bg-white rounded-lg shadow-lg p-8">
+          <h1 className="text-4xl font-bold text-gray-800 mb-2">Reservation Calculator</h1>
+          <p className="text-gray-600 mb-8">Calculate total reservations for a specific date</p>
 
-            <div className="flex gap-2">
-              <Button onClick={handleCalculate} className="flex-1">
-                Calculate
-              </Button>
-              <Button onClick={handleReset} variant="outline" className="flex-1">
-                Reset
-              </Button>
-            </div>
+          <div className="mb-8">
+            <label className="block text-sm font-semibold text-gray-700 mb-3">
+              Select Date
+            </label>
+            <select
+              value={selectedDate}
+              onChange={(e) => setSelectedDate(e.target.value)}
+              className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-indigo-500 bg-white text-gray-800 font-medium"
+            >
+              {allDates.map(date => (
+                <option key={date} value={date}>
+                  {new Date(date).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                </option>
+              ))}
+            </select>
           </div>
 
-          {/* Results Section */}
-          {hasSearched && (
-            <div className="space-y-4 border-t pt-6">
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <p className="text-sm text-blue-600 mb-1">Total Reservations</p>
-                <p className="text-3xl font-bold text-blue-900">{totalReservations}</p>
-                <p className="text-xs text-blue-500 mt-1">for {selectedDate}</p>
-              </div>
+          <div className="bg-gradient-to-r from-indigo-500 to-blue-500 rounded-lg p-8 mb-8 text-white">
+            <p className="text-lg font-semibold mb-2">Total Reservations</p>
+            <p className="text-5xl font-bold">{totalReservations}</p>
+            <p className="text-indigo-100 mt-2">for {new Date(selectedDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</p>
+          </div>
 
-              {/* Reservations List */}
-              {filteredReservations.length > 0 ? (
-                <div className="space-y-3">
-                  <h3 className="font-semibold text-lg">Reservation Details</h3>
-                  <div className="space-y-2 max-h-96 overflow-y-auto">
-                    {filteredReservations.map((reservation: Reservation) => (
-                      <div
-                        key={reservation.id}
-                        className="border rounded-lg p-3 hover:bg-gray-50 transition-colors"
-                      >
-                        <div className="flex justify-between items-start">
-                          <div className="space-y-1">
-                            <p className="font-medium">{reservation.guestName}</p>
-                            <p className="text-sm text-gray-600">
-                              Room {reservation.roomNumber}
-                            </p>
-                          </div>
-                          <span
-                            className={`px-2 py-1 rounded text-xs font-medium ${getStatusColor(
-                              reservation.status
-                            )}`}
-                          >
-                            {reservation.status.charAt(0).toUpperCase() +
-                              reservation.status.slice(1)}
-                          </span>
-                        </div>
-                      </div>
-                    ))}
+          <div className="bg-gray-50 rounded-lg p-6">
+            <h2 className="text-xl font-bold text-gray-800 mb-4">Reservations Details</h2>
+            {reservationsForDate.length > 0 ? (
+              <div className="space-y-3">
+                {reservationsForDate.map((reservation, index) => (
+                  <div
+                    key={reservation.id}
+                    className="bg-white border-l-4 border-indigo-500 p-4 rounded flex justify-between items-center hover:shadow-md transition-shadow"
+                  >
+                    <div>
+                      <p className="font-semibold text-gray-800">{reservation.guestName}</p>
+                      <p className="text-sm text-gray-600">Reservation #{index + 1}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-semibold text-indigo-600">{reservation.time}</p>
+                      <p className="text-xs text-gray-500">Check-in time</p>
+                    </div>
                   </div>
-                </div>
-              ) : (
-                <div className="text-center py-8">
-                  <p className="text-gray-500">No reservations found for this date</p>
-                </div>
-              )}
-            </div>
-          )}
+                ))}
+              </div>
+            ) : (
+              <p className="text-gray-500 text-center py-8">No reservations found for this date</p>
+            )}
+          </div>
 
-          {/* Empty State */}
-          {!hasSearched && (
-            <div className="text-center py-8 text-gray-500">
-              <p>Select a date and click Calculate to view reservations</p>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+          <div className="mt-8 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+            <p className="text-sm text-blue-800">
+              <span className="font-semibold">Summary:</span> There are <span className="font-bold text-lg text-blue-600">{totalReservations}</span> reservation(s) scheduled for {new Date(selectedDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}.
+            </p>
+          </div>
+        </div>
+      </div>
     </div>
   );
-};
-
-export default CalculateThe;
+}
