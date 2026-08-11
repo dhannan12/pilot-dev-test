@@ -1,216 +1,224 @@
-import React, { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, Minus, ShoppingCart, Clock, Flame } from 'lucide-react';
-import { mockDishDetails, mockIngredients, mockNutrition } from './BuildDishDetails.mock';
+import React, { useState } from 'react'
 
-interface DishDetailsProps {
-  dishId?: string;
+const MOCK_DISH = {
+  id: 1,
+  name: 'Grilled Salmon with Lemon Butter',
+  description: 'Fresh Atlantic salmon fillet grilled to perfection with a zesty lemon butter sauce',
+  price: 24.99,
+  prepTime: '15 mins',
+  servings: 2,
+  difficulty: 'Medium',
+  rating: 4.8,
+  reviews: 127,
+  image: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=800',
+  ingredients: [
+    { id: 1, name: 'Salmon Fillet', amount: '2', unit: 'pieces' },
+    { id: 2, name: 'Lemon', amount: '1', unit: 'whole' },
+    { id: 3, name: 'Butter', amount: '4', unit: 'tbsp' },
+    { id: 4, name: 'Garlic', amount: '3', unit: 'cloves' },
+    { id: 5, name: 'Olive Oil', amount: '2', unit: 'tbsp' },
+    { id: 6, name: 'Salt & Pepper', amount: 'to taste', unit: '' }
+  ],
+  instructions: [
+    'Preheat grill to medium-high heat',
+    'Pat salmon dry and season with salt and pepper',
+    'Brush grill grates with oil to prevent sticking',
+    'Grill salmon for 4-5 minutes per side until cooked through',
+    'Prepare lemon butter sauce by melting butter with minced garlic',
+    'Squeeze fresh lemon juice into the butter sauce',
+    'Plate salmon and drizzle with lemon butter sauce',
+    'Garnish with fresh herbs and serve immediately'
+  ],
+  tags: ['Seafood', 'Healthy', 'Grilled', 'Quick', 'Dinner']
 }
 
-const BuildDishDetails: React.FC<DishDetailsProps> = ({ dishId = '1' }) => {
-  const [quantity, setQuantity] = useState<number>(1);
-  const [selectedIngredients, setSelectedIngredients] = useState<string[]>([]);
+export default function BuildDishDetails() {
+  const [servings, setServings] = useState(2)
+  const [selectedTab, setSelectedTab] = useState<'ingredients' | 'instructions'>('ingredients')
+  const [isFavorite, setIsFavorite] = useState(false)
 
-  const dish = mockDishDetails[0];
-  const ingredients = mockIngredients;
-  const nutrition = mockNutrition;
-
-  const handleQuantityChange = (delta: number) => {
-    setQuantity(Math.max(1, quantity + delta));
-  };
-
-  const toggleIngredient = (ingredientId: string) => {
-    setSelectedIngredients((prev) =>
-      prev.includes(ingredientId)
-        ? prev.filter((id) => id !== ingredientId)
-        : [...prev, ingredientId]
-    );
-  };
-
-  const totalPrice = (dish.price * quantity).toFixed(2);
+  const adjustedIngredients = MOCK_DISH.ingredients.map(ing => ({
+    ...ing,
+    amount: ing.amount === 'to taste' ? ing.amount : (parseFloat(ing.amount) * (servings / MOCK_DISH.servings)).toFixed(1)
+  }))
 
   return (
-    <div className="w-full max-w-4xl mx-auto p-4 space-y-6">
-      {/* Header Section */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Image */}
-        <div className="flex items-center justify-center bg-gray-100 rounded-lg overflow-hidden h-80">
-          <img
-            src={dish.image}
-            alt={dish.name}
-            className="w-full h-full object-cover"
-          />
-        </div>
-
-        {/* Details */}
-        <div className="space-y-4">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">{dish.name}</h1>
-            <p className="text-gray-600 mt-2">{dish.description}</p>
-          </div>
-
-          <div className="flex gap-2 flex-wrap">
-            {dish.tags.map((tag) => (
-              <Badge key={tag} variant="secondary">
-                {tag}
-              </Badge>
-            ))}
-          </div>
-
-          <div className="grid grid-cols-3 gap-4 py-4 border-y">
-            <div className="flex items-center gap-2">
-              <Clock className="w-5 h-5 text-blue-600" />
-              <div>
-                <p className="text-sm text-gray-600">Prep Time</p>
-                <p className="font-semibold">{dish.prepTime}</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <Flame className="w-5 h-5 text-orange-600" />
-              <div>
-                <p className="text-sm text-gray-600">Calories</p>
-                <p className="font-semibold">{dish.calories}</p>
-              </div>
-            </div>
-            <div>
-              <p className="text-sm text-gray-600">Difficulty</p>
-              <p className="font-semibold text-green-600">{dish.difficulty}</p>
-            </div>
-          </div>
-
-          {/* Quantity & Price */}
-          <div className="space-y-3">
-            <div className="flex items-center gap-4">
-              <span className="text-sm font-medium text-gray-700">Quantity:</span>
-              <div className="flex items-center border rounded-lg">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => handleQuantityChange(-1)}
-                  className="h-8 w-8 p-0"
-                >
-                  <Minus className="w-4 h-4" />
-                </Button>
-                <span className="px-4 font-semibold">{quantity}</span>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => handleQuantityChange(1)}
-                  className="h-8 w-8 p-0"
-                >
-                  <Plus className="w-4 h-4" />
-                </Button>
-              </div>
-            </div>
-
-            <div className="flex items-baseline gap-2">
-              <span className="text-3xl font-bold text-gray-900">${totalPrice}</span>
-              <span className="text-sm text-gray-600">per order</span>
-            </div>
-          </div>
-
-          <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white py-6 text-lg">
-            <ShoppingCart className="w-5 h-5 mr-2" />
-            Add to Cart
-          </Button>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+      {/* Header */}
+      <div className="sticky top-0 z-10 bg-white shadow-sm border-b border-slate-200">
+        <div className="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
+          <button className="text-slate-600 hover:text-slate-900 font-semibold text-lg">← Back</button>
+          <h1 className="text-2xl font-bold text-slate-900">Dish Details</h1>
+          <button className="text-slate-400 hover:text-slate-600">⋮</button>
         </div>
       </div>
 
-      {/* Tabs Section */}
-      <Tabs defaultValue="ingredients" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="ingredients">Ingredients</TabsTrigger>
-          <TabsTrigger value="nutrition">Nutrition</TabsTrigger>
-          <TabsTrigger value="instructions">Instructions</TabsTrigger>
-        </TabsList>
+      {/* Main Content */}
+      <div className="max-w-4xl mx-auto px-4 py-8">
+        {/* Image Section */}
+        <div className="mb-8 rounded-xl overflow-hidden shadow-lg">
+          <img src={MOCK_DISH.image} alt={MOCK_DISH.name} className="w-full h-96 object-cover" />
+        </div>
 
-        {/* Ingredients Tab */}
-        <TabsContent value="ingredients" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Ingredients</CardTitle>
-              <CardDescription>Select ingredients to customize</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {ingredients.map((ingredient) => (
-                <div
-                  key={ingredient.id}
-                  className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 cursor-pointer"
-                  onClick={() => toggleIngredient(ingredient.id)}
-                >
-                  <div className="flex items-center gap-3 flex-1">
-                    <input
-                      type="checkbox"
-                      checked={selectedIngredients.includes(ingredient.id)}
-                      onChange={() => {}}
-                      className="w-4 h-4 rounded"
-                    />
-                    <div>
-                      <p className="font-medium text-gray-900">{ingredient.name}</p>
-                      <p className="text-sm text-gray-600">{ingredient.quantity}</p>
-                    </div>
-                  </div>
-                  <span className="text-sm font-semibold text-gray-700">
-                    {ingredient.optional && <Badge variant="outline">Optional</Badge>}
+        {/* Title and Rating */}
+        <div className="mb-6">
+          <div className="flex items-start justify-between mb-3">
+            <div>
+              <h2 className="text-4xl font-bold text-slate-900 mb-2">{MOCK_DISH.name}</h2>
+              <p className="text-slate-600 text-lg">{MOCK_DISH.description}</p>
+            </div>
+            <button
+              onClick={() => setIsFavorite(!isFavorite)}
+              className={`text-3xl transition-transform hover:scale-110 ${
+                isFavorite ? 'text-red-500' : 'text-slate-300'
+              }`}
+            >
+              ♥
+            </button>
+          </div>
+
+          {/* Rating and Stats */}
+          <div className="flex items-center gap-6 py-4 border-y border-slate-200">
+            <div className="flex items-center gap-2">
+              <span className="text-2xl font-bold text-slate-900">{MOCK_DISH.rating}</span>
+              <div className="flex gap-1">
+                {[...Array(5)].map((_, i) => (
+                  <span key={i} className={i < Math.floor(MOCK_DISH.rating) ? 'text-yellow-400' : 'text-slate-300'}>
+                    ★
                   </span>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Nutrition Tab */}
-        <TabsContent value="nutrition" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Nutritional Information</CardTitle>
-              <CardDescription>Per serving</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {nutrition.map((item) => (
-                  <div key={item.id} className="p-4 bg-gray-50 rounded-lg text-center">
-                    <p className="text-sm text-gray-600 mb-1">{item.label}</p>
-                    <p className="text-2xl font-bold text-gray-900">{item.value}</p>
-                    <p className="text-xs text-gray-500 mt-1">{item.unit}</p>
-                  </div>
                 ))}
               </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
+              <span className="text-slate-600">({MOCK_DISH.reviews} reviews)</span>
+            </div>
+            <div className="flex gap-8 text-slate-700">
+              <div>
+                <span className="font-semibold">⏱</span>
+                <span className="ml-2">{MOCK_DISH.prepTime}</span>
+              </div>
+              <div>
+                <span className="font-semibold">👥</span>
+                <span className="ml-2">{MOCK_DISH.servings} servings</span>
+              </div>
+              <div>
+                <span className="font-semibold">📊</span>
+                <span className="ml-2">{MOCK_DISH.difficulty}</span>
+              </div>
+            </div>
+          </div>
+        </div>
 
-        {/* Instructions Tab */}
-        <TabsContent value="instructions" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Cooking Instructions</CardTitle>
-              <CardDescription>Step-by-step guide</CardDescription>
-            </CardHeader>
-            <CardContent>
+        {/* Price and Actions */}
+        <div className="mb-8 bg-white rounded-lg p-6 shadow-sm">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <span className="text-slate-600 text-sm">Price per serving</span>
+              <p className="text-4xl font-bold text-slate-900">${MOCK_DISH.price}</p>
+            </div>
+            <div className="flex gap-3">
+              <button className="px-6 py-3 bg-slate-200 text-slate-900 rounded-lg font-semibold hover:bg-slate-300 transition">
+                Share
+              </button>
+              <button className="px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition">
+                Add to Cart
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Servings Adjuster */}
+        <div className="mb-8 bg-white rounded-lg p-6 shadow-sm">
+          <label className="block text-sm font-semibold text-slate-900 mb-4">Adjust Servings</label>
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => setServings(Math.max(1, servings - 1))}
+              className="w-10 h-10 rounded-lg bg-slate-200 hover:bg-slate-300 font-bold text-lg transition"
+            >
+              −
+            </button>
+            <span className="text-2xl font-bold text-slate-900 w-12 text-center">{servings}</span>
+            <button
+              onClick={() => setServings(servings + 1)}
+              className="w-10 h-10 rounded-lg bg-slate-200 hover:bg-slate-300 font-bold text-lg transition"
+            >
+              +
+            </button>
+            <span className="text-slate-600 ml-4">servings</span>
+          </div>
+        </div>
+
+        {/* Tabs */}
+        <div className="mb-8">
+          <div className="flex gap-4 border-b border-slate-200 mb-6">
+            <button
+              onClick={() => setSelectedTab('ingredients')}
+              className={`pb-3 font-semibold transition ${
+                selectedTab === 'ingredients'
+                  ? 'text-blue-600 border-b-2 border-blue-600'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              Ingredients
+            </button>
+            <button
+              onClick={() => setSelectedTab('instructions')}
+              className={`pb-3 font-semibold transition ${
+                selectedTab === 'instructions'
+                  ? 'text-blue-600 border-b-2 border-blue-600'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              Instructions
+            </button>
+          </div>
+
+          {/* Ingredients Tab */}
+          {selectedTab === 'ingredients' && (
+            <div className="bg-white rounded-lg p-6 shadow-sm">
+              <h3 className="text-xl font-bold text-slate-900 mb-4">Ingredients</h3>
+              <ul className="space-y-3">
+                {adjustedIngredients.map(ing => (
+                  <li key={ing.id} className="flex items-center gap-3 pb-3 border-b border-slate-100 last:border-0">
+                    <input type="checkbox" className="w-5 h-5 rounded border-slate-300 cursor-pointer" />
+                    <span className="text-slate-900 flex-1">{ing.name}</span>
+                    <span className="text-slate-600 font-semibold">
+                      {ing.amount} {ing.unit}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* Instructions Tab */}
+          {selectedTab === 'instructions' && (
+            <div className="bg-white rounded-lg p-6 shadow-sm">
+              <h3 className="text-xl font-bold text-slate-900 mb-4">Instructions</h3>
               <ol className="space-y-4">
-                {dish.instructions.map((instruction, index) => (
+                {MOCK_DISH.instructions.map((instruction, index) => (
                   <li key={index} className="flex gap-4">
-                    <div className="flex-shrink-0">
-                      <div className="flex items-center justify-center h-8 w-8 rounded-full bg-blue-600 text-white font-semibold">
-                        {index + 1}
-                      </div>
+                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold">
+                      {index + 1}
                     </div>
-                    <div className="flex-1 pt-1">
-                      <p className="text-gray-900">{instruction}</p>
-                    </div>
+                    <p className="text-slate-700 pt-1">{instruction}</p>
                   </li>
                 ))}
               </ol>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
-    </div>
-  );
-};
+            </div>
+          )}
+        </div>
 
-export default BuildDishDetails;
+        {/* Tags */}
+        <div className="mb-8">
+          <h3 className="text-lg font-bold text-slate-900 mb-3">Tags</h3>
+          <div className="flex flex-wrap gap-2">
+            {MOCK_DISH.tags.map(tag => (
+              <span key={tag} className="px-4 py-2 bg-slate-200 text-slate-800 rounded-full text-sm font-medium hover:bg-slate-300 cursor-pointer transition">
+                {tag}
+              </span>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
