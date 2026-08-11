@@ -1,3 +1,360 @@
-{
-  "component_code": "import React, { useState } from 'react';\nimport { Button } from '@/components/ui/button';\nimport { Input } from '@/components/ui/input';\nimport { Textarea } from '@/components/ui/textarea';\nimport { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';\nimport { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';\nimport { Label } from '@/components/ui/label';\nimport { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';\nimport { AlertCircle, Edit2, Trash2, Plus } from 'lucide-react';\nimport { Alert, AlertDescription } from '@/components/ui/alert';\nimport { mockMenuItems, mockCategories } from './RestaurantUpdate.mock';\n\ninterface MenuItem {\n  id: string;\n  name: string;\n  description: string;\n  price: number;\n  category: string;\n  available: boolean;\n}\n\ninterface FormData {\n  name: string;\n  description: string;\n  price: string;\n  category: string;\n  available: boolean;\n}\n\nconst RestaurantUpdate: React.FC = () => {\n  const [menuItems, setMenuItems] = useState<MenuItem[]>(mockMenuItems);\n  const [isOpen, setIsOpen] = useState(false);\n  const [editingId, setEditingId] = useState<string | null>(null);\n  const [formData, setFormData] = useState<FormData>({\n    name: '',\n    description: '',\n    price: '',\n    category: '',\n    available: true,\n  });\n  const [successMessage, setSuccessMessage] = useState('');\n  const [filterCategory, setFilterCategory] = useState<string>('all');\n\n  const handleOpenDialog = (item?: MenuItem) => {\n    if (item) {\n      setEditingId(item.id);\n      setFormData({\n        name: item.name,\n        description: item.description,\n        price: item.price.toString(),\n        category: item.category,\n        available: item.available,\n      });\n    } else {\n      setEditingId(null);\n      setFormData({\n        name: '',\n        description: '',\n        price: '',\n        category: '',\n        available: true,\n      });\n    }\n    setIsOpen(true);\n  };\n\n  const handleCloseDialog = () => {\n    setIsOpen(false);\n    setEditingId(null);\n    setFormData({\n      name: '',\n      description: '',\n      price: '',\n      category: '',\n      available: true,\n    });\n  };\n\n  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {\n    const { name, value } = e.target;\n    setFormData((prev) => ({\n      ...prev,\n      [name]: value,\n    }));\n  };\n\n  const handleSelectChange = (value: string) => {\n    setFormData((prev) => ({\n      ...prev,\n      category: value,\n    }));\n  };\n\n  const handleAvailabilityChange = (value: string) => {\n    setFormData((prev) => ({\n      ...prev,\n      available: value === 'true',\n    }));\n  };\n\n  const handleSubmit = (e: React.FormEvent) => {\n    e.preventDefault();\n\n    if (!formData.name || !formData.price || !formData.category) {\n      alert('Please fill in all required fields');\n      return;\n    }\n\n    if (editingId) {\n      setMenuItems((prev) =>\n        prev.map((item) =>\n          item.id === editingId\n            ? {\n                ...item,\n                name: formData.name,\n                description: formData.description,\n                price: parseFloat(formData.price),\n                category: formData.category,\n                available: formData.available,\n              }\n            : item\n        )\n      );\n      setSuccessMessage('Menu item updated successfully!');\n    } else {\n      const newItem: MenuItem = {\n        id: Date.now().toString(),\n        name: formData.name,\n        description: formData.description,\n        price: parseFloat(formData.price),\n        category: formData.category,\n        available: formData.available,\n      };\n      setMenuItems((prev) => [...prev, newItem]);\n      setSuccessMessage('Menu item added successfully!');\n    }\n\n    setTimeout(() => setSuccessMessage(''), 3000);\n    handleCloseDialog();\n  };\n\n  const handleDelete = (id: string) => {\n    if (window.confirm('Are you sure you want to delete this menu item?')) {\n      setMenuItems((prev) => prev.filter((item) => item.id !== id));\n      setSuccessMessage('Menu item deleted successfully!');\n      setTimeout(() => setSuccessMessage(''), 3000);\n    }\n  };\n\n  const filteredItems =\n    filterCategory === 'all' ? menuItems : menuItems.filter((item) => item.category === filterCategory);\n\n  return (\n    <div className=\"min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-6\">\n      <div className=\"max-w-6xl mx-auto\">\n        {/* Header */}\n        <div className=\"mb-8\">\n          <h1 className=\"text-4xl font-bold text-slate-900 mb-2\">Menu Management</h1>\n          <p className=\"text-slate-600\">Update and manage your restaurant menu items</p>\n        </div>\n\n        {/* Success Message */}\n        {successMessage && (\n          <Alert className=\"mb-6 bg-green-50 border-green-200\">\n            <AlertCircle className=\"h-4 w-4 text-green-600\" />\n            <AlertDescription className=\"text-green-800\">{successMessage}</AlertDescription>\n          </Alert>\n        )}\n\n        {/* Controls */}\n        <div className=\"flex flex-col sm:flex-row gap-4 mb-6 justify-between items-start sm:items-center\">\n          <div className=\"flex-1 max-w-xs\">\n            <Label htmlFor=\"category-filter\" className=\"text-sm font-medium text-slate-700 mb-2 block\">\n              Filter by Category\n            </Label>\n            <Select value={filterCategory} onValueChange={setFilterCategory}>\n              <SelectTrigger id=\"category-filter\" className=\"w-full\">\n                <SelectValue />\n              </SelectTrigger>\n              <SelectContent>\n                <SelectItem value=\"all\">All Categories</SelectItem>\n                {mockCategories.map((cat) => (\n                  <SelectItem key={cat} value={cat}>\n                    {cat}\n                  </SelectItem>\n                ))}\n              </SelectContent>\n            </Select>\n          </div>\n\n          <Dialog open={isOpen} onOpenChange={setIsOpen}>\n            <DialogTrigger asChild>\n              <Button onClick={() => handleOpenDialog()} className=\"bg-blue-600 hover:bg-blue-700 text-white\">\n                <Plus className=\"w-4 h-4 mr-2\" />\n                Add New Item\n              </Button>\n            </DialogTrigger>\n            <DialogContent className=\"sm:max-w-[500px]\">\n              <DialogHeader>\n                <DialogTitle>{editingId ? 'Edit Menu Item' : 'Add New Menu Item'}</DialogTitle>\n                <DialogDescription>\n                  {editingId ? 'Update the details of your menu item' : 'Add a new item to your restaurant menu'}\n                </DialogDescription>\n              </DialogHeader>\n\n              <form onSubmit={handleSubmit} className=\"space-y-4\">\n                <div>\n                  <Label htmlFor=\"name\" className=\"text-sm font-medium text-slate-700\">\n                    Item Name *\n                  </Label>\n                  <Input\n                    id=\"name\"\n                    name=\"name\"\n                    value={formData.name}\n                    onChange={handleInputChange}\n                    placeholder=\"e.g., Margherita Pizza\"\n                    className=\"mt-1\"\n                  />\n                </div>\n\n                <div>\n                  <Label htmlFor=\"description\" className=\"text-sm font-medium text-slate-700\">\n                    Description\n                  </Label>\n                  <Textarea\n                    id=\"description\"\n                    name=\"description\"\n                    value={formData.description}\n                    onChange={handleInputChange}\n                    placeholder=\"Describe your menu item...\"\n                    className=\"mt-1 resize-none\"\n                    rows={3}\n                  />\n                </div>\n\n                <div className=\"grid grid-cols-2 gap-4\">\n                  <div>\n                    <Label htmlFor=\"price\" className=\"text-sm font-medium text-slate-700\">\n                      Price ($) *\n                    </Label>\n                    <Input\n                      id=\"price\"\n                      name=\"price\"\n                      type=\"number\"\n                      step=\"0.01\"\n                      min=\"0\"\n                      value={formData.price}\n                      onChange={handleInputChange}\n                      placeholder=\"0.00\"\n                      className=\"mt-1\"\n                    />\n                  </div>\n\n                  <div>\n                    <Label htmlFor=\"category\" className=\"text-sm font-medium text-slate-700\">\n                      Category *\n                    </Label>\n                    <Select value={formData.category} onValueChange={handleSelectChange}>\n                      <SelectTrigger id=\"category\" className=\"mt-1\">\n                        <SelectValue placeholder=\"Select category\" />\n                      </SelectTrigger>\n                      <SelectContent>\n                        {mockCategories.map((cat) => (\n                          <SelectItem key={cat} value={cat}>\n                            {cat}\n                          </SelectItem>\n                        ))}\n                      </SelectContent>\n                    </Select>\n                  </div>\n                </div>\n\n                <div>\n                  <Label htmlFor=\"availability\" className=\"text-sm font-medium text-slate-700\">\n                    Availability\n                  </Label>\n                  <Select value={formData.available.toString()} onValueChange={handleAvailabilityChange}>\n                    <SelectTrigger id=\"availability\" className=\"mt-1\">\n                      <SelectValue />\n                    </SelectTrigger>\n                    <SelectContent>\n                      <SelectItem value=\"true\">Available</SelectItem>\n                      <SelectItem value=\"false\">Unavailable</SelectItem>\n                    </SelectContent>\n                  </Select>\n                </div>\n\n                <div className=\"flex gap-3 pt-4\">\n                  <Button type=\"button\" variant=\"outline\" onClick={handleCloseDialog} className=\"flex-1\">\n                    Cancel\n                  </Button>\n                  <Button type=\"submit\" className=\"flex-1 bg-blue-600 hover:bg-blue-700 text-white\">\n                    {editingId ? 'Update Item' : 'Add Item'}\n                  </Button>\n                </div>\n              </form>\n            </DialogContent>\n          </Dialog>\n        </div>\n\n        {/* Menu Items Grid */}\n        <div className=\"grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6\">\n          {filteredItems.length > 0 ? (\n            filteredItems.map((item) => (\n              <Card key={item.id} className=\"hover:shadow-lg transition-shadow\">\n                <CardHeader>\n                  <div className=\"flex justify-between items-start gap-2\">\n                    <div className=\"flex-1\">\n                      <CardTitle className=\"text-lg text-slate-900\">{item.name}</CardTitle>\n                      <CardDescription className=\"text-xs mt-1\">{item.category}</CardDescription>\n                    </div>\n                    <span\n                      className={`px-2 py-1 rounded-full text-xs font-medium ${\n                        item.available\n                          ? 'bg-green-100 text-green-800'\n                          : 'bg-red-100 text-red-800'\n                      }`}\n                    >\n                      {item.available ? 'Available' : 'Unavailable'}\n                    </span>\n                  </div>\n                </CardHeader>\n                <CardContent>\n                  <p className=\"text-sm text-slate-600 mb-4\">{item.description}</p>\n                  <div className=\"flex justify-between items-center\">\n                    <span className=\"text-2xl font-bold text-slate-900\">${item.price.toFixed(2)}</span>\n                    <div className=\"flex gap-2\">\n                      <Button\n                        size=\"sm\"\n                        variant=\"outline\"\n                        onClick={() => handleOpenDialog(item)}\n                        className=\"text-blue-600 hover:text-blue-700 hover:bg-blue-50\"\n                      >\n                        <Edit2 className=\"w-4 h-4\" />\n                      </Button>\n                      <Button\n                        size=\"sm\"\n                        variant=\"outline\"\n                        onClick={() => handleDelete(item.id)}\n                        className=\"text-red-600 hover:text-red-700 hover:bg-red-50\"\n                      >\n                        <Trash2 className=\"w-4 h-4\" />\n                      </Button>\n                    </div>\n                  </div>\n                </CardContent>\n              </Card>\n            ))\n          ) : (\n            <div className=\"col-span-full text-center py-12\">\n              <p className=\"text-slate-500 text-lg\">No menu items found in this category</p>\n            </div>\n          )}\n        </div>\n      </div>\n    </div>\n  );\n};\n\nexport default RestaurantUpdate;",
-  "mock_data_code": "export const mockCategories = [\n  'Appetizers',\n  'Main Courses',\n  'Desserts',\n  'Beverages',\n  'Salads',\n  'Soups',\n];\n\nexport const mockMenuItems = [\n  {\n    id: '1',\n    name: 'Margherita Pizza',\n    description: 'Classic pizza with fresh mozzarella, basil, and tomato sauce',\n    price: 12.99,\n    category: 'Main Courses',\n    available: true,\n  },\n  {\n    id: '2',\n    name: 'Caesar Salad',\n    description: 'Crisp romaine lettuce with parmesan cheese and homemade croutons',\n    price: 9.99,\n    category: 'Salads',\n    available: true,\n  },\n  {\n    id: '3',\n    name: '
+import React, { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { AlertCircle, Edit2, Trash2, Plus } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { mockMenuItems, mockCategories } from './RestaurantUpdate.mock';
+
+interface MenuItem {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  category: string;
+  available: boolean;
+}
+
+interface FormData {
+  name: string;
+  description: string;
+  price: string;
+  category: string;
+  available: boolean;
+}
+
+const RestaurantUpdate: React.FC = () => {
+  const [menuItems, setMenuItems] = useState<MenuItem[]>(mockMenuItems);
+  const [isOpen, setIsOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [formData, setFormData] = useState<FormData>({
+    name: '',
+    description: '',
+    price: '',
+    category: '',
+    available: true,
+  });
+  const [successMessage, setSuccessMessage] = useState('');
+  const [filterCategory, setFilterCategory] = useState<string>('all');
+
+  const handleOpenDialog = (item?: MenuItem) => {
+    if (item) {
+      setEditingId(item.id);
+      setFormData({
+        name: item.name,
+        description: item.description,
+        price: item.price.toString(),
+        category: item.category,
+        available: item.available,
+      });
+    } else {
+      setEditingId(null);
+      setFormData({
+        name: '',
+        description: '',
+        price: '',
+        category: '',
+        available: true,
+      });
+    }
+    setIsOpen(true);
+  };
+
+  const handleCloseDialog = () => {
+    setIsOpen(false);
+    setEditingId(null);
+    setFormData({
+      name: '',
+      description: '',
+      price: '',
+      category: '',
+      available: true,
+    });
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  const handleSelectChange = (value: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      category: value,
+    }));
+  };
+
+  const handleAvailabilityChange = (value: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      available: value === 'true',
+    }));
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!formData.name || !formData.price || !formData.category) {
+      alert('Please fill in all required fields');
+      return;
+    }
+
+    if (editingId) {
+      setMenuItems((prev) =>
+        prev.map((item) =>
+          item.id === editingId
+            ? {
+                ...item,
+                name: formData.name,
+                description: formData.description,
+                price: parseFloat(formData.price),
+                category: formData.category,
+                available: formData.available,
+              }
+            : item
+        )
+      );
+      setSuccessMessage('Menu item updated successfully!');
+    } else {
+      const newItem: MenuItem = {
+        id: Date.now().toString(),
+        name: formData.name,
+        description: formData.description,
+        price: parseFloat(formData.price),
+        category: formData.category,
+        available: formData.available,
+      };
+      setMenuItems((prev) => [...prev, newItem]);
+      setSuccessMessage('Menu item added successfully!');
+    }
+
+    setTimeout(() => setSuccessMessage(''), 3000);
+    handleCloseDialog();
+  };
+
+  const handleDelete = (id: string) => {
+    if (window.confirm('Are you sure you want to delete this menu item?')) {
+      setMenuItems((prev) => prev.filter((item) => item.id !== id));
+      setSuccessMessage('Menu item deleted successfully!');
+      setTimeout(() => setSuccessMessage(''), 3000);
+    }
+  };
+
+  const filteredItems =
+    filterCategory === 'all' ? menuItems : menuItems.filter((item) => item.category === filterCategory);
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-6">
+      <div className="max-w-6xl mx-auto">
+        {/* Header */}
+        <div className="mb-8">
+          <h1 className="text-4xl font-bold text-slate-900 mb-2">Menu Management</h1>
+          <p className="text-slate-600">Update and manage your restaurant menu items</p>
+        </div>
+
+        {/* Success Message */}
+        {successMessage && (
+          <Alert className="mb-6 bg-green-50 border-green-200">
+            <AlertCircle className="h-4 w-4 text-green-600" />
+            <AlertDescription className="text-green-800">{successMessage}</AlertDescription>
+          </Alert>
+        )}
+
+        {/* Controls */}
+        <div className="flex flex-col sm:flex-row gap-4 mb-6 justify-between items-start sm:items-center">
+          <div className="flex-1 max-w-xs">
+            <Label htmlFor="category-filter" className="text-sm font-medium text-slate-700 mb-2 block">
+              Filter by Category
+            </Label>
+            <Select value={filterCategory} onValueChange={setFilterCategory}>
+              <SelectTrigger id="category-filter" className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Categories</SelectItem>
+                {mockCategories.map((cat) => (
+                  <SelectItem key={cat} value={cat}>
+                    {cat}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <Dialog open={isOpen} onOpenChange={setIsOpen}>
+            <DialogTrigger asChild>
+              <Button onClick={() => handleOpenDialog()} className="bg-blue-600 hover:bg-blue-700 text-white">
+                <Plus className="w-4 h-4 mr-2" />
+                Add New Item
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[500px]">
+              <DialogHeader>
+                <DialogTitle>{editingId ? 'Edit Menu Item' : 'Add New Menu Item'}</DialogTitle>
+                <DialogDescription>
+                  {editingId ? 'Update the details of your menu item' : 'Add a new item to your restaurant menu'}
+                </DialogDescription>
+              </DialogHeader>
+
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div>
+                  <Label htmlFor="name" className="text-sm font-medium text-slate-700">
+                    Item Name *
+                  </Label>
+                  <Input
+                    id="name"
+                    name="name"
+                    value={formData.name}
+                    onChange={handleInputChange}
+                    placeholder="e.g., Margherita Pizza"
+                    className="mt-1"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="description" className="text-sm font-medium text-slate-700">
+                    Description
+                  </Label>
+                  <Textarea
+                    id="description"
+                    name="description"
+                    value={formData.description}
+                    onChange={handleInputChange}
+                    placeholder="Describe your menu item..."
+                    className="mt-1 resize-none"
+                    rows={3}
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="price" className="text-sm font-medium text-slate-700">
+                      Price ($) *
+                    </Label>
+                    <Input
+                      id="price"
+                      name="price"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={formData.price}
+                      onChange={handleInputChange}
+                      placeholder="0.00"
+                      className="mt-1"
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="category" className="text-sm font-medium text-slate-700">
+                      Category *
+                    </Label>
+                    <Select value={formData.category} onValueChange={handleSelectChange}>
+                      <SelectTrigger id="category" className="mt-1">
+                        <SelectValue placeholder="Select category" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {mockCategories.map((cat) => (
+                          <SelectItem key={cat} value={cat}>
+                            {cat}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div>
+                  <Label htmlFor="availability" className="text-sm font-medium text-slate-700">
+                    Availability
+                  </Label>
+                  <Select value={formData.available.toString()} onValueChange={handleAvailabilityChange}>
+                    <SelectTrigger id="availability" className="mt-1">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="true">Available</SelectItem>
+                      <SelectItem value="false">Unavailable</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="flex gap-3 pt-4">
+                  <Button type="button" variant="outline" onClick={handleCloseDialog} className="flex-1">
+                    Cancel
+                  </Button>
+                  <Button type="submit" className="flex-1 bg-blue-600 hover:bg-blue-700 text-white">
+                    {editingId ? 'Update Item' : 'Add Item'}
+                  </Button>
+                </div>
+              </form>
+            </DialogContent>
+          </Dialog>
+        </div>
+
+        {/* Menu Items Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredItems.length > 0 ? (
+            filteredItems.map((item) => (
+              <Card key={item.id} className="hover:shadow-lg transition-shadow">
+                <CardHeader>
+                  <div className="flex justify-between items-start gap-2">
+                    <div className="flex-1">
+                      <CardTitle className="text-lg text-slate-900">{item.name}</CardTitle>
+                      <CardDescription className="text-xs mt-1">{item.category}</CardDescription>
+                    </div>
+                    <span
+                      className={`px-2 py-1 rounded-full text-xs font-medium ${
+                        item.available
+                          ? 'bg-green-100 text-green-800'
+                          : 'bg-red-100 text-red-800'
+                      }`}
+                    >
+                      {item.available ? 'Available' : 'Unavailable'}
+                    </span>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-slate-600 mb-4">{item.description}</p>
+                  <div className="flex justify-between items-center">
+                    <span className="text-2xl font-bold text-slate-900">${item.price.toFixed(2)}</span>
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleOpenDialog(item)}
+                        className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                      >
+                        <Edit2 className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleDelete(item.id)}
+                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))
+          ) : (
+            <div className="col-span-full text-center py-12">
+              <p className="text-slate-500 text-lg">No menu items found in this category</p>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default RestaurantUpdate;
