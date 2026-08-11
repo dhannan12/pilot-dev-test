@@ -42,7 +42,7 @@ const MOCK_DISHES: Dish[] = [
     id: 4,
     name: 'Beef Wellington',
     description: 'Tender beef tenderloin wrapped in mushroom duxelles and pastry',
-    price: 32.99,
+    price: 34.99,
     isNew: false,
     image: '🥩',
     category: 'Main Course'
@@ -115,8 +115,8 @@ export default function NewDishes() {
               {/* New Badge */}
               {dish.isNew && (
                 <div className="absolute top-4 right-4 z-10">
-                  <div className="bg-gradient-to-r from-amber-400 to-orange-500 text-white px-4 py-2 rounded-full text-sm font-bold shadow-lg transform -rotate-12 group-hover:rotate-0 transition-transform duration-300">
-                    ✨ NEW
+                  <div className="bg-gradient-to-r from-amber-400 to-orange-500 text-white px-4 py-2 rounded-full font-bold text-sm shadow-lg transform -rotate-12 group-hover:rotate-0 transition-transform duration-300">
+                    NEW
                   </div>
                 </div>
               )}
@@ -138,19 +138,19 @@ export default function NewDishes() {
                   {dish.description}
                 </p>
 
-                <div className="flex items-center justify-between pt-4 border-t border-slate-200">
+                <div className="flex items-center justify-between">
                   <span className="text-2xl font-bold text-amber-600">
                     ${dish.price.toFixed(2)}
                   </span>
-                  <button className="bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200">
-                    Add to Cart
-                  </button>
+                  <span className="text-xs font-semibold text-slate-500 bg-slate-100 px-3 py-1 rounded-full">
+                    {dish.category}
+                  </span>
                 </div>
               </div>
 
-              {/* Highlight Border for New Dishes */}
+              {/* Hover Effect Border */}
               {dish.isNew && (
-                <div className="absolute inset-0 rounded-xl border-2 border-amber-400 pointer-events-none opacity-50"></div>
+                <div className="absolute inset-0 border-2 border-amber-400 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
               )}
             </div>
           ))}
@@ -159,11 +159,19 @@ export default function NewDishes() {
         {/* Empty State */}
         {filteredDishes.length === 0 && (
           <div className="text-center py-12">
-            <p className="text-xl text-slate-600">
-              No dishes found in this category.
-            </p>
+            <p className="text-xl text-slate-600">No dishes found in this category.</p>
           </div>
         )}
+
+        {/* New Dishes Count */}
+        <div className="mt-12 text-center">
+          <p className="text-slate-600">
+            <span className="font-bold text-amber-600">
+              {MOCK_DISHES.filter(d => d.isNew).length}
+            </span>
+            {' '}new dishes available this season
+          </p>
+        </div>
       </div>
     </div>
   )
