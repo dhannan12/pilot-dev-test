@@ -1,80 +1,149 @@
-import React from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { menuSections } from './MenuMust.mock';
+import React, { useState } from 'react'
 
 interface MenuItem {
-  id: string;
-  name: string;
-  description: string;
-  price: number;
-  allergens?: string[];
+  id: string
+  name: string
+  description: string
+  price: number
 }
 
 interface MenuSection {
-  id: string;
-  title: string;
-  description: string;
-  items: MenuItem[];
+  title: string
+  items: MenuItem[]
 }
 
-const MenuMust: React.FC = () => {
+const MOCK_DATA: MenuSection[] = [
+  {
+    title: 'Starters',
+    items: [
+      {
+        id: 'starter-1',
+        name: 'Bruschetta',
+        description: 'Toasted bread with tomatoes and garlic',
+        price: 8.99
+      },
+      {
+        id: 'starter-2',
+        name: 'Calamari Fritti',
+        description: 'Crispy fried squid with marinara sauce',
+        price: 10.99
+      },
+      {
+        id: 'starter-3',
+        name: 'Caprese Salad',
+        description: 'Fresh mozzarella, tomatoes, and basil',
+        price: 9.99
+      }
+    ]
+  },
+  {
+    title: 'Main',
+    items: [
+      {
+        id: 'main-1',
+        name: 'Spaghetti Carbonara',
+        description: 'Classic Italian pasta with eggs and pancetta',
+        price: 16.99
+      },
+      {
+        id: 'main-2',
+        name: 'Grilled Salmon',
+        description: 'Fresh salmon fillet with lemon butter sauce',
+        price: 22.99
+      },
+      {
+        id: 'main-3',
+        name: 'Risotto Mushroom',
+        description: 'Creamy arborio rice with wild mushrooms',
+        price: 18.99
+      },
+      {
+        id: 'main-4',
+        name: 'Beef Tenderloin',
+        description: 'Prime cut with roasted vegetables',
+        price: 28.99
+      }
+    ]
+  },
+  {
+    title: 'Desserts',
+    items: [
+      {
+        id: 'dessert-1',
+        name: 'Tiramisu',
+        description: 'Classic Italian dessert with mascarpone and espresso',
+        price: 7.99
+      },
+      {
+        id: 'dessert-2',
+        name: 'Panna Cotta',
+        description: 'Silky smooth vanilla cream with berry compote',
+        price: 8.99
+      },
+      {
+        id: 'dessert-3',
+        name: 'Chocolate Lava Cake',
+        description: 'Warm chocolate cake with molten center',
+        price: 9.99
+      }
+    ]
+  }
+]
+
+export default function MenuMust() {
+  const [expandedSection, setExpandedSection] = useState<string | null>('Starters')
+
+  const toggleSection = (sectionTitle: string) => {
+    setExpandedSection(expandedSection === sectionTitle ? null : sectionTitle)
+  }
+
   return (
-    <div className="w-full max-w-4xl mx-auto p-6 bg-gradient-to-br from-slate-50 to-slate-100 rounded-lg">
-      <div className="mb-8 text-center">
-        <h1 className="text-4xl font-bold text-slate-900 mb-2">Our Menu</h1>
-        <p className="text-slate-600">Carefully curated dishes for your dining experience</p>
-      </div>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-2xl mx-auto">
+        {/* Header */}
+        <div className="text-center mb-12">
+          <h1 className="text-4xl sm:text-5xl font-bold text-slate-900 mb-2">Our Menu</h1>
+          <p className="text-lg text-slate-600">Discover our carefully curated selection</p>
+        </div>
 
-      <div className="space-y-8">
-        {menuSections.map((section: MenuSection) => (
-          <section key={section.id} className="">
-            <div className="mb-4 border-b-2 border-slate-300 pb-3">
-              <h2 className="text-2xl font-semibold text-slate-800">{section.title}</h2>
-              <p className="text-sm text-slate-600 mt-1">{section.description}</p>
-            </div>
+        {/* Menu Sections */}
+        <div className="space-y-6">
+          {MOCK_DATA.map((section) => (
+            <div key={section.title} className="bg-white rounded-lg shadow-md overflow-hidden">
+              {/* Section Header */}
+              <button
+                onClick={() => toggleSection(section.title)}
+                className="w-full px-6 py-4 flex items-center justify-between bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 transition-all duration-200"
+              >
+                <h2 className="text-2xl font-bold text-white">{section.title}</h2>
+                <span className={`text-white text-2xl transition-transform duration-300 ${expandedSection === section.title ? 'rotate-180' : ''}`}>
+                  ▼
+                </span>
+              </button>
 
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-1">
-              {section.items.map((item: MenuItem) => (
-                <Card key={item.id} className="hover:shadow-lg transition-shadow duration-200 border-slate-200">
-                  <CardHeader className="pb-3">
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex-1">
-                        <CardTitle className="text-lg text-slate-900">{item.name}</CardTitle>
-                        <CardDescription className="text-slate-600 mt-1">
-                          {item.description}
-                        </CardDescription>
+              {/* Section Items */}
+              {expandedSection === section.title && (
+                <div className="divide-y divide-slate-200">
+                  {section.items.map((item) => (
+                    <div key={item.id} className="px-6 py-5 hover:bg-slate-50 transition-colors duration-150">
+                      <div className="flex items-start justify-between mb-2">
+                        <h3 className="text-lg font-semibold text-slate-900">{item.name}</h3>
+                        <span className="text-lg font-bold text-blue-600 ml-4 flex-shrink-0">${item.price.toFixed(2)}</span>
                       </div>
-                      <span className="text-xl font-bold text-emerald-600 whitespace-nowrap">
-                        ${item.price.toFixed(2)}
-                      </span>
+                      <p className="text-slate-600 text-sm">{item.description}</p>
                     </div>
-                  </CardHeader>
-                  {item.allergens && item.allergens.length > 0 && (
-                    <CardContent>
-                      <div className="flex flex-wrap gap-2">
-                        {item.allergens.map((allergen: string) => (
-                          <Badge key={allergen} variant="secondary" className="text-xs">
-                            {allergen}
-                          </Badge>
-                        ))}
-                      </div>
-                    </CardContent>
-                  )}
-                </Card>
-              ))}
+                  ))}
+                </div>
+              )}
             </div>
-          </section>
-        ))}
-      </div>
+          ))}
+        </div>
 
-      <div className="mt-8 p-4 bg-blue-50 border border-blue-200 rounded-lg text-center">
-        <p className="text-sm text-blue-900">
-          ℹ️ All prices are in USD. Please inform us of any dietary restrictions.
-        </p>
+        {/* Footer Note */}
+        <div className="mt-12 text-center">
+          <p className="text-slate-600 text-sm">All prices are in USD. Please inform us of any dietary restrictions.</p>
+        </div>
       </div>
     </div>
-  );
-};
-
-export default MenuMust;
+  )
+}
