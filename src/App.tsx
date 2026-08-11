@@ -7,25 +7,21 @@ const screens = [
 
 export default function App() {
   const [active, setActive] = useState(0)
-
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      <header className="border-b border-border px-6 py-3 flex items-center gap-4">
-        <h1 className="text-lg font-bold">Restaurant Menu Page - Italian Cuisine Digital Interface</h1>
-        <nav className="flex gap-2 ml-4 flex-wrap">
-          {screens.map((s, i) => (
-            <button key={i} onClick={() => setActive(i)}
-              className={`text-xs px-3 py-1 rounded border transition-colors ${
-                active === i ? 'border-primary text-primary bg-primary/10' : 'border-border text-muted-foreground hover:text-foreground'
-              }`}>
-              {s.name}
-            </button>
-          ))}
-        </nav>
+    <div className="min-h-screen" style={{background:"#f9fafb"}}>
+      <header style={{borderBottom:"1px solid #e5e7eb",padding:"12px 24px",display:"flex",gap:"8px",flexWrap:"wrap",alignItems:"center"}}>
+        <strong style={{marginRight:"16px"}}>Restaurant Menu Page - Italian Cuisine Digital Interface</strong>
+        {screens.map((s, i) => (
+          <button key={i} onClick={() => setActive(i)}
+            style={{padding:"4px 12px",borderRadius:"6px",border:"1px solid",cursor:"pointer",
+              background: active===i ? "#3b82f6" : "white",
+              color: active===i ? "white" : "#374151",
+              borderColor: active===i ? "#3b82f6" : "#d1d5db"}}>
+            {s.name}
+          </button>
+        ))}
       </header>
-      <main className="p-6">
-        {screens[active]?.component}
-      </main>
+      <main style={{padding:"24px"}}>{screens[active]?.component}</main>
     </div>
   )
 }
