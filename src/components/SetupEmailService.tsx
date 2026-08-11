@@ -1,259 +1,243 @@
 import React, { useState } from 'react'
 
 const MOCK_EMAIL_PROVIDERS = [
-  { id: 1, name: 'SendGrid', status: 'connected', apiKey: 'sg_test_****' },
+  { id: 1, name: 'SendGrid', status: 'connected', apiKey: 'sg_***' },
   { id: 2, name: 'Mailgun', status: 'disconnected', apiKey: '' },
   { id: 3, name: 'AWS SES', status: 'disconnected', apiKey: '' },
 ]
 
 const MOCK_EMAIL_TEMPLATES = [
-  { id: 1, name: 'Reservation Confirmation', subject: 'Your reservation is confirmed', status: 'active' },
-  { id: 2, name: 'Cancellation Notice', subject: 'Your reservation has been cancelled', status: 'active' },
-  { id: 3, name: 'Reminder Email', subject: 'Reminder: Your reservation is coming up', status: 'inactive' },
+  { id: 1, name: 'Reservation Confirmation', subject: 'Your reservation is confirmed', enabled: true },
+  { id: 2, name: 'Cancellation Notice', subject: 'Your reservation has been cancelled', enabled: true },
+  { id: 3, name: 'Reminder Email', subject: 'Reminder: Your reservation is coming up', enabled: false },
 ]
 
-const MOCK_TEST_EMAILS = [
-  { id: 1, recipient: 'test@example.com', template: 'Reservation Confirmation', sentAt: '2024-01-15 10:30 AM', status: 'delivered' },
-  { id: 2, recipient: 'user@test.com', template: 'Cancellation Notice', sentAt: '2024-01-14 02:15 PM', status: 'delivered' },
+const MOCK_TEST_RECIPIENTS = [
+  { id: 1, email: 'admin@example.com', lastTest: '2024-01-15' },
+  { id: 2, email: 'support@example.com', lastTest: '2024-01-14' },
 ]
 
 export default function SetupEmailService() {
-  const [activeTab, setActiveTab] = useState<'providers' | 'templates' | 'test'>('providers')
   const [providers, setProviders] = useState(MOCK_EMAIL_PROVIDERS)
   const [templates, setTemplates] = useState(MOCK_EMAIL_TEMPLATES)
-  const [testEmails, setTestEmails] = useState(MOCK_TEST_EMAILS)
-  const [showAddProvider, setShowAddProvider] = useState(false)
+  const [activeTab, setActiveTab] = useState('providers')
+  const [showApiModal, setShowApiModal] = useState(false)
+  const [selectedProvider, setSelectedProvider] = useState<number | null>(null)
+  const [apiKeyInput, setApiKeyInput] = useState('')
   const [testEmail, setTestEmail] = useState('')
-  const [selectedTemplate, setSelectedTemplate] = useState('Reservation Confirmation')
+  const [successMessage, setSuccessMessage] = useState('')
 
-  const handleConnectProvider = (id: number) => {
-    setProviders(providers.map(p => p.id === id ? { ...p, status: 'connected', apiKey: 'sg_test_****' } : p))
+  const handleConnectProvider = (providerId: number) => {
+    setSelectedProvider(providerId)
+    setShowApiModal(true)
   }
 
-  const handleDisconnectProvider = (id: number) => {
-    setProviders(providers.map(p => p.id === id ? { ...p, status: 'disconnected', apiKey: '' } : p))
+  const handleSaveApiKey = () => {
+    if (!apiKeyInput.trim()) return
+    setProviders(providers.map(p => 
+      p.id === selectedProvider 
+        ? { ...p, status: 'connected', apiKey: apiKeyInput.substring(0, 3) + '***' }
+        : p
+    ))
+    setSuccessMessage('API key saved successfully!')
+    setTimeout(() => setSuccessMessage(''), 3000)
+    setShowApiModal(false)
+    setApiKeyInput('')
+    setSelectedProvider(null)
   }
 
-  const handleToggleTemplate = (id: number) => {
-    setTemplates(templates.map(t => t.id === id ? { ...t, status: t.status === 'active' ? 'inactive' : 'active' } : t))
+  const handleToggleTemplate = (templateId: number) => {
+    setTemplates(templates.map(t =>
+      t.id === templateId ? { ...t, enabled: !t.enabled } : t
+    ))
   }
 
   const handleSendTestEmail = () => {
-    if (testEmail && selectedTemplate) {
-      const newTestEmail = {
-        id: testEmails.length + 1,
-        recipient: testEmail,
-        template: selectedTemplate,
-        sentAt: new Date().toLocaleString(),
-        status: 'delivered'
-      }
-      setTestEmails([newTestEmail, ...testEmails])
-      setTestEmail('')
-    }
+    if (!testEmail.trim()) return
+    setSuccessMessage(`Test email sent to ${testEmail}`)
+    setTimeout(() => setSuccessMessage(''), 3000)
+    setTestEmail('')
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-8">
       <div className="max-w-6xl mx-auto">
+        {/* Header */}
         <div className="mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">Email Service Setup</h1>
-          <p className="text-gray-600">Configure email providers and manage reservation confirmation templates</p>
+          <h1 className="text-4xl font-bold text-slate-900 mb-2">Email Service Setup</h1>
+          <p className="text-slate-600">Configure email providers and templates for reservation confirmations</p>
         </div>
 
-        <div className="bg-white rounded-lg shadow">
-          <div className="border-b border-gray-200">
-            <div className="flex">
+        {/* Success Message */}
+        {successMessage && (
+          <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
+            <p className="text-green-800 font-medium">{successMessage}</p>
+          </div>
+        )}
+
+        {/* Tab Navigation */}
+        <div className="flex gap-4 mb-8 border-b border-slate-200">
+          <button
+            onClick={() => setActiveTab('providers')}
+            className={`px-6 py-3 font-semibold transition-colors ${
+              activeTab === 'providers'
+                ? 'text-blue-600 border-b-2 border-blue-600'
+                : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            Email Providers
+          </button>
+          <button
+            onClick={() => setActiveTab('templates')}
+            className={`px-6 py-3 font-semibold transition-colors ${
+              activeTab === 'templates'
+                ? 'text-blue-600 border-b-2 border-blue-600'
+                : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            Email Templates
+          </button>
+          <button
+            onClick={() => setActiveTab('test')}
+            className={`px-6 py-3 font-semibold transition-colors ${
+              activeTab === 'test'
+                ? 'text-blue-600 border-b-2 border-blue-600'
+                : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            Test Email
+          </button>
+        </div>
+
+        {/* Providers Tab */}
+        {activeTab === 'providers' && (
+          <div className="space-y-4">
+            <h2 className="text-2xl font-bold text-slate-900 mb-6">Email Providers</h2>
+            {providers.map(provider => (
+              <div key={provider.id} className="bg-white rounded-lg shadow p-6 flex items-center justify-between">
+                <div className="flex-1">
+                  <h3 className="text-lg font-semibold text-slate-900">{provider.name}</h3>
+                  <p className="text-sm text-slate-600 mt-1">API Key: {provider.apiKey}</p>
+                </div>
+                <div className="flex items-center gap-4">
+                  <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                    provider.status === 'connected'
+                      ? 'bg-green-100 text-green-800'
+                      : 'bg-slate-100 text-slate-800'
+                  }`}>
+                    {provider.status === 'connected' ? '✓ Connected' : 'Disconnected'}
+                  </span>
+                  {provider.status === 'disconnected' && (
+                    <button
+                      onClick={() => handleConnectProvider(provider.id)}
+                      className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                    >
+                      Connect
+                    </button>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Templates Tab */}
+        {activeTab === 'templates' && (
+          <div className="space-y-4">
+            <h2 className="text-2xl font-bold text-slate-900 mb-6">Email Templates</h2>
+            {templates.map(template => (
+              <div key={template.id} className="bg-white rounded-lg shadow p-6 flex items-center justify-between">
+                <div className="flex-1">
+                  <h3 className="text-lg font-semibold text-slate-900">{template.name}</h3>
+                  <p className="text-sm text-slate-600 mt-1">Subject: {template.subject}</p>
+                </div>
+                <button
+                  onClick={() => handleToggleTemplate(template.id)}
+                  className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                    template.enabled
+                      ? 'bg-green-100 text-green-800 hover:bg-green-200'
+                      : 'bg-slate-100 text-slate-800 hover:bg-slate-200'
+                  }`}
+                >
+                  {template.enabled ? 'Enabled' : 'Disabled'}
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Test Email Tab */}
+        {activeTab === 'test' && (
+          <div className="space-y-6">
+            <h2 className="text-2xl font-bold text-slate-900 mb-6">Send Test Email</h2>
+            <div className="bg-white rounded-lg shadow p-8">
+              <div className="mb-6">
+                <label className="block text-sm font-semibold text-slate-900 mb-2">Recipient Email</label>
+                <input
+                  type="email"
+                  value={testEmail}
+                  onChange={(e) => setTestEmail(e.target.value)}
+                  placeholder="Enter email address"
+                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
               <button
-                onClick={() => setActiveTab('providers')}
-                className={`px-6 py-4 font-medium text-sm border-b-2 transition-colors ${
-                  activeTab === 'providers'
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-600 hover:text-gray-900'
-                }`}
+                onClick={handleSendTestEmail}
+                disabled={!testEmail.trim()}
+                className="w-full px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-slate-300 transition-colors font-semibold"
               >
-                Email Providers
+                Send Test Email
+              </button>
+            </div>
+            <div className="bg-white rounded-lg shadow p-6">
+              <h3 className="text-lg font-semibold text-slate-900 mb-4">Recent Test Recipients</h3>
+              <div className="space-y-3">
+                {MOCK_TEST_RECIPIENTS.map(recipient => (
+                  <div key={recipient.id} className="flex justify-between items-center p-3 bg-slate-50 rounded">
+                    <span className="text-slate-700">{recipient.email}</span>
+                    <span className="text-sm text-slate-500">Last: {recipient.lastTest}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* API Key Modal */}
+      {showApiModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-8">
+            <h2 className="text-2xl font-bold text-slate-900 mb-6">Enter API Key</h2>
+            <input
+              type="password"
+              value={apiKeyInput}
+              onChange={(e) => setApiKeyInput(e.target.value)}
+              placeholder="Paste your API key here"
+              className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 mb-6"
+            />
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  setShowApiModal(false)
+                  setApiKeyInput('')
+                  setSelectedProvider(null)
+                }}
+                className="flex-1 px-4 py-2 border border-slate-300 text-slate-900 rounded-lg hover:bg-slate-50 transition-colors font-medium"
+              >
+                Cancel
               </button>
               <button
-                onClick={() => setActiveTab('templates')}
-                className={`px-6 py-4 font-medium text-sm border-b-2 transition-colors ${
-                  activeTab === 'templates'
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-600 hover:text-gray-900'
-                }`}
+                onClick={handleSaveApiKey}
+                disabled={!apiKeyInput.trim()}
+                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-slate-300 transition-colors font-medium"
               >
-                Email Templates
-              </button>
-              <button
-                onClick={() => setActiveTab('test')}
-                className={`px-6 py-4 font-medium text-sm border-b-2 transition-colors ${
-                  activeTab === 'test'
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-600 hover:text-gray-900'
-                }`}
-              >
-                Test Emails
+                Save
               </button>
             </div>
           </div>
-
-          <div className="p-6">
-            {activeTab === 'providers' && (
-              <div>
-                <div className="flex justify-between items-center mb-6">
-                  <h2 className="text-2xl font-semibold text-gray-900">Email Providers</h2>
-                  <button
-                    onClick={() => setShowAddProvider(!showAddProvider)}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
-                  >
-                    {showAddProvider ? 'Cancel' : 'Add Provider'}
-                  </button>
-                </div>
-
-                {showAddProvider && (
-                  <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
-                    <div className="space-y-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Provider Name</label>
-                        <input type="text" placeholder="e.g., SendGrid" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">API Key</label>
-                        <input type="password" placeholder="Enter your API key" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                      </div>
-                      <button className="w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium">
-                        Save Provider
-                      </button>
-                    </div>
-                  </div>
-                )}
-
-                <div className="space-y-4">
-                  {providers.map(provider => (
-                    <div key={provider.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
-                      <div className="flex-1">
-                        <h3 className="font-semibold text-gray-900">{provider.name}</h3>
-                        <p className="text-sm text-gray-600 mt-1">API Key: {provider.apiKey || 'Not configured'}</p>
-                      </div>
-                      <div className="flex items-center gap-4">
-                        <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                          provider.status === 'connected'
-                            ? 'bg-green-100 text-green-800'
-                            : 'bg-gray-100 text-gray-800'
-                        }`}>
-                          {provider.status === 'connected' ? '✓ Connected' : 'Disconnected'}
-                        </span>
-                        {provider.status === 'connected' ? (
-                          <button
-                            onClick={() => handleDisconnectProvider(provider.id)}
-                            className="px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors font-medium"
-                          >
-                            Disconnect
-                          </button>
-                        ) : (
-                          <button
-                            onClick={() => handleConnectProvider(provider.id)}
-                            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
-                          >
-                            Connect
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {activeTab === 'templates' && (
-              <div>
-                <h2 className="text-2xl font-semibold text-gray-900 mb-6">Email Templates</h2>
-                <div className="space-y-4">
-                  {templates.map(template => (
-                    <div key={template.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
-                      <div className="flex-1">
-                        <h3 className="font-semibold text-gray-900">{template.name}</h3>
-                        <p className="text-sm text-gray-600 mt-1">Subject: {template.subject}</p>
-                      </div>
-                      <div className="flex items-center gap-4">
-                        <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                          template.status === 'active'
-                            ? 'bg-green-100 text-green-800'
-                            : 'bg-gray-100 text-gray-800'
-                        }`}>
-                          {template.status === 'active' ? '✓ Active' : 'Inactive'}
-                        </span>
-                        <button
-                          onClick={() => handleToggleTemplate(template.id)}
-                          className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
-                        >
-                          {template.status === 'active' ? 'Disable' : 'Enable'}
-                        </button>
-                        <button className="px-4 py-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors font-medium">
-                          Edit
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {activeTab === 'test' && (
-              <div>
-                <h2 className="text-2xl font-semibold text-gray-900 mb-6">Send Test Email</h2>
-                <div className="mb-8 p-4 bg-gray-50 rounded-lg border border-gray-200">
-                  <div className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Recipient Email</label>
-                      <input
-                        type="email"
-                        value={testEmail}
-                        onChange={(e) => setTestEmail(e.target.value)}
-                        placeholder="test@example.com"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Template</label>
-                      <select
-                        value={selectedTemplate}
-                        onChange={(e) => setSelectedTemplate(e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      >
-                        {templates.map(t => (
-                          <option key={t.id} value={t.name}>{t.name}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <button
-                      onClick={handleSendTestEmail}
-                      className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
-                    >
-                      Send Test Email
-                    </button>
-                  </div>
-                </div>
-
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Test Email History</h3>
-                <div className="space-y-4">
-                  {testEmails.map(email => (
-                    <div key={email.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
-                      <div className="flex-1">
-                        <p className="font-medium text-gray-900">{email.recipient}</p>
-                        <p className="text-sm text-gray-600 mt-1">Template: {email.template}</p>
-                        <p className="text-sm text-gray-500 mt-1">Sent: {email.sentAt}</p>
-                      </div>
-                      <span className="px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
-                        ✓ {email.status}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
         </div>
-      </div>
+      )}
     </div>
   )
 }
