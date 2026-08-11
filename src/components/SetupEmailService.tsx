@@ -1,53 +1,63 @@
 import React, { useState } from 'react'
 
 const MOCK_EMAIL_PROVIDERS = [
-  { id: 1, name: 'SendGrid', status: 'connected', apiKey: 'sg_test_****' },
-  { id: 2, name: 'Mailgun', status: 'disconnected', apiKey: '' },
-  { id: 3, name: 'AWS SES', status: 'disconnected', apiKey: '' },
+  { id: 1, name: 'SendGrid', status: 'connected', apiKey: 'sg_test_****', lastVerified: '2024-01-15' },
+  { id: 2, name: 'Mailgun', status: 'disconnected', apiKey: '', lastVerified: null },
+  { id: 3, name: 'AWS SES', status: 'disconnected', apiKey: '', lastVerified: null }
 ]
 
 const MOCK_EMAIL_TEMPLATES = [
   { id: 1, name: 'Reservation Confirmation', subject: 'Your reservation is confirmed', status: 'active' },
-  { id: 2, name: 'Cancellation Notice', subject: 'Your reservation has been cancelled', status: 'active' },
-  { id: 3, name: 'Reminder Email', subject: 'Reminder: Your reservation is coming up', status: 'inactive' },
+  { id: 2, name: 'Reservation Reminder', subject: 'Reminder: Your reservation is tomorrow', status: 'active' },
+  { id: 3, name: 'Cancellation Notice', subject: 'Your reservation has been cancelled', status: 'inactive' },
+  { id: 4, name: 'Payment Receipt', subject: 'Payment received for your reservation', status: 'active' }
 ]
 
-const MOCK_TEST_EMAILS = [
-  { id: 1, recipient: 'customer@example.com', template: 'Reservation Confirmation', sentAt: '2024-01-15 10:30 AM', status: 'delivered' },
-  { id: 2, recipient: 'user@test.com', template: 'Cancellation Notice', sentAt: '2024-01-14 02:15 PM', status: 'delivered' },
+const MOCK_TEST_RESULTS = [
+  { id: 1, recipient: 'test@example.com', template: 'Reservation Confirmation', sentAt: '2024-01-20 14:32', status: 'delivered' },
+  { id: 2, recipient: 'admin@example.com', template: 'Reservation Reminder', sentAt: '2024-01-20 14:15', status: 'delivered' },
+  { id: 3, recipient: 'user@example.com', template: 'Payment Receipt', sentAt: '2024-01-20 13:45', status: 'failed' }
 ]
 
 export default function SetupEmailService() {
-  const [activeTab, setActiveTab] = useState<'providers' | 'templates' | 'test'>('providers')
+  const [activeTab, setActiveTab] = useState('providers')
   const [providers, setProviders] = useState(MOCK_EMAIL_PROVIDERS)
   const [templates, setTemplates] = useState(MOCK_EMAIL_TEMPLATES)
-  const [testEmails, setTestEmails] = useState(MOCK_TEST_EMAILS)
+  const [testResults, setTestResults] = useState(MOCK_TEST_RESULTS)
   const [showAddProvider, setShowAddProvider] = useState(false)
+  const [selectedProvider, setSelectedProvider] = useState('')
+  const [apiKeyInput, setApiKeyInput] = useState('')
   const [testEmail, setTestEmail] = useState('')
-  const [selectedTemplate, setSelectedTemplate] = useState('Reservation Confirmation')
 
-  const handleConnectProvider = (id: number) => {
-    setProviders(providers.map(p => p.id === id ? { ...p, status: 'connected', apiKey: 'sg_test_****' } : p))
-  }
-
-  const handleDisconnectProvider = (id: number) => {
-    setProviders(providers.map(p => p.id === id ? { ...p, status: 'disconnected', apiKey: '' } : p))
+  const handleConnectProvider = () => {
+    if (selectedProvider && apiKeyInput) {
+      setProviders(providers.map(p => 
+        p.name === selectedProvider 
+          ? { ...p, status: 'connected', apiKey: apiKeyInput.slice(0, -4) + '****', lastVerified: new Date().toISOString().split('T')[0] }
+          : p
+      ))
+      setShowAddProvider(false)
+      setSelectedProvider('')
+      setApiKeyInput('')
+    }
   }
 
   const handleToggleTemplate = (id: number) => {
-    setTemplates(templates.map(t => t.id === id ? { ...t, status: t.status === 'active' ? 'inactive' : 'active' } : t))
+    setTemplates(templates.map(t => 
+      t.id === id ? { ...t, status: t.status === 'active' ? 'inactive' : 'active' } : t
+    ))
   }
 
-  const handleSendTestEmail = () => {
-    if (testEmail && selectedTemplate) {
-      const newTestEmail = {
-        id: testEmails.length + 1,
+  const handleSendTest = () => {
+    if (testEmail) {
+      const newResult = {
+        id: testResults.length + 1,
         recipient: testEmail,
-        template: selectedTemplate,
+        template: 'Reservation Confirmation',
         sentAt: new Date().toLocaleString(),
-        status: 'delivered'
+        status: Math.random() > 0.3 ? 'delivered' : 'failed'
       }
-      setTestEmails([newTestEmail, ...testEmails])
+      setTestResults([newResult, ...testResults])
       setTestEmail('')
     }
   }
@@ -56,11 +66,11 @@ export default function SetupEmailService() {
     <div className="min-h-screen bg-gray-50 p-8">
       <div className="max-w-6xl mx-auto">
         <div className="mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">Email Service Setup</h1>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Email Service Setup</h1>
           <p className="text-gray-600">Configure email providers and templates for reservation confirmations</p>
         </div>
 
-        <div className="bg-white rounded-lg shadow-md">
+        <div className="bg-white rounded-lg shadow">
           <div className="border-b border-gray-200">
             <div className="flex">
               <button
@@ -84,14 +94,14 @@ export default function SetupEmailService() {
                 Email Templates
               </button>
               <button
-                onClick={() => setActiveTab('test')}
+                onClick={() => setActiveTab('testing')}
                 className={`px-6 py-4 font-medium text-sm border-b-2 transition-colors ${
-                  activeTab === 'test'
+                  activeTab === 'testing'
                     ? 'border-blue-500 text-blue-600'
                     : 'border-transparent text-gray-600 hover:text-gray-900'
                 }`}
               >
-                Send Test Email
+                Testing
               </button>
             </div>
           </div>
@@ -100,63 +110,73 @@ export default function SetupEmailService() {
             {activeTab === 'providers' && (
               <div>
                 <div className="flex justify-between items-center mb-6">
-                  <h2 className="text-2xl font-bold text-gray-900">Email Providers</h2>
+                  <h2 className="text-xl font-semibold text-gray-900">Email Providers</h2>
                   <button
                     onClick={() => setShowAddProvider(!showAddProvider)}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
                   >
                     {showAddProvider ? 'Cancel' : 'Add Provider'}
                   </button>
                 </div>
 
                 {showAddProvider && (
-                  <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                    <h3 className="font-semibold text-gray-900 mb-4">Add New Email Provider</h3>
+                  <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
                     <div className="space-y-4">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Provider Name</label>
-                        <input type="text" placeholder="e.g., SendGrid" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Select Provider</label>
+                        <select
+                          value={selectedProvider}
+                          onChange={(e) => setSelectedProvider(e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        >
+                          <option value="">Choose a provider...</option>
+                          {providers.filter(p => p.status === 'disconnected').map(p => (
+                            <option key={p.id} value={p.name}>{p.name}</option>
+                          ))}
+                        </select>
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">API Key</label>
-                        <input type="password" placeholder="Enter your API key" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                        <label className="block text-sm font-medium text-gray-700 mb-2">API Key</label>
+                        <input
+                          type="password"
+                          value={apiKeyInput}
+                          onChange={(e) => setApiKeyInput(e.target.value)}
+                          placeholder="Enter your API key"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
                       </div>
-                      <button className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium">
-                        Save Provider
+                      <button
+                        onClick={handleConnectProvider}
+                        className="w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium"
+                      >
+                        Connect Provider
                       </button>
                     </div>
                   </div>
                 )}
 
-                <div className="space-y-4">
+                <div className="space-y-3">
                   {providers.map(provider => (
-                    <div key={provider.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                    <div key={provider.id} className="p-4 border border-gray-200 rounded-lg flex items-center justify-between">
                       <div className="flex-1">
-                        <h3 className="font-semibold text-gray-900">{provider.name}</h3>
-                        <p className="text-sm text-gray-600 mt-1">API Key: {provider.apiKey || 'Not configured'}</p>
+                        <h3 className="font-medium text-gray-900">{provider.name}</h3>
+                        <p className="text-sm text-gray-600 mt-1">
+                          {provider.status === 'connected' ? `API Key: ${provider.apiKey}` : 'Not connected'}
+                        </p>
+                        {provider.lastVerified && (
+                          <p className="text-xs text-gray-500 mt-1">Last verified: {provider.lastVerified}</p>
+                        )}
                       </div>
-                      <div className="flex items-center gap-4">
-                        <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                      <div className="flex items-center gap-3">
+                        <span className={`px-3 py-1 rounded-full text-xs font-medium ${
                           provider.status === 'connected'
                             ? 'bg-green-100 text-green-800'
                             : 'bg-gray-100 text-gray-800'
                         }`}>
                           {provider.status === 'connected' ? '✓ Connected' : 'Disconnected'}
                         </span>
-                        {provider.status === 'connected' ? (
-                          <button
-                            onClick={() => handleDisconnectProvider(provider.id)}
-                            className="px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors font-medium"
-                          >
-                            Disconnect
-                          </button>
-                        ) : (
-                          <button
-                            onClick={() => handleConnectProvider(provider.id)}
-                            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium"
-                          >
-                            Connect
-                          </button>
+                        {provider.status === 'connected' && (
+                          <button className="text-red-600 hover:text-red-700 text-sm font-medium">Disconnect</button>
                         )}
                       </div>
                     </div>
@@ -167,31 +187,26 @@ export default function SetupEmailService() {
 
             {activeTab === 'templates' && (
               <div>
-                <h2 className="text-2xl font-bold text-gray-900 mb-6">Email Templates</h2>
-                <div className="space-y-4">
+                <h2 className="text-xl font-semibold text-gray-900 mb-6">Email Templates</h2>
+                <div className="space-y-3">
                   {templates.map(template => (
-                    <div key={template.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                    <div key={template.id} className="p-4 border border-gray-200 rounded-lg flex items-center justify-between">
                       <div className="flex-1">
-                        <h3 className="font-semibold text-gray-900">{template.name}</h3>
+                        <h3 className="font-medium text-gray-900">{template.name}</h3>
                         <p className="text-sm text-gray-600 mt-1">Subject: {template.subject}</p>
                       </div>
-                      <div className="flex items-center gap-4">
-                        <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                          template.status === 'active'
-                            ? 'bg-green-100 text-green-800'
-                            : 'bg-gray-100 text-gray-800'
-                        }`}>
-                          {template.status === 'active' ? '✓ Active' : 'Inactive'}
-                        </span>
+                      <div className="flex items-center gap-3">
                         <button
                           onClick={() => handleToggleTemplate(template.id)}
-                          className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-100 transition-colors font-medium"
+                          className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors ${
+                            template.status === 'active'
+                              ? 'bg-green-100 text-green-700 hover:bg-green-200'
+                              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                          }`}
                         >
-                          {template.status === 'active' ? 'Disable' : 'Enable'}
+                          {template.status === 'active' ? 'Active' : 'Inactive'}
                         </button>
-                        <button className="px-4 py-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors font-medium">
-                          Edit
-                        </button>
+                        <button className="text-blue-600 hover:text-blue-700 text-sm font-medium">Edit</button>
                       </div>
                     </div>
                   ))}
@@ -199,61 +214,48 @@ export default function SetupEmailService() {
               </div>
             )}
 
-            {activeTab === 'test' && (
+            {activeTab === 'testing' && (
               <div>
-                <h2 className="text-2xl font-bold text-gray-900 mb-6">Send Test Email</h2>
+                <h2 className="text-xl font-semibold text-gray-900 mb-6">Test Email Service</h2>
+                
                 <div className="mb-8 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                  <h3 className="font-semibold text-gray-900 mb-4">Test Email Configuration</h3>
-                  <div className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Recipient Email</label>
-                      <input
-                        type="email"
-                        value={testEmail}
-                        onChange={(e) => setTestEmail(e.target.value)}
-                        placeholder="test@example.com"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Email Template</label>
-                      <select
-                        value={selectedTemplate}
-                        onChange={(e) => setSelectedTemplate(e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      >
-                        {templates.map(t => (
-                          <option key={t.id} value={t.name}>{t.name}</option>
-                        ))}
-                      </select>
-                    </div>
+                  <div className="flex gap-3">
+                    <input
+                      type="email"
+                      value={testEmail}
+                      onChange={(e) => setTestEmail(e.target.value)}
+                      placeholder="Enter test email address"
+                      className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
                     <button
-                      onClick={handleSendTestEmail}
-                      className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                      onClick={handleSendTest}
+                      className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
                     >
-                      Send Test Email
+                      Send Test
                     </button>
                   </div>
                 </div>
 
-                <h3 className="text-xl font-bold text-gray-900 mb-4">Test Email History</h3>
-                <div className="space-y-4">
-                  {testEmails.length === 0 ? (
-                    <p className="text-gray-600 text-center py-8">No test emails sent yet</p>
-                  ) : (
-                    testEmails.map(email => (
-                      <div key={email.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                <h3 className="font-semibold text-gray-900 mb-4">Recent Test Results</h3>
+                <div className="space-y-3">
+                  {testResults.map(result => (
+                    <div key={result.id} className="p-4 border border-gray-200 rounded-lg">
+                      <div className="flex items-center justify-between">
                         <div className="flex-1">
-                          <p className="font-semibold text-gray-900">{email.recipient}</p>
-                          <p className="text-sm text-gray-600 mt-1">Template: {email.template}</p>
-                          <p className="text-sm text-gray-500 mt-1">Sent: {email.sentAt}</p>
+                          <p className="font-medium text-gray-900">{result.recipient}</p>
+                          <p className="text-sm text-gray-600 mt-1">Template: {result.template}</p>
+                          <p className="text-xs text-gray-500 mt-1">Sent: {result.sentAt}</p>
                         </div>
-                        <span className="px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
-                          ✓ {email.status}
+                        <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                          result.status === 'delivered'
+                            ? 'bg-green-100 text-green-800'
+                            : 'bg-red-100 text-red-800'
+                        }`}>
+                          {result.status === 'delivered' ? '✓ Delivered' : '✗ Failed'}
                         </span>
                       </div>
-                    ))
-                  )}
+                    </div>
+                  ))}
                 </div>
               </div>
             )}
