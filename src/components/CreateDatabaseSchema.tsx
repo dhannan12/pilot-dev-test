@@ -33,21 +33,19 @@ const MOCK_SCHEMA = [
       { name: 'item_name', type: 'VARCHAR(255)', constraint: 'NOT NULL' },
       { name: 'description', type: 'TEXT', constraint: 'NULL' },
       { name: 'price', type: 'DECIMAL(10,2)', constraint: 'NOT NULL' },
+      { name: 'is_vegetarian', type: 'BOOLEAN', constraint: 'DEFAULT FALSE' },
       { name: 'is_available', type: 'BOOLEAN', constraint: 'DEFAULT TRUE' },
-      { name: 'image_url', type: 'VARCHAR(500)', constraint: 'NULL' },
-      { name: 'allergens', type: 'JSON', constraint: 'NULL' }
+      { name: 'image_url', type: 'VARCHAR(500)', constraint: 'NULL' }
     ]
   },
   {
     id: 4,
-    tableName: 'menu_reviews',
+    tableName: 'menu_allergens',
     columns: [
       { name: 'id', type: 'INT', constraint: 'PRIMARY KEY AUTO_INCREMENT' },
       { name: 'item_id', type: 'INT', constraint: 'FOREIGN KEY' },
-      { name: 'user_id', type: 'INT', constraint: 'FOREIGN KEY' },
-      { name: 'rating', type: 'INT', constraint: 'CHECK (rating >= 1 AND rating <= 5)' },
-      { name: 'comment', type: 'TEXT', constraint: 'NULL' },
-      { name: 'created_at', type: 'TIMESTAMP', constraint: 'DEFAULT CURRENT_TIMESTAMP' }
+      { name: 'allergen_name', type: 'VARCHAR(100)', constraint: 'NOT NULL' },
+      { name: 'severity', type: 'ENUM("low","medium","high")', constraint: 'DEFAULT "medium"' }
     ]
   }
 ]
@@ -57,16 +55,18 @@ export default function CreateDatabaseSchema() {
   const [copiedCode, setCopiedCode] = useState(false)
 
   const generateSQL = () => {
-    return MOCK_SCHEMA.map(table => {
-      const columnDefs = table.columns
-        .map(col => `  ${col.name} ${col.type} ${col.constraint}`)
-        .join(',\n')
-      return `CREATE TABLE ${table.tableName} (\n${columnDefs}\n);`
-    }).join('\n\n')
+    let sql = ''
+    MOCK_SCHEMA.forEach(table => {
+      sql += `CREATE TABLE ${table.tableName} (\n`
+      sql += table.columns.map(col => `  ${col.name} ${col.type} ${col.constraint}`).join(',\n')
+      sql += '\n);\n\n'
+    })
+    return sql
   }
 
   const handleCopySQL = () => {
-    navigator.clipboard.writeText(generateSQL())
+    const sql = generateSQL()
+    navigator.clipboard.writeText(sql)
     setCopiedCode(true)
     setTimeout(() => setCopiedCode(false), 2000)
   }
@@ -77,30 +77,29 @@ export default function CreateDatabaseSchema() {
         {/* Header */}
         <div className="mb-12">
           <h1 className="text-4xl font-bold text-white mb-2">Restaurant Menu Database Schema</h1>
-          <p className="text-slate-400 text-lg">Italian Restaurant Menu Management System</p>
-          <p className="text-slate-500 text-sm mt-2">SCRUM-577: Database Schema Design</p>
+          <p className="text-slate-400 text-lg">Italian Restaurant Management System - SCRUM-577</p>
         </div>
 
-        {/* SQL Export Section */}
+        {/* SQL Preview */}
         <div className="bg-slate-800 rounded-lg border border-slate-700 p-6 mb-8">
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-semibold text-white">Generated SQL</h2>
+            <h2 className="text-xl font-semibold text-white">Generated SQL Schema</h2>
             <button
               onClick={handleCopySQL}
-              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors duration-200 text-sm font-medium"
+              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors duration-200 font-medium"
             >
               {copiedCode ? '✓ Copied!' : 'Copy SQL'}
             </button>
           </div>
-          <pre className="bg-slate-900 p-4 rounded border border-slate-700 overflow-x-auto text-slate-300 text-xs leading-relaxed">
-            <code>{generateSQL()}</code>
+          <pre className="bg-slate-900 p-4 rounded border border-slate-700 overflow-x-auto text-sm text-slate-300 font-mono">
+            {generateSQL()}
           </pre>
         </div>
 
         {/* Schema Tables */}
         <div className="space-y-4">
           <h2 className="text-2xl font-bold text-white mb-6">Database Tables</h2>
-          {MOCK_SCHEMA.map((table) => (
+          {MOCK_SCHEMA.map(table => (
             <div key={table.id} className="bg-slate-800 rounded-lg border border-slate-700 overflow-hidden">
               <button
                 onClick={() => setExpandedTable(expandedTable === table.id ? null : table.id)}
@@ -108,14 +107,10 @@ export default function CreateDatabaseSchema() {
               >
                 <div className="flex items-center gap-3">
                   <span className="text-2xl text-blue-400">📊</span>
-                  <div className="text-left">
-                    <h3 className="text-lg font-semibold text-white">{table.tableName}</h3>
-                    <p className="text-slate-400 text-sm">{table.columns.length} columns</p>
-                  </div>
+                  <h3 className="text-lg font-semibold text-white">{table.tableName}</h3>
+                  <span className="text-slate-400 text-sm">({table.columns.length} columns)</span>
                 </div>
-                <span className={`text-2xl text-slate-400 transition-transform duration-200 ${expandedTable === table.id ? 'rotate-180' : ''}`}>
-                  ▼
-                </span>
+                <span className="text-slate-400 text-xl">{expandedTable === table.id ? '−' : '+'}</span>
               </button>
 
               {expandedTable === table.id && (
@@ -130,13 +125,11 @@ export default function CreateDatabaseSchema() {
                         </tr>
                       </thead>
                       <tbody>
-                        {table.columns.map((column, idx) => (
+                        {table.columns.map((col, idx) => (
                           <tr key={idx} className="border-b border-slate-700 hover:bg-slate-800 transition-colors">
-                            <td className="py-3 px-4 text-slate-200 font-mono">{column.name}</td>
-                            <td className="py-3 px-4 text-blue-400 font-mono">{column.type}</td>
-                            <td className="py-3 px-4 text-slate-400 text-xs">
-                              <span className="bg-slate-700 px-2 py-1 rounded">{column.constraint}</span>
-                            </td>
+                            <td className="py-3 px-4 text-slate-200 font-mono">{col.name}</td>
+                            <td className="py-3 px-4 text-blue-400 font-mono">{col.type}</td>
+                            <td className="py-3 px-4 text-green-400 font-mono text-xs">{col.constraint}</td>
                           </tr>
                         ))}
                       </tbody>
@@ -150,17 +143,20 @@ export default function CreateDatabaseSchema() {
 
         {/* Schema Info */}
         <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="bg-slate-800 border border-slate-700 rounded-lg p-6">
-            <h3 className="text-white font-semibold mb-2">📋 Tables</h3>
-            <p className="text-slate-400">{MOCK_SCHEMA.length} main tables</p>
+          <div className="bg-slate-800 rounded-lg border border-slate-700 p-6">
+            <div className="text-3xl mb-2">📋</div>
+            <h3 className="text-lg font-semibold text-white mb-2">Tables</h3>
+            <p className="text-slate-400">{MOCK_SCHEMA.length} main tables for restaurant menu management</p>
           </div>
-          <div className="bg-slate-800 border border-slate-700 rounded-lg p-6">
-            <h3 className="text-white font-semibold mb-2">🔗 Relationships</h3>
-            <p className="text-slate-400">Foreign key constraints</p>
+          <div className="bg-slate-800 rounded-lg border border-slate-700 p-6">
+            <div className="text-3xl mb-2">🔗</div>
+            <h3 className="text-lg font-semibold text-white mb-2">Relations</h3>
+            <p className="text-slate-400">Foreign key relationships for data integrity</p>
           </div>
-          <div className="bg-slate-800 border border-slate-700 rounded-lg p-6">
-            <h3 className="text-white font-semibold mb-2">🍝 Purpose</h3>
-            <p className="text-slate-400">Italian menu management</p>
+          <div className="bg-slate-800 rounded-lg border border-slate-700 p-6">
+            <div className="text-3xl mb-2">🇮🇹</div>
+            <h3 className="text-lg font-semibold text-white mb-2">Italian Menu</h3>
+            <p className="text-slate-400">Optimized for restaurant menu operations</p>
           </div>
         </div>
       </div>
