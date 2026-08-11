@@ -13,10 +13,9 @@ const MOCK_RESERVATIONS: Reservation[] = [
   { id: '2', date: '2024-01-15', guestName: 'Sarah Johnson', partySize: 2, time: '19:00' },
   { id: '3', date: '2024-01-15', guestName: 'Michael Brown', partySize: 6, time: '20:00' },
   { id: '4', date: '2024-01-16', guestName: 'Emily Davis', partySize: 3, time: '18:30' },
-  { id: '5', date: '2024-01-15', guestName: 'Robert Wilson', partySize: 5, time: '19:30' },
-  { id: '6', date: '2024-01-16', guestName: 'Jessica Martinez', partySize: 2, time: '20:00' },
-  { id: '7', date: '2024-01-17', guestName: 'David Anderson', partySize: 4, time: '18:00' },
-  { id: '8', date: '2024-01-15', guestName: 'Lisa Taylor', partySize: 3, time: '21:00' },
+  { id: '5', date: '2024-01-16', guestName: 'Robert Wilson', partySize: 5, time: '19:30' },
+  { id: '6', date: '2024-01-17', guestName: 'Jessica Martinez', partySize: 2, time: '17:00' },
+  { id: '7', date: '2024-01-15', guestName: 'David Anderson', partySize: 4, time: '21:00' },
 ];
 
 export default function CalculateThe() {
@@ -55,7 +54,7 @@ export default function CalculateThe() {
           <select
             value={selectedDate}
             onChange={(e) => setSelectedDate(e.target.value)}
-            className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-indigo-500 bg-white text-gray-800 font-medium"
+            className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-indigo-500 bg-white text-gray-800 font-medium"
           >
             {availableDates.map(date => (
               <option key={date} value={date}>
@@ -65,19 +64,24 @@ export default function CalculateThe() {
           </select>
         </div>
 
-        {/* Statistics Cards */}
+        {/* Summary Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-          <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-indigo-500">
-            <p className="text-gray-600 text-sm font-medium mb-1">Total Reservations</p>
-            <p className="text-3xl font-bold text-indigo-600">{totalReservations}</p>
+          {/* Total Reservations Card */}
+          <div className="bg-white rounded-lg shadow-lg p-6 border-l-4 border-indigo-500">
+            <p className="text-gray-600 text-sm font-semibold mb-2">Total Reservations</p>
+            <p className="text-4xl font-bold text-indigo-600">{totalReservations}</p>
           </div>
-          <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-green-500">
-            <p className="text-gray-600 text-sm font-medium mb-1">Total Guests</p>
-            <p className="text-3xl font-bold text-green-600">{totalGuests}</p>
+
+          {/* Total Guests Card */}
+          <div className="bg-white rounded-lg shadow-lg p-6 border-l-4 border-green-500">
+            <p className="text-gray-600 text-sm font-semibold mb-2">Total Guests</p>
+            <p className="text-4xl font-bold text-green-600">{totalGuests}</p>
           </div>
-          <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-purple-500">
-            <p className="text-gray-600 text-sm font-medium mb-1">Average Party Size</p>
-            <p className="text-3xl font-bold text-purple-600">
+
+          {/* Average Party Size Card */}
+          <div className="bg-white rounded-lg shadow-lg p-6 border-l-4 border-orange-500">
+            <p className="text-gray-600 text-sm font-semibold mb-2">Avg Party Size</p>
+            <p className="text-4xl font-bold text-orange-600">
               {totalReservations > 0 ? (totalGuests / totalReservations).toFixed(1) : '0'}
             </p>
           </div>
@@ -92,21 +96,23 @@ export default function CalculateThe() {
               <table className="w-full">
                 <thead>
                   <tr className="border-b-2 border-gray-200">
-                    <th className="text-left py-3 px-4 font-semibold text-gray-700">Guest Name</th>
                     <th className="text-left py-3 px-4 font-semibold text-gray-700">Time</th>
+                    <th className="text-left py-3 px-4 font-semibold text-gray-700">Guest Name</th>
                     <th className="text-left py-3 px-4 font-semibold text-gray-700">Party Size</th>
+                    <th className="text-left py-3 px-4 font-semibold text-gray-700">ID</th>
                   </tr>
                 </thead>
                 <tbody>
                   {reservationsForDate.map((reservation, index) => (
-                    <tr key={reservation.id} className={`border-b border-gray-100 ${index % 2 === 0 ? 'bg-gray-50' : 'bg-white'}`}>
+                    <tr key={reservation.id} className={index % 2 === 0 ? 'bg-gray-50' : 'bg-white'}>
+                      <td className="py-3 px-4 text-gray-800 font-medium">{reservation.time}</td>
                       <td className="py-3 px-4 text-gray-800">{reservation.guestName}</td>
-                      <td className="py-3 px-4 text-gray-800">{reservation.time}</td>
                       <td className="py-3 px-4">
-                        <span className="inline-block bg-indigo-100 text-indigo-800 px-3 py-1 rounded-full text-sm font-medium">
-                          {reservation.partySize} {reservation.partySize === 1 ? 'guest' : 'guests'}
+                        <span className="inline-block bg-indigo-100 text-indigo-800 px-3 py-1 rounded-full font-semibold text-sm">
+                          {reservation.partySize}
                         </span>
                       </td>
+                      <td className="py-3 px-4 text-gray-600 text-sm">{reservation.id}</td>
                     </tr>
                   ))}
                 </tbody>
