@@ -23,19 +23,19 @@ export default function SetupAuthenticationAnd() {
   const [activeTab, setActiveTab] = useState<'overview' | 'roles' | 'users' | 'permissions'>('overview')
   const [selectedRole, setSelectedRole] = useState<number | null>(null)
   const [newRoleName, setNewRoleName] = useState('')
-  const [showAddRole, setShowAddRole] = useState(false)
+  const [showRoleForm, setShowRoleForm] = useState(false)
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-8">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-800 p-8">
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-4xl font-bold text-slate-900 mb-2">Authentication & RBAC Setup</h1>
-          <p className="text-lg text-slate-600">Configure roles, permissions, and user access control</p>
+          <h1 className="text-4xl font-bold text-white mb-2">Authentication & RBAC Setup</h1>
+          <p className="text-slate-400">Configure roles, permissions, and user access control</p>
         </div>
 
         {/* Tab Navigation */}
-        <div className="flex gap-2 mb-8 border-b border-slate-200">
+        <div className="flex gap-4 mb-8 border-b border-slate-700">
           {[
             { id: 'overview', label: 'Overview' },
             { id: 'roles', label: 'Roles' },
@@ -47,8 +47,8 @@ export default function SetupAuthenticationAnd() {
               onClick={() => setActiveTab(tab.id as any)}
               className={`px-6 py-3 font-medium transition-colors ${
                 activeTab === tab.id
-                  ? 'text-blue-600 border-b-2 border-blue-600'
-                  : 'text-slate-600 hover:text-slate-900'
+                  ? 'text-blue-400 border-b-2 border-blue-400'
+                  : 'text-slate-400 hover:text-slate-300'
               }`}
             >
               {tab.label}
@@ -59,20 +59,20 @@ export default function SetupAuthenticationAnd() {
         {/* Overview Tab */}
         {activeTab === 'overview' && (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="bg-white rounded-lg shadow p-6 border-l-4 border-blue-500">
-              <h3 className="text-sm font-semibold text-slate-600 uppercase mb-2">Total Users</h3>
-              <p className="text-3xl font-bold text-slate-900">{MOCK_USERS.length}</p>
-              <p className="text-xs text-slate-500 mt-2">Active: {MOCK_USERS.filter(u => u.status === 'active').length}</p>
+            <div className="bg-slate-700 rounded-lg p-6 border border-slate-600">
+              <div className="text-slate-400 text-sm font-medium mb-2">Total Roles</div>
+              <div className="text-3xl font-bold text-white">{MOCK_ROLES.length}</div>
+              <div className="text-slate-500 text-xs mt-2">Role-based access control configured</div>
             </div>
-            <div className="bg-white rounded-lg shadow p-6 border-l-4 border-green-500">
-              <h3 className="text-sm font-semibold text-slate-600 uppercase mb-2">Total Roles</h3>
-              <p className="text-3xl font-bold text-slate-900">{MOCK_ROLES.length}</p>
-              <p className="text-xs text-slate-500 mt-2">Configured roles</p>
+            <div className="bg-slate-700 rounded-lg p-6 border border-slate-600">
+              <div className="text-slate-400 text-sm font-medium mb-2">Active Users</div>
+              <div className="text-3xl font-bold text-white">{MOCK_USERS.filter(u => u.status === 'active').length}</div>
+              <div className="text-slate-500 text-xs mt-2">Users with active access</div>
             </div>
-            <div className="bg-white rounded-lg shadow p-6 border-l-4 border-purple-500">
-              <h3 className="text-sm font-semibold text-slate-600 uppercase mb-2">Permissions</h3>
-              <p className="text-3xl font-bold text-slate-900">{MOCK_PERMISSIONS.length}</p>
-              <p className="text-xs text-slate-500 mt-2">Available permissions</p>
+            <div className="bg-slate-700 rounded-lg p-6 border border-slate-600">
+              <div className="text-slate-400 text-sm font-medium mb-2">Permissions</div>
+              <div className="text-3xl font-bold text-white">{MOCK_PERMISSIONS.length}</div>
+              <div className="text-slate-500 text-xs mt-2">Total permission types</div>
             </div>
           </div>
         )}
@@ -81,48 +81,61 @@ export default function SetupAuthenticationAnd() {
         {activeTab === 'roles' && (
           <div className="space-y-6">
             <div className="flex justify-between items-center">
-              <h2 className="text-2xl font-bold text-slate-900">Role Management</h2>
+              <h2 className="text-2xl font-bold text-white">Role Management</h2>
               <button
-                onClick={() => setShowAddRole(!showAddRole)}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                onClick={() => setShowRoleForm(!showRoleForm)}
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
               >
-                {showAddRole ? 'Cancel' : '+ Add Role'}
+                {showRoleForm ? 'Cancel' : 'Add Role'}
               </button>
             </div>
 
-            {showAddRole && (
-              <div className="bg-white rounded-lg shadow p-6 border border-blue-200">
-                <input
-                  type="text"
-                  placeholder="Enter role name"
-                  value={newRoleName}
-                  onChange={(e) => setNewRoleName(e.target.value)}
-                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4"
-                />
-                <button className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium">
-                  Create Role
-                </button>
+            {showRoleForm && (
+              <div className="bg-slate-700 rounded-lg p-6 border border-slate-600">
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-300 mb-2">Role Name</label>
+                    <input
+                      type="text"
+                      value={newRoleName}
+                      onChange={(e) => setNewRoleName(e.target.value)}
+                      placeholder="Enter role name"
+                      className="w-full px-4 py-2 bg-slate-600 border border-slate-500 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:border-blue-500"
+                    />
+                  </div>
+                  <button className="w-full px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors">
+                    Create Role
+                  </button>
+                </div>
               </div>
             )}
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="space-y-4">
               {MOCK_ROLES.map((role) => (
                 <div
                   key={role.id}
                   onClick={() => setSelectedRole(selectedRole === role.id ? null : role.id)}
-                  className={`bg-white rounded-lg shadow p-6 cursor-pointer transition-all ${
-                    selectedRole === role.id ? 'ring-2 ring-blue-500 shadow-lg' : 'hover:shadow-md'
-                  }`}
+                  className="bg-slate-700 rounded-lg p-6 border border-slate-600 cursor-pointer hover:border-blue-500 transition-colors"
                 >
-                  <h3 className="text-lg font-bold text-slate-900 mb-4">{role.name}</h3>
-                  <div className="space-y-2">
-                    {role.permissions.map((perm) => (
-                      <div key={perm} className="flex items-center gap-2">
-                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                        <span className="text-sm text-slate-600 capitalize">{perm}</span>
-                      </div>
-                    ))}
+                  <div className="flex justify-between items-start mb-4">
+                    <div>
+                      <h3 className="text-lg font-bold text-white">{role.name}</h3>
+                      <p className="text-slate-400 text-sm mt-1">{role.permissions.length} permissions assigned</p>
+                    </div>
+                    <div className="text-slate-400 text-xl">{selectedRole === role.id ? '▼' : '▶'}</div>
                   </div>
+                  {selectedRole === role.id && (
+                    <div className="mt-4 pt-4 border-t border-slate-600">
+                      <p className="text-slate-300 text-sm font-medium mb-3">Permissions:</p>
+                      <div className="flex flex-wrap gap-2">
+                        {role.permissions.map((perm) => (
+                          <span key={perm} className="px-3 py-1 bg-blue-600 text-white text-xs rounded-full">
+                            {perm}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
@@ -132,32 +145,32 @@ export default function SetupAuthenticationAnd() {
         {/* Users Tab */}
         {activeTab === 'users' && (
           <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-slate-900">User Management</h2>
-            <div className="bg-white rounded-lg shadow overflow-hidden">
+            <h2 className="text-2xl font-bold text-white">User Management</h2>
+            <div className="overflow-x-auto">
               <table className="w-full">
-                <thead className="bg-slate-50 border-b border-slate-200">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-sm font-semibold text-slate-900">Name</th>
-                    <th className="px-6 py-3 text-left text-sm font-semibold text-slate-900">Email</th>
-                    <th className="px-6 py-3 text-left text-sm font-semibold text-slate-900">Role</th>
-                    <th className="px-6 py-3 text-left text-sm font-semibold text-slate-900">Status</th>
+                <thead>
+                  <tr className="border-b border-slate-600">
+                    <th className="px-6 py-3 text-left text-sm font-semibold text-slate-300">Name</th>
+                    <th className="px-6 py-3 text-left text-sm font-semibold text-slate-300">Email</th>
+                    <th className="px-6 py-3 text-left text-sm font-semibold text-slate-300">Role</th>
+                    <th className="px-6 py-3 text-left text-sm font-semibold text-slate-300">Status</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-200">
+                <tbody>
                   {MOCK_USERS.map((user) => (
-                    <tr key={user.id} className="hover:bg-slate-50 transition-colors">
-                      <td className="px-6 py-4 text-sm font-medium text-slate-900">{user.name}</td>
-                      <td className="px-6 py-4 text-sm text-slate-600">{user.email}</td>
-                      <td className="px-6 py-4 text-sm">
-                        <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-medium">
+                    <tr key={user.id} className="border-b border-slate-700 hover:bg-slate-700 transition-colors">
+                      <td className="px-6 py-4 text-white">{user.name}</td>
+                      <td className="px-6 py-4 text-slate-400">{user.email}</td>
+                      <td className="px-6 py-4">
+                        <span className="px-3 py-1 bg-purple-600 text-white text-xs rounded-full">
                           {user.role}
                         </span>
                       </td>
-                      <td className="px-6 py-4 text-sm">
-                        <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                      <td className="px-6 py-4">
+                        <span className={`px-3 py-1 text-xs rounded-full ${
                           user.status === 'active'
-                            ? 'bg-green-100 text-green-700'
-                            : 'bg-slate-100 text-slate-700'
+                            ? 'bg-green-600 text-white'
+                            : 'bg-slate-600 text-slate-300'
                         }`}>
                           {user.status}
                         </span>
@@ -173,19 +186,19 @@ export default function SetupAuthenticationAnd() {
         {/* Permissions Tab */}
         {activeTab === 'permissions' && (
           <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-slate-900">Permission Management</h2>
+            <h2 className="text-2xl font-bold text-white">Permission Management</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {MOCK_PERMISSIONS.map((permission) => (
-                <div key={permission.id} className="bg-white rounded-lg shadow p-6 border-l-4 border-purple-500">
-                  <h3 className="text-lg font-bold text-slate-900 mb-2 capitalize">{permission.name}</h3>
-                  <p className="text-slate-600 text-sm mb-4">{permission.description}</p>
-                  <div className="flex gap-2">
-                    <button className="flex-1 px-3 py-2 bg-slate-100 text-slate-700 rounded hover:bg-slate-200 transition-colors text-sm font-medium">
-                      Edit
-                    </button>
-                    <button className="flex-1 px-3 py-2 bg-red-50 text-red-700 rounded hover:bg-red-100 transition-colors text-sm font-medium">
-                      Delete
-                    </button>
+                <div key={permission.id} className="bg-slate-700 rounded-lg p-6 border border-slate-600">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <h3 className="text-lg font-bold text-white">{permission.name}</h3>
+                      <p className="text-slate-400 text-sm mt-2">{permission.description}</p>
+                    </div>
+                    <div className="w-3 h-3 bg-green-500 rounded-full mt-1"></div>
+                  </div>
+                  <div className="mt-4 pt-4 border-t border-slate-600">
+                    <p className="text-slate-400 text-xs">Used in {Math.floor(Math.random() * 3) + 1} role(s)</p>
                   </div>
                 </div>
               ))}
