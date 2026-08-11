@@ -1,2 +1,368 @@
-{
-  "component_code": "import React, { useState } from 'react';\n\ninterface MenuItem {\n  id: string;\n  name: string;\n  description: string;\n  price: number;\n  category: string;\n  available: boolean;\n}\n\ninterface Restaurant {\n  id: string;\n  name: string;\n  manager: string;\n  menuItems: MenuItem[];\n}\n\nconst MOCK_RESTAURANT: Restaurant = {\n  id: 'rest-001',\n  name: 'The Golden Fork',\n  manager: 'John Smith',\n  menuItems: [\n    {\n      id: 'item-001',\n      name: 'Grilled Salmon',\n      description: 'Fresh Atlantic salmon with lemon butter sauce',\n      price: 24.99,\n      category: 'Main Course',\n      available: true,\n    },\n    {\n      id: 'item-002',\n      name: 'Caesar Salad',\n      description: 'Crisp romaine with parmesan and croutons',\n      price: 12.99,\n      category: 'Appetizer',\n      available: true,\n    },\n    {\n      id: 'item-003',\n      name: 'Chocolate Lava Cake',\n      description: 'Warm chocolate cake with molten center',\n      price: 8.99,\n      category: 'Dessert',\n      available: false,\n    },\n    {\n      id: 'item-004',\n      name: 'Ribeye Steak',\n      description: '12oz premium cut with seasonal vegetables',\n      price: 34.99,\n      category: 'Main Course',\n      available: true,\n    },\n  ],\n};\n\nexport default function RestaurantUpdate() {\n  const [restaurant, setRestaurant] = useState<Restaurant>(MOCK_RESTAURANT);\n  const [editingId, setEditingId] = useState<string | null>(null);\n  const [editFormData, setEditFormData] = useState<MenuItem | null>(null);\n  const [showAddForm, setShowAddForm] = useState(false);\n  const [newItem, setNewItem] = useState<Omit<MenuItem, 'id'>>({\n    name: '',\n    description: '',\n    price: 0,\n    category: 'Main Course',\n    available: true,\n  });\n\n  const handleEditClick = (item: MenuItem) => {\n    setEditingId(item.id);\n    setEditFormData({ ...item });\n  };\n\n  const handleSaveEdit = () => {\n    if (editFormData && editingId) {\n      setRestaurant({\n        ...restaurant,\n        menuItems: restaurant.menuItems.map((item) =>\n          item.id === editingId ? editFormData : item\n        ),\n      });\n      setEditingId(null);\n      setEditFormData(null);\n    }\n  };\n\n  const handleCancelEdit = () => {\n    setEditingId(null);\n    setEditFormData(null);\n  };\n\n  const handleDeleteItem = (id: string) => {\n    setRestaurant({\n      ...restaurant,\n      menuItems: restaurant.menuItems.filter((item) => item.id !== id),\n    });\n  };\n\n  const handleAddItem = () => {\n    const id = `item-${Date.now()}`;\n    setRestaurant({\n      ...restaurant,\n      menuItems: [\n        ...restaurant.menuItems,\n        {\n          ...newItem,\n          id,\n        },\n      ],\n    });\n    setNewItem({\n      name: '',\n      description: '',\n      price: 0,\n      category: 'Main Course',\n      available: true,\n    });\n    setShowAddForm(false);\n  };\n\n  const handleEditFieldChange = (\n    field: keyof MenuItem,\n    value: string | number | boolean\n  ) => {\n    if (editFormData) {\n      setEditFormData({\n        ...editFormData,\n        [field]: value,\n      });\n    }\n  };\n\n  const handleNewItemFieldChange = (\n    field: keyof Omit<MenuItem, 'id'>,\n    value: string | number | boolean\n  ) => {\n    setNewItem({\n      ...newItem,\n      [field]: value,\n    });\n  };\n\n  return (\n    <div className=\"min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-8\">\n      <div className=\"max-w-6xl mx-auto\">\n        {/* Header */}\n        <div className=\"mb-8\">\n          <h1 className=\"text-4xl font-bold text-slate-900 mb-2\">\n            {restaurant.name}\n          </h1>\n          <p className=\"text-lg text-slate-600\">\n            Manager: <span className=\"font-semibold\">{restaurant.manager}</span>\n          </p>\n        </div>\n\n        {/* Add New Item Button */}\n        <div className=\"mb-8\">\n          <button\n            onClick={() => setShowAddForm(!showAddForm)}\n            className=\"px-6 py-3 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition-colors duration-200 shadow-md\"\n          >\n            {showAddForm ? '✕ Cancel' : '+ Add New Menu Item'}\n          </button>\n        </div>\n\n        {/* Add New Item Form */}\n        {showAddForm && (\n          <div className=\"bg-white rounded-lg shadow-lg p-6 mb-8 border-l-4 border-green-600\">\n            <h2 className=\"text-2xl font-bold text-slate-900 mb-6\">Add New Menu Item</h2>\n            <div className=\"grid grid-cols-1 md:grid-cols-2 gap-6\">\n              <div>\n                <label className=\"block text-sm font-semibold text-slate-700 mb-2\">\n                  Item Name\n                </label>\n                <input\n                  type=\"text\"\n                  value={newItem.name}\n                  onChange={(e) =>\n                    handleNewItemFieldChange('name', e.target.value)\n                  }\n                  className=\"w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent\"\n                  placeholder=\"e.g., Pasta Carbonara\"\n                />\n              </div>\n              <div>\n                <label className=\"block text-sm font-semibold text-slate-700 mb-2\">\n                  Price ($)\n                </label>\n                <input\n                  type=\"number\"\n                  step=\"0.01\"\n                  value={newItem.price}\n                  onChange={(e) =>\n                    handleNewItemFieldChange('price', parseFloat(e.target.value))\n                  }\n                  className=\"w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent\"\n                  placeholder=\"0.00\"\n                />\n              </div>\n              <div>\n                <label className=\"block text-sm font-semibold text-slate-700 mb-2\">\n                  Category\n                </label>\n                <select\n                  value={newItem.category}\n                  onChange={(e) =>\n                    handleNewItemFieldChange('category', e.target.value)\n                  }\n                  className=\"w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent\"\n                >\n                  <option>Appetizer</option>\n                  <option>Main Course</option>\n                  <option>Dessert</option>\n                  <option>Beverage</option>\n                </select>\n              </div>\n              <div>\n                <label className=\"block text-sm font-semibold text-slate-700 mb-2\">\n                  Available\n                </label>\n                <select\n                  value={newItem.available ? 'true' : 'false'}\n                  onChange={(e) =>\n                    handleNewItemFieldChange('available', e.target.value === 'true')\n                  }\n                  className=\"w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent\"\n                >\n                  <option value=\"true\">Available</option>\n                  <option value=\"false\">Not Available</option>\n                </select>\n              </div>\n              <div className=\"md:col-span-2\">\n                <label className=\"block text-sm font-semibold text-slate-700 mb-2\">\n                  Description\n                </label>\n                <textarea\n                  value={newItem.description}\n                  onChange={(e) =>\n                    handleNewItemFieldChange('description', e.target.value)\n                  }\n                  className=\"w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent\"\n                  placeholder=\"Describe the dish...\"\n                  rows={3}\n                />\n              </div>\n            </div>\n            <div className=\"flex gap-4 mt-6\">\n              <button\n                onClick={handleAddItem}\n                className=\"px-6 py-2 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition-colors duration-200\"\n              >\n                Save Item\n              </button>\n              <button\n                onClick={() => setShowAddForm(false)}\n                className=\"px-6 py-2 bg-slate-300 text-slate-800 font-semibold rounded-lg hover:bg-slate-400 transition-colors duration-200\"\n              >\n                Cancel\n              </button>\n            </div>\n          </div>\n        )}\n\n        {/* Menu Items List */}\n        <div className=\"space-y-4\">\n          <h2 className=\"text-2xl font-bold text-slate-900 mb-6\">\n            Menu Items ({restaurant.menuItems.length})\n          </h2>\n\n          {restaurant.menuItems.length === 0 ? (\n            <div className=\"bg-white rounded-lg shadow p-8 text-center\">\n              <p className=\"text-slate-600 text-lg\">No menu items yet.</p>\n            </div>\n          ) : (\n            restaurant.menuItems.map((item) => (\n              <div\n                key={item.id}\n                className=\"bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-200 overflow-hidden\"\n              >\n                {editingId === item.id && editFormData ? (\n                  // Edit Mode\n                  <div className=\"p-6 border-l-4 border-blue-600\">\n                    <h3 className=\"text-xl font-bold text-slate-900 mb-4\">\n                      Edit Menu Item\n                    </h3>\n                    <div className=\"grid grid-cols-1 md:grid-cols-2 gap-4\">\n                      <div>\n                        <label className=\"block text-sm font-semibold text-slate-700 mb-1\">\n                          Item Name\n                        </label>\n                        <input\n                          type=\"text\"\n                          value={editFormData.name}\n                          onChange={(e) =>\n                            handleEditFieldChange('name', e.target.value)\n                          }\n                          className=\"w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent\"\n                        />\n                      </div>\n                      <div>\n                        <label className=\"block text-sm font-semibold text-slate-700 mb-1\">\n                          Price ($)\n                        </label>\n                        <input\n                          type=\"number\"\n                          step=\"0.01\"\n                          value={editFormData.price}\n                          onChange={(e) =>\n                            handleEditFieldChange(\n                              'price',\n                              parseFloat(e.target.value)\n                            )\n                          }\n                          className=\"w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent\"\n                        />\n                      </div>\n                      <div>\n                        <label className=\"block text-sm font-semibold text-slate-700 mb-1\">\n                          Category\n                        </label>\n                        <select\n                          value={editFormData.category}\n                          onChange={(e) =>\n                            handleEditFieldChange('category', e.target.value)\n                          }\n                          className=\"w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent\"\n                        >\n                          <option>Appetizer</option>\n                          <option>Main Course</option>\n                          <option>Dessert</option>\n                          <option>Beverage</option>\n                        </select>\n                      </div>\n                      <div>\n                        <label className=\"block text-sm font-semibold text-slate-700 mb-1\">\n                          Available\n                        </label>\n                        <select\n                          value={editFormData.available ? 'true' : 'false'}\n                          onChange={(e) =>\n                            handleEditFieldChange(\n                              'available',\n                              e.target.value === 'true'\n                            )\n                          }\n                          className=\"w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent\"\n                        >\n                          <option value=\"true\">Available</option>\n                          <option value=\"false\">Not Available</option>\n                        </select>\n                      </div>\n                      <div className=\"md:col-span-2\">\n                        <label className=\"block text-sm font-semibold text-slate-700 mb-1\">\n                          Description\n                        </label>\n                        <textarea\n                          value={editFormData.description}\n                          onChange={(e) =>\n                            handleEditFieldChange('description', e.target.value)\n                          }\n                          className=\"w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent\"\n                          rows={3}\n                        />\n                      </div>\n                    </div>\n
+import React, { useState } from 'react';
+
+interface MenuItem {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  category: string;
+  available: boolean;
+}
+
+interface Restaurant {
+  id: string;
+  name: string;
+  manager: string;
+  menuItems: MenuItem[];
+}
+
+const MOCK_RESTAURANT: Restaurant = {
+  id: 'rest-001',
+  name: 'The Golden Fork',
+  manager: 'John Smith',
+  menuItems: [
+    {
+      id: 'item-001',
+      name: 'Grilled Salmon',
+      description: 'Fresh Atlantic salmon with lemon butter sauce',
+      price: 24.99,
+      category: 'Main Course',
+      available: true,
+    },
+    {
+      id: 'item-002',
+      name: 'Caesar Salad',
+      description: 'Crisp romaine with parmesan and croutons',
+      price: 12.99,
+      category: 'Appetizer',
+      available: true,
+    },
+    {
+      id: 'item-003',
+      name: 'Chocolate Lava Cake',
+      description: 'Warm chocolate cake with molten center',
+      price: 8.99,
+      category: 'Dessert',
+      available: false,
+    },
+    {
+      id: 'item-004',
+      name: 'Ribeye Steak',
+      description: '12oz premium cut with seasonal vegetables',
+      price: 34.99,
+      category: 'Main Course',
+      available: true,
+    },
+  ],
+};
+
+export default function RestaurantUpdate() {
+  const [restaurant, setRestaurant] = useState<Restaurant>(MOCK_RESTAURANT);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editFormData, setEditFormData] = useState<MenuItem | null>(null);
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [newItem, setNewItem] = useState<Omit<MenuItem, 'id'>>({
+    name: '',
+    description: '',
+    price: 0,
+    category: 'Main Course',
+    available: true,
+  });
+
+  const handleEditClick = (item: MenuItem) => {
+    setEditingId(item.id);
+    setEditFormData({ ...item });
+  };
+
+  const handleSaveEdit = () => {
+    if (editFormData && editingId) {
+      setRestaurant({
+        ...restaurant,
+        menuItems: restaurant.menuItems.map((item) =>
+          item.id === editingId ? editFormData : item
+        ),
+      });
+      setEditingId(null);
+      setEditFormData(null);
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setEditingId(null);
+    setEditFormData(null);
+  };
+
+  const handleDeleteItem = (id: string) => {
+    setRestaurant({
+      ...restaurant,
+      menuItems: restaurant.menuItems.filter((item) => item.id !== id),
+    });
+  };
+
+  const handleAddItem = () => {
+    const id = `item-${Date.now()}`;
+    setRestaurant({
+      ...restaurant,
+      menuItems: [
+        ...restaurant.menuItems,
+        {
+          ...newItem,
+          id,
+        },
+      ],
+    });
+    setNewItem({
+      name: '',
+      description: '',
+      price: 0,
+      category: 'Main Course',
+      available: true,
+    });
+    setShowAddForm(false);
+  };
+
+  const handleEditFieldChange = (
+    field: keyof MenuItem,
+    value: string | number | boolean
+  ) => {
+    if (editFormData) {
+      setEditFormData({
+        ...editFormData,
+        [field]: value,
+      });
+    }
+  };
+
+  const handleNewItemFieldChange = (
+    field: keyof Omit<MenuItem, 'id'>,
+    value: string | number | boolean
+  ) => {
+    setNewItem({
+      ...newItem,
+      [field]: value,
+    });
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-8">
+      <div className="max-w-6xl mx-auto">
+        {/* Header */}
+        <div className="mb-8">
+          <h1 className="text-4xl font-bold text-slate-900 mb-2">
+            {restaurant.name}
+          </h1>
+          <p className="text-lg text-slate-600">
+            Manager: <span className="font-semibold">{restaurant.manager}</span>
+          </p>
+        </div>
+
+        {/* Add New Item Button */}
+        <div className="mb-8">
+          <button
+            onClick={() => setShowAddForm(!showAddForm)}
+            className="px-6 py-3 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition-colors duration-200 shadow-md"
+          >
+            {showAddForm ? '✕ Cancel' : '+ Add New Menu Item'}
+          </button>
+        </div>
+
+        {/* Add New Item Form */}
+        {showAddForm && (
+          <div className="bg-white rounded-lg shadow-lg p-6 mb-8 border-l-4 border-green-600">
+            <h2 className="text-2xl font-bold text-slate-900 mb-6">Add New Menu Item</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-2">
+                  Item Name
+                </label>
+                <input
+                  type="text"
+                  value={newItem.name}
+                  onChange={(e) =>
+                    handleNewItemFieldChange('name', e.target.value)
+                  }
+                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  placeholder="e.g., Pasta Carbonara"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-2">
+                  Price ($)
+                </label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={newItem.price}
+                  onChange={(e) =>
+                    handleNewItemFieldChange('price', parseFloat(e.target.value))
+                  }
+                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  placeholder="0.00"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-2">
+                  Category
+                </label>
+                <select
+                  value={newItem.category}
+                  onChange={(e) =>
+                    handleNewItemFieldChange('category', e.target.value)
+                  }
+                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                >
+                  <option>Appetizer</option>
+                  <option>Main Course</option>
+                  <option>Dessert</option>
+                  <option>Beverage</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-2">
+                  Available
+                </label>
+                <select
+                  value={newItem.available ? 'true' : 'false'}
+                  onChange={(e) =>
+                    handleNewItemFieldChange('available', e.target.value === 'true')
+                  }
+                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                >
+                  <option value="true">Available</option>
+                  <option value="false">Not Available</option>
+                </select>
+              </div>
+              <div className="md:col-span-2">
+                <label className="block text-sm font-semibold text-slate-700 mb-2">
+                  Description
+                </label>
+                <textarea
+                  value={newItem.description}
+                  onChange={(e) =>
+                    handleNewItemFieldChange('description', e.target.value)
+                  }
+                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  placeholder="Describe the dish..."
+                  rows={3}
+                />
+              </div>
+            </div>
+            <div className="flex gap-4 mt-6">
+              <button
+                onClick={handleAddItem}
+                className="px-6 py-2 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition-colors duration-200"
+              >
+                Save Item
+              </button>
+              <button
+                onClick={() => setShowAddForm(false)}
+                className="px-6 py-2 bg-slate-300 text-slate-800 font-semibold rounded-lg hover:bg-slate-400 transition-colors duration-200"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Menu Items List */}
+        <div className="space-y-4">
+          <h2 className="text-2xl font-bold text-slate-900 mb-6">
+            Menu Items ({restaurant.menuItems.length})
+          </h2>
+
+          {restaurant.menuItems.length === 0 ? (
+            <div className="bg-white rounded-lg shadow p-8 text-center">
+              <p className="text-slate-600 text-lg">No menu items yet.</p>
+            </div>
+          ) : (
+            restaurant.menuItems.map((item) => (
+              <div
+                key={item.id}
+                className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-200 overflow-hidden"
+              >
+                {editingId === item.id && editFormData ? (
+                  // Edit Mode
+                  <div className="p-6 border-l-4 border-blue-600">
+                    <h3 className="text-xl font-bold text-slate-900 mb-4">
+                      Edit Menu Item
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-semibold text-slate-700 mb-1">
+                          Item Name
+                        </label>
+                        <input
+                          type="text"
+                          value={editFormData.name}
+                          onChange={(e) =>
+                            handleEditFieldChange('name', e.target.value)
+                          }
+                          className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-semibold text-slate-700 mb-1">
+                          Price ($)
+                        </label>
+                        <input
+                          type="number"
+                          step="0.01"
+                          value={editFormData.price}
+                          onChange={(e) =>
+                            handleEditFieldChange(
+                              'price',
+                              parseFloat(e.target.value)
+                            )
+                          }
+                          className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-semibold text-slate-700 mb-1">
+                          Category
+                        </label>
+                        <select
+                          value={editFormData.category}
+                          onChange={(e) =>
+                            handleEditFieldChange('category', e.target.value)
+                          }
+                          className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        >
+                          <option>Appetizer</option>
+                          <option>Main Course</option>
+                          <option>Dessert</option>
+                          <option>Beverage</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-semibold text-slate-700 mb-1">
+                          Available
+                        </label>
+                        <select
+                          value={editFormData.available ? 'true' : 'false'}
+                          onChange={(e) =>
+                            handleEditFieldChange(
+                              'available',
+                              e.target.value === 'true'
+                            )
+                          }
+                          className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        >
+                          <option value="true">Available</option>
+                          <option value="false">Not Available</option>
+                        </select>
+                      </div>
+                      <div className="md:col-span-2">
+                        <label className="block text-sm font-semibold text-slate-700 mb-1">
+                          Description
+                        </label>
+                        <textarea
+                          value={editFormData.description}
+                          onChange={(e) =>
+                            handleEditFieldChange('description', e.target.value)
+                          }
+                          className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          rows={3}
+                        />
+                      </div>
+                    </div>
