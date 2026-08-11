@@ -7,9 +7,9 @@ const MOCK_SCHEMA = [
     columns: [
       { name: 'id', type: 'INT', constraint: 'PRIMARY KEY AUTO_INCREMENT' },
       { name: 'name', type: 'VARCHAR(255)', constraint: 'NOT NULL' },
-      { name: 'cuisine_type', type: 'VARCHAR(100)', constraint: 'NOT NULL' },
-      { name: 'location', type: 'VARCHAR(255)', constraint: 'NOT NULL' },
-      { name: 'rating', type: 'DECIMAL(3,2)', constraint: '' },
+      { name: 'cuisine', type: 'VARCHAR(100)', constraint: 'NOT NULL' },
+      { name: 'address', type: 'TEXT', constraint: 'NULL' },
+      { name: 'phone', type: 'VARCHAR(20)', constraint: 'NULL' },
       { name: 'created_at', type: 'TIMESTAMP', constraint: 'DEFAULT CURRENT_TIMESTAMP' }
     ]
   },
@@ -18,10 +18,10 @@ const MOCK_SCHEMA = [
     tableName: 'menu_categories',
     columns: [
       { name: 'id', type: 'INT', constraint: 'PRIMARY KEY AUTO_INCREMENT' },
-      { name: 'restaurant_id', type: 'INT', constraint: 'FOREIGN KEY' },
-      { name: 'category_name', type: 'VARCHAR(100)', constraint: 'NOT NULL' },
-      { name: 'description', type: 'TEXT', constraint: '' },
-      { name: 'display_order', type: 'INT', constraint: '' }
+      { name: 'restaurant_id', type: 'INT', constraint: 'NOT NULL FOREIGN KEY' },
+      { name: 'name', type: 'VARCHAR(100)', constraint: 'NOT NULL' },
+      { name: 'description', type: 'TEXT', constraint: 'NULL' },
+      { name: 'display_order', type: 'INT', constraint: 'DEFAULT 0' }
     ]
   },
   {
@@ -29,164 +29,157 @@ const MOCK_SCHEMA = [
     tableName: 'menu_items',
     columns: [
       { name: 'id', type: 'INT', constraint: 'PRIMARY KEY AUTO_INCREMENT' },
-      { name: 'category_id', type: 'INT', constraint: 'FOREIGN KEY' },
-      { name: 'item_name', type: 'VARCHAR(255)', constraint: 'NOT NULL' },
-      { name: 'description', type: 'TEXT', constraint: '' },
+      { name: 'category_id', type: 'INT', constraint: 'NOT NULL FOREIGN KEY' },
+      { name: 'name', type: 'VARCHAR(255)', constraint: 'NOT NULL' },
+      { name: 'description', type: 'TEXT', constraint: 'NULL' },
       { name: 'price', type: 'DECIMAL(10,2)', constraint: 'NOT NULL' },
-      { name: 'is_vegetarian', type: 'BOOLEAN', constraint: 'DEFAULT FALSE' },
       { name: 'is_available', type: 'BOOLEAN', constraint: 'DEFAULT TRUE' },
+      { name: 'allergens', type: 'JSON', constraint: 'NULL' },
       { name: 'created_at', type: 'TIMESTAMP', constraint: 'DEFAULT CURRENT_TIMESTAMP' }
     ]
   },
   {
     id: 4,
-    tableName: 'menu_item_allergens',
+    tableName: 'menu_item_images',
     columns: [
       { name: 'id', type: 'INT', constraint: 'PRIMARY KEY AUTO_INCREMENT' },
-      { name: 'item_id', type: 'INT', constraint: 'FOREIGN KEY' },
-      { name: 'allergen_name', type: 'VARCHAR(100)', constraint: 'NOT NULL' }
+      { name: 'menu_item_id', type: 'INT', constraint: 'NOT NULL FOREIGN KEY' },
+      { name: 'image_url', type: 'VARCHAR(500)', constraint: 'NOT NULL' },
+      { name: 'alt_text', type: 'VARCHAR(255)', constraint: 'NULL' },
+      { name: 'is_primary', type: 'BOOLEAN', constraint: 'DEFAULT FALSE' }
     ]
   }
 ]
 
+interface Column {
+  name: string
+  type: string
+  constraint: string
+}
+
 interface SchemaTable {
   id: number
   tableName: string
-  columns: Array<{
-    name: string
-    type: string
-    constraint: string
-  }>
+  columns: Column[]
 }
 
 export default function CreateDatabaseSchema() {
-  const [selectedTable, setSelectedTable] = useState<number>(1)
-  const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set([1]))
+  const [expandedTable, setExpandedTable] = useState<number | null>(0)
+  const [copiedSQL, setCopiedSQL] = useState(false)
 
-  const currentTable = MOCK_SCHEMA.find(t => t.id === selectedTable) as SchemaTable
+  const generateSQL = (table: SchemaTable): string => {
+    const columnDefs = table.columns
+      .map(col => `  ${col.name} ${col.type} ${col.constraint}`)
+      .join(',\n')
+    return `CREATE TABLE ${table.tableName} (\n${columnDefs}\n);`
+  }
 
-  const toggleRowExpansion = (tableId: number) => {
-    const newExpanded = new Set(expandedRows)
-    if (newExpanded.has(tableId)) {
-      newExpanded.delete(tableId)
-    } else {
-      newExpanded.add(tableId)
-    }
-    setExpandedRows(newExpanded)
+  const handleCopySQL = (sql: string) => {
+    navigator.clipboard.writeText(sql)
+    setCopiedSQL(true)
+    setTimeout(() => setCopiedSQL(false), 2000)
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-amber-50 to-orange-100 p-8">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-8">
       <div className="max-w-6xl mx-auto">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold text-amber-900 mb-2">Restaurant Menu Database Schema</h1>
-          <p className="text-amber-700 text-lg">Italian Restaurant Management System - SCRUM-577</p>
+        <div className="mb-12">
+          <h1 className="text-4xl font-bold text-slate-900 mb-2">Database Schema</h1>
+          <p className="text-lg text-slate-600">Italian Restaurant Menu System</p>
+          <p className="text-sm text-slate-500 mt-2">SCRUM-577: Complete database schema for restaurant menu management</p>
         </div>
 
         {/* Schema Overview */}
-        <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
-          <h2 className="text-2xl font-semibold text-amber-900 mb-4">Database Tables</h2>
+        <div className="bg-white rounded-lg shadow-md p-6 mb-8">
+          <h2 className="text-2xl font-semibold text-slate-900 mb-4">Schema Overview</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {MOCK_SCHEMA.map(table => (
-              <button
-                key={table.id}
-                onClick={() => setSelectedTable(table.id)}
-                className={`p-4 rounded-lg border-2 transition-all ${
-                  selectedTable === table.id
-                    ? 'bg-amber-500 border-amber-700 text-white shadow-md'
-                    : 'bg-amber-50 border-amber-200 text-amber-900 hover:border-amber-400'
-                }`}
-              >
-                <div className="font-semibold text-sm">{table.tableName}</div>
-                <div className="text-xs mt-1 opacity-75">{table.columns.length} columns</div>
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Selected Table Details */}
-        {currentTable && (
-          <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
-            <h3 className="text-2xl font-semibold text-amber-900 mb-4">{currentTable.tableName}</h3>
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="bg-amber-100 border-b-2 border-amber-300">
-                    <th className="px-4 py-3 text-left text-amber-900 font-semibold">Column Name</th>
-                    <th className="px-4 py-3 text-left text-amber-900 font-semibold">Data Type</th>
-                    <th className="px-4 py-3 text-left text-amber-900 font-semibold">Constraints</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {currentTable.columns.map((column, idx) => (
-                    <tr key={idx} className="border-b border-amber-100 hover:bg-amber-50 transition-colors">
-                      <td className="px-4 py-3 font-mono text-sm text-amber-900">{column.name}</td>
-                      <td className="px-4 py-3 font-mono text-sm text-orange-700 font-semibold">{column.type}</td>
-                      <td className="px-4 py-3 text-sm text-amber-800">
-                        {column.constraint ? (
-                          <span className="bg-amber-100 px-2 py-1 rounded text-xs font-medium">
-                            {column.constraint}
-                          </span>
-                        ) : (
-                          <span className="text-gray-400">—</span>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
-
-        {/* All Tables Expandable View */}
-        <div className="bg-white rounded-lg shadow-lg p-6">
-          <h3 className="text-2xl font-semibold text-amber-900 mb-4">Complete Schema Overview</h3>
-          <div className="space-y-3">
-            {MOCK_SCHEMA.map(table => (
-              <div key={table.id} className="border border-amber-200 rounded-lg overflow-hidden">
-                <button
-                  onClick={() => toggleRowExpansion(table.id)}
-                  className="w-full px-4 py-3 bg-amber-50 hover:bg-amber-100 transition-colors flex items-center justify-between text-left"
-                >
-                  <span className="font-semibold text-amber-900">{table.tableName}</span>
-                  <span className={`text-amber-700 transition-transform ${
-                    expandedRows.has(table.id) ? 'rotate-180' : ''
-                  }`}>
-                    ▼
-                  </span>
-                </button>
-                {expandedRows.has(table.id) && (
-                  <div className="px-4 py-3 bg-white border-t border-amber-200">
-                    <div className="space-y-2">
-                      {table.columns.map((col, idx) => (
-                        <div key={idx} className="flex items-start justify-between text-sm">
-                          <div className="font-mono text-amber-900 font-medium">{col.name}</div>
-                          <div className="flex gap-2">
-                            <span className="bg-orange-100 text-orange-800 px-2 py-1 rounded text-xs font-mono">
-                              {col.type}
-                            </span>
-                            {col.constraint && (
-                              <span className="bg-amber-100 text-amber-800 px-2 py-1 rounded text-xs">
-                                {col.constraint}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
+              <div key={table.id} className="bg-slate-50 rounded-lg p-4 border border-slate-200">
+                <h3 className="font-semibold text-slate-900 mb-2">{table.tableName}</h3>
+                <p className="text-sm text-slate-600">{table.columns.length} columns</p>
               </div>
             ))}
           </div>
         </div>
 
+        {/* Detailed Schema Tables */}
+        <div className="space-y-4">
+          {MOCK_SCHEMA.map(table => (
+            <div key={table.id} className="bg-white rounded-lg shadow-md overflow-hidden">
+              {/* Table Header */}
+              <button
+                onClick={() => setExpandedTable(expandedTable === table.id ? null : table.id)}
+                className="w-full px-6 py-4 bg-slate-50 hover:bg-slate-100 transition-colors flex items-center justify-between border-b border-slate-200"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-full bg-blue-500 text-white flex items-center justify-center text-sm font-semibold">
+                    {table.id}
+                  </div>
+                  <h3 className="text-lg font-semibold text-slate-900">{table.tableName}</h3>
+                </div>
+                <span className="text-slate-600 text-2xl">
+                  {expandedTable === table.id ? '−' : '+'}
+                </span>
+              </button>
+
+              {/* Table Content */}
+              {expandedTable === table.id && (
+                <div className="p-6">
+                  {/* Columns Table */}
+                  <div className="mb-6 overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="bg-slate-100 border-b border-slate-200">
+                          <th className="px-4 py-3 text-left font-semibold text-slate-900">Column Name</th>
+                          <th className="px-4 py-3 text-left font-semibold text-slate-900">Data Type</th>
+                          <th className="px-4 py-3 text-left font-semibold text-slate-900">Constraint</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {table.columns.map((col, idx) => (
+                          <tr key={idx} className="border-b border-slate-100 hover:bg-slate-50">
+                            <td className="px-4 py-3 font-mono text-slate-900">{col.name}</td>
+                            <td className="px-4 py-3 font-mono text-blue-600">{col.type}</td>
+                            <td className="px-4 py-3 font-mono text-slate-600 text-xs">{col.constraint}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* SQL Preview */}
+                  <div className="bg-slate-900 rounded-lg p-4 mb-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="text-xs font-semibold text-slate-400 uppercase">SQL Statement</p>
+                      <button
+                        onClick={() => handleCopySQL(generateSQL(table))}
+                        className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded transition-colors"
+                      >
+                        {copiedSQL ? 'Copied!' : 'Copy'}
+                      </button>
+                    </div>
+                    <pre className="text-slate-300 font-mono text-xs overflow-x-auto">
+                      {generateSQL(table)}
+                    </pre>
+                  </div>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+
         {/* Footer Info */}
-        <div className="mt-8 p-4 bg-amber-100 border-l-4 border-amber-500 rounded text-amber-900">
-          <p className="text-sm font-semibold">Schema Status: Ready for Implementation</p>
-          <p className="text-xs mt-1 opacity-75">Total Tables: {MOCK_SCHEMA.length} | Total Columns: {MOCK_SCHEMA.reduce((sum, t) => sum + t.columns.length, 0)}</p>
+        <div className="mt-12 bg-blue-50 border border-blue-200 rounded-lg p-6">
+          <h3 className="font-semibold text-blue-900 mb-2">Schema Features</h3>
+          <ul className="text-sm text-blue-800 space-y-1">
+            <li>✓ Relational design with foreign keys</li>
+            <li>✓ Support for allergen tracking (JSON)</li>
+            <li>✓ Image management for menu items</li>
+            <li>✓ Availability status tracking</li>
+            <li>✓ Timestamp tracking for audit</li>
+            <li>✓ Optimized for Italian restaurant menus</li>
+          </ul>
         </div>
       </div>
     </div>
