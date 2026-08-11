@@ -1,3 +1,306 @@
-{
-  "component_code": "import React, { useState } from 'react';\nimport { Button } from '@/components/ui/button';\nimport { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';\nimport { Input } from '@/components/ui/input';\nimport { Label } from '@/components/ui/label';\nimport { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';\nimport { Plus, Trash2, Edit2, Search } from 'lucide-react';\nimport { mockMenuItems, mockCategories } from './BuildMenuPage.mock';\n\ninterface MenuItem {\n  id: string;\n  name: string;\n  description: string;\n  price: number;\n  category: string;\n  available: boolean;\n}\n\ninterface Category {\n  id: string;\n  name: string;\n  description: string;\n}\n\nconst BuildMenuPage: React.FC = () => {\n  const [menuItems, setMenuItems] = useState<MenuItem[]>(mockMenuItems);\n  const [categories, setCategories] = useState<Category[]>(mockCategories);\n  const [searchTerm, setSearchTerm] = useState<string>('');\n  const [selectedCategory, setSelectedCategory] = useState<string>('all');\n  const [isAddingItem, setIsAddingItem] = useState<boolean>(false);\n  const [newItem, setNewItem] = useState<Partial<MenuItem>>({\n    name: '',\n    description: '',\n    price: 0,\n    category: categories[0]?.id || '',\n    available: true,\n  });\n\n  const filteredItems = menuItems.filter((item) => {\n    const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||\n      item.description.toLowerCase().includes(searchTerm.toLowerCase());\n    const matchesCategory = selectedCategory === 'all' || item.category === selectedCategory;\n    return matchesSearch && matchesCategory;\n  });\n\n  const handleAddItem = () => {\n    if (newItem.name && newItem.price !== undefined) {\n      const item: MenuItem = {\n        id: `item-${Date.now()}`,\n        name: newItem.name,\n        description: newItem.description || '',\n        price: newItem.price,\n        category: newItem.category || categories[0]?.id || '',\n        available: newItem.available ?? true,\n      };\n      setMenuItems([...menuItems, item]);\n      setNewItem({\n        name: '',\n        description: '',\n        price: 0,\n        category: categories[0]?.id || '',\n        available: true,\n      });\n      setIsAddingItem(false);\n    }\n  };\n\n  const handleDeleteItem = (id: string) => {\n    setMenuItems(menuItems.filter((item) => item.id !== id));\n  };\n\n  const handleToggleAvailability = (id: string) => {\n    setMenuItems(\n      menuItems.map((item) =>\n        item.id === id ? { ...item, available: !item.available } : item\n      )\n    );\n  };\n\n  const getCategoryName = (categoryId: string): string => {\n    return categories.find((cat) => cat.id === categoryId)?.name || 'Unknown';\n  };\n\n  return (\n    <div className=\"min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-6\">\n      <div className=\"max-w-6xl mx-auto\">\n        {/* Header */}\n        <div className=\"mb-8\">\n          <h1 className=\"text-4xl font-bold text-slate-900 mb-2\">Build Menu</h1>\n          <p className=\"text-slate-600\">Manage your restaurant menu items and categories</p>\n        </div>\n\n        {/* Search and Filter */}\n        <div className=\"mb-6 flex flex-col gap-4 md:flex-row md:items-end md:justify-between\">\n          <div className=\"flex-1\">\n            <Label htmlFor=\"search\" className=\"text-sm font-medium text-slate-700 mb-2 block\">\n              Search Items\n            </Label>\n            <div className=\"relative\">\n              <Search className=\"absolute left-3 top-3 h-4 w-4 text-slate-400\" />\n              <Input\n                id=\"search\"\n                placeholder=\"Search by name or description...\"\n                value={searchTerm}\n                onChange={(e) => setSearchTerm(e.target.value)}\n                className=\"pl-10\"\n              />\n            </div>\n          </div>\n          <Button\n            onClick={() => setIsAddingItem(true)}\n            className=\"bg-blue-600 hover:bg-blue-700 text-white\"\n          >\n            <Plus className=\"h-4 w-4 mr-2\" />\n            Add Item\n          </Button>\n        </div>\n\n        {/* Tabs */}\n        <Tabs defaultValue=\"items\" className=\"w-full\">\n          <TabsList className=\"grid w-full grid-cols-2 mb-6\">\n            <TabsTrigger value=\"items\">Menu Items ({filteredItems.length})</TabsTrigger>\n            <TabsTrigger value=\"categories\">Categories ({categories.length})</TabsTrigger>\n          </TabsList>\n\n          {/* Menu Items Tab */}\n          <TabsContent value=\"items\" className=\"space-y-4\">\n            {/* Category Filter */}\n            <div className=\"flex gap-2 flex-wrap mb-4\">\n              <Button\n                variant={selectedCategory === 'all' ? 'default' : 'outline'}\n                onClick={() => setSelectedCategory('all')}\n                size=\"sm\"\n              >\n                All Categories\n              </Button>\n              {categories.map((category) => (\n                <Button\n                  key={category.id}\n                  variant={selectedCategory === category.id ? 'default' : 'outline'}\n                  onClick={() => setSelectedCategory(category.id)}\n                  size=\"sm\"\n                >\n                  {category.name}\n                </Button>\n              ))}\n            </div>\n\n            {/* Add Item Form */}\n            {isAddingItem && (\n              <Card className=\"border-blue-200 bg-blue-50\">\n                <CardHeader>\n                  <CardTitle>Add New Menu Item</CardTitle>\n                </CardHeader>\n                <CardContent className=\"space-y-4\">\n                  <div className=\"grid grid-cols-1 md:grid-cols-2 gap-4\">\n                    <div>\n                      <Label htmlFor=\"item-name\" className=\"text-sm font-medium\">Item Name</Label>\n                      <Input\n                        id=\"item-name\"\n                        value={newItem.name || ''}\n                        onChange={(e) => setNewItem({ ...newItem, name: e.target.value })}\n                        placeholder=\"e.g., Caesar Salad\"\n                      />\n                    </div>\n                    <div>\n                      <Label htmlFor=\"item-price\" className=\"text-sm font-medium\">Price</Label>\n                      <Input\n                        id=\"item-price\"\n                        type=\"number\"\n                        step=\"0.01\"\n                        value={newItem.price || 0}\n                        onChange={(e) => setNewItem({ ...newItem, price: parseFloat(e.target.value) })}\n                        placeholder=\"0.00\"\n                      />\n                    </div>\n                  </div>\n                  <div>\n                    <Label htmlFor=\"item-description\" className=\"text-sm font-medium\">Description</Label>\n                    <Input\n                      id=\"item-description\"\n                      value={newItem.description || ''}\n                      onChange={(e) => setNewItem({ ...newItem, description: e.target.value })}\n                      placeholder=\"Item description\"\n                    />\n                  </div>\n                  <div>\n                    <Label htmlFor=\"item-category\" className=\"text-sm font-medium\">Category</Label>\n                    <select\n                      id=\"item-category\"\n                      value={newItem.category || ''}\n                      onChange={(e) => setNewItem({ ...newItem, category: e.target.value })}\n                      className=\"w-full px-3 py-2 border border-slate-300 rounded-md text-sm\"\n                    >\n                      {categories.map((cat) => (\n                        <option key={cat.id} value={cat.id}>\n                          {cat.name}\n                        </option>\n                      ))}\n                    </select>\n                  </div>\n                  <div className=\"flex gap-2\">\n                    <Button onClick={handleAddItem} className=\"bg-green-600 hover:bg-green-700\">\n                      Save Item\n                    </Button>\n                    <Button\n                      onClick={() => setIsAddingItem(false)}\n                      variant=\"outline\"\n                    >\n                      Cancel\n                    </Button>\n                  </div>\n                </CardContent>\n              </Card>\n            )}\n\n            {/* Items Grid */}\n            {filteredItems.length > 0 ? (\n              <div className=\"grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4\">\n                {filteredItems.map((item) => (\n                  <Card key={item.id} className={item.available ? '' : 'opacity-60'}>\n                    <CardHeader>\n                      <div className=\"flex justify-between items-start\">\n                        <div className=\"flex-1\">\n                          <CardTitle className=\"text-lg\">{item.name}</CardTitle>\n                          <CardDescription className=\"text-xs mt-1\">\n                            {getCategoryName(item.category)}\n                          </CardDescription>\n                        </div>\n                        <span className=\"text-lg font-bold text-green-600\">${item.price.toFixed(2)}</span>\n                      </div>\n                    </CardHeader>\n                    <CardContent className=\"space-y-3\">\n                      <p className=\"text-sm text-slate-600\">{item.description}</p>\n                      <div className=\"flex items-center gap-2\">\n                        <div\n                          className={`h-2 w-2 rounded-full ${\n                            item.available ? 'bg-green-500' : 'bg-red-500'\n                          }`}\n                        />\n                        <span className=\"text-xs font-medium text-slate-600\">\n                          {item.available ? 'Available' : 'Unavailable'}\n                        </span>\n                      </div>\n                      <div className=\"flex gap-2 pt-2\">\n                        <Button\n                          onClick={() => handleToggleAvailability(item.id)}\n                          variant=\"outline\"\n                          size=\"sm\"\n                          className=\"flex-1\"\n                        >\n                          {item.available ? 'Disable' : 'Enable'}\n                        </Button>\n                        <Button\n                          onClick={() => handleDeleteItem(item.id)}\n                          variant=\"destructive\"\n                          size=\"sm\"\n                        >\n                          <Trash2 className=\"h-4 w-4\" />\n                        </Button>\n                      </div>\n                    </CardContent>\n                  </Card>\n                ))}\n              </div>\n            ) : (\n              <Card>\n                <CardContent className=\"py-12 text-center\">\n                  <p className=\"text-slate-500\">No menu items found. Try adjusting your search or filters.</p>\n                </CardContent>\n              </Card>\n            )}\n          </TabsContent>\n\n          {/* Categories Tab */}\n          <TabsContent value=\"categories\" className=\"space-y-4\">\n            <div className=\"grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4\">\n              {categories.map((category) => {\n                const itemCount = menuItems.filter((item) => item.category === category.id).length;\n                return (\n                  <Card key={category.id}>\n                    <CardHeader>\n                      <CardTitle>{category.name}</CardTitle>\n                      <CardDescription>{category.description}</CardDescription>\n                    </CardHeader>\n                    <CardContent>\n                      <p className=\"text-sm text-slate-600 mb-4\">\n                        <span className=\"font-semibold text-slate-900\">{itemCount}</span> items in this category\n                      </p>\n                      <Button variant=\"outline\" size=\"sm\" className=\"w-full\">\n                        <Edit2 className=\"h-4 w-4 mr-2\" />\n                        Edit\n                      </Button>\n                    </CardContent>\n                  </Card>\n                );\n              })}\n            </div>\n          </TabsContent>\n        </Tabs>\n      </div>\n    </div>\n  );\n};\n\nexport default BuildMenuPage;",
-  "mock_data_code": "export const mockCategories = [\n  {\n    id: 'cat-1',\n    name: 'Appetizers',\n    description: 'Starters and small bites',\n  },\n  {\n    id: 'cat-2',\n    name: 'Main Courses',\n    description: 'Entrees and main dishes',\n  },\n  {\n    id: 'cat-3',\n    name: 'Desserts',\n    description: 'Sweet treats and desserts',\n  },\n  {\n    id: 'cat-4',\n    name: 'Beverages',\n    description: 'Drinks and beverages',\n  },\n];\n\nexport const mockMenuItems = [\n  {\n    id: 'item-1',\n    name: 'Caesar Salad',\n    description: 'Fresh romaine lettuce with parmesan and croutons',\n    price: 12.99,\n    category: 'cat-1',\n    available: true,\n  },\n  {\n    id: 'item-2',\n    name: 'Bruschetta',\n    description: 'Toasted bread with tomato and garlic',\n    price: 8.99,\n    category: 'cat-1',\n    available: true,\n  },\n  {\n    id: 'item-3',\n    name: 'Grilled Salmon',\n    description: 'Atlantic salmon with seasonal vegetables',\n    price: 24.99,\n    category: 'cat-2',\n    available: true,\n  },\n  {\n    id: 'item-4',\n    name: 'Ribeye Steak',\n    description: '12oz premium cut with mashed potatoes',\n    price: 32.99,\n    category: 'cat-2',\n    available: false,\n  },\n  {\n    id: 'item-5',\n    name: 'Pasta Carbonara',\n    description: 'Classic Italian pasta with bacon and cream sauce',\n    price: 16.99,\n    category: 'cat-2',\n
+import React, { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Plus, Trash2, Edit2, Search } from 'lucide-react';
+import { mockMenuItems, mockCategories } from './BuildMenuPage.mock';
+
+interface MenuItem {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  category: string;
+  available: boolean;
+}
+
+interface Category {
+  id: string;
+  name: string;
+  description: string;
+}
+
+const BuildMenuPage: React.FC = () => {
+  const [menuItems, setMenuItems] = useState<MenuItem[]>(mockMenuItems);
+  const [categories, setCategories] = useState<Category[]>(mockCategories);
+  const [searchTerm, setSearchTerm] = useState<string>('');
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [isAddingItem, setIsAddingItem] = useState<boolean>(false);
+  const [newItem, setNewItem] = useState<Partial<MenuItem>>({
+    name: '',
+    description: '',
+    price: 0,
+    category: categories[0]?.id || '',
+    available: true,
+  });
+
+  const filteredItems = menuItems.filter((item) => {
+    const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.description.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesCategory = selectedCategory === 'all' || item.category === selectedCategory;
+    return matchesSearch && matchesCategory;
+  });
+
+  const handleAddItem = () => {
+    if (newItem.name && newItem.price !== undefined) {
+      const item: MenuItem = {
+        id: `item-${Date.now()}`,
+        name: newItem.name,
+        description: newItem.description || '',
+        price: newItem.price,
+        category: newItem.category || categories[0]?.id || '',
+        available: newItem.available ?? true,
+      };
+      setMenuItems([...menuItems, item]);
+      setNewItem({
+        name: '',
+        description: '',
+        price: 0,
+        category: categories[0]?.id || '',
+        available: true,
+      });
+      setIsAddingItem(false);
+    }
+  };
+
+  const handleDeleteItem = (id: string) => {
+    setMenuItems(menuItems.filter((item) => item.id !== id));
+  };
+
+  const handleToggleAvailability = (id: string) => {
+    setMenuItems(
+      menuItems.map((item) =>
+        item.id === id ? { ...item, available: !item.available } : item
+      )
+    );
+  };
+
+  const getCategoryName = (categoryId: string): string => {
+    return categories.find((cat) => cat.id === categoryId)?.name || 'Unknown';
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-6">
+      <div className="max-w-6xl mx-auto">
+        {/* Header */}
+        <div className="mb-8">
+          <h1 className="text-4xl font-bold text-slate-900 mb-2">Build Menu</h1>
+          <p className="text-slate-600">Manage your restaurant menu items and categories</p>
+        </div>
+
+        {/* Search and Filter */}
+        <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+          <div className="flex-1">
+            <Label htmlFor="search" className="text-sm font-medium text-slate-700 mb-2 block">
+              Search Items
+            </Label>
+            <div className="relative">
+              <Search className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
+              <Input
+                id="search"
+                placeholder="Search by name or description..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+          </div>
+          <Button
+            onClick={() => setIsAddingItem(true)}
+            className="bg-blue-600 hover:bg-blue-700 text-white"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Add Item
+          </Button>
+        </div>
+
+        {/* Tabs */}
+        <Tabs defaultValue="items" className="w-full">
+          <TabsList className="grid w-full grid-cols-2 mb-6">
+            <TabsTrigger value="items">Menu Items ({filteredItems.length})</TabsTrigger>
+            <TabsTrigger value="categories">Categories ({categories.length})</TabsTrigger>
+          </TabsList>
+
+          {/* Menu Items Tab */}
+          <TabsContent value="items" className="space-y-4">
+            {/* Category Filter */}
+            <div className="flex gap-2 flex-wrap mb-4">
+              <Button
+                variant={selectedCategory === 'all' ? 'default' : 'outline'}
+                onClick={() => setSelectedCategory('all')}
+                size="sm"
+              >
+                All Categories
+              </Button>
+              {categories.map((category) => (
+                <Button
+                  key={category.id}
+                  variant={selectedCategory === category.id ? 'default' : 'outline'}
+                  onClick={() => setSelectedCategory(category.id)}
+                  size="sm"
+                >
+                  {category.name}
+                </Button>
+              ))}
+            </div>
+
+            {/* Add Item Form */}
+            {isAddingItem && (
+              <Card className="border-blue-200 bg-blue-50">
+                <CardHeader>
+                  <CardTitle>Add New Menu Item</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="item-name" className="text-sm font-medium">Item Name</Label>
+                      <Input
+                        id="item-name"
+                        value={newItem.name || ''}
+                        onChange={(e) => setNewItem({ ...newItem, name: e.target.value })}
+                        placeholder="e.g., Caesar Salad"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="item-price" className="text-sm font-medium">Price</Label>
+                      <Input
+                        id="item-price"
+                        type="number"
+                        step="0.01"
+                        value={newItem.price || 0}
+                        onChange={(e) => setNewItem({ ...newItem, price: parseFloat(e.target.value) })}
+                        placeholder="0.00"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <Label htmlFor="item-description" className="text-sm font-medium">Description</Label>
+                    <Input
+                      id="item-description"
+                      value={newItem.description || ''}
+                      onChange={(e) => setNewItem({ ...newItem, description: e.target.value })}
+                      placeholder="Item description"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="item-category" className="text-sm font-medium">Category</Label>
+                    <select
+                      id="item-category"
+                      value={newItem.category || ''}
+                      onChange={(e) => setNewItem({ ...newItem, category: e.target.value })}
+                      className="w-full px-3 py-2 border border-slate-300 rounded-md text-sm"
+                    >
+                      {categories.map((cat) => (
+                        <option key={cat.id} value={cat.id}>
+                          {cat.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button onClick={handleAddItem} className="bg-green-600 hover:bg-green-700">
+                      Save Item
+                    </Button>
+                    <Button
+                      onClick={() => setIsAddingItem(false)}
+                      variant="outline"
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Items Grid */}
+            {filteredItems.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {filteredItems.map((item) => (
+                  <Card key={item.id} className={item.available ? '' : 'opacity-60'}>
+                    <CardHeader>
+                      <div className="flex justify-between items-start">
+                        <div className="flex-1">
+                          <CardTitle className="text-lg">{item.name}</CardTitle>
+                          <CardDescription className="text-xs mt-1">
+                            {getCategoryName(item.category)}
+                          </CardDescription>
+                        </div>
+                        <span className="text-lg font-bold text-green-600">${item.price.toFixed(2)}</span>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      <p className="text-sm text-slate-600">{item.description}</p>
+                      <div className="flex items-center gap-2">
+                        <div
+                          className={`h-2 w-2 rounded-full ${
+                            item.available ? 'bg-green-500' : 'bg-red-500'
+                          }`}
+                        />
+                        <span className="text-xs font-medium text-slate-600">
+                          {item.available ? 'Available' : 'Unavailable'}
+                        </span>
+                      </div>
+                      <div className="flex gap-2 pt-2">
+                        <Button
+                          onClick={() => handleToggleAvailability(item.id)}
+                          variant="outline"
+                          size="sm"
+                          className="flex-1"
+                        >
+                          {item.available ? 'Disable' : 'Enable'}
+                        </Button>
+                        <Button
+                          onClick={() => handleDeleteItem(item.id)}
+                          variant="destructive"
+                          size="sm"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            ) : (
+              <Card>
+                <CardContent className="py-12 text-center">
+                  <p className="text-slate-500">No menu items found. Try adjusting your search or filters.</p>
+                </CardContent>
+              </Card>
+            )}
+          </TabsContent>
+
+          {/* Categories Tab */}
+          <TabsContent value="categories" className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {categories.map((category) => {
+                const itemCount = menuItems.filter((item) => item.category === category.id).length;
+                return (
+                  <Card key={category.id}>
+                    <CardHeader>
+                      <CardTitle>{category.name}</CardTitle>
+                      <CardDescription>{category.description}</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-sm text-slate-600 mb-4">
+                        <span className="font-semibold text-slate-900">{itemCount}</span> items in this category
+                      </p>
+                      <Button variant="outline" size="sm" className="w-full">
+                        <Edit2 className="h-4 w-4 mr-2" />
+                        Edit
+                      </Button>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          </TabsContent>
+        </Tabs>
+      </div>
+    </div>
+  );
+};
+
+export default BuildMenuPage;
