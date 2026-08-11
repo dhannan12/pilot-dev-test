@@ -27,12 +27,12 @@ const MOCK_DISH = {
     'Prepare lemon butter sauce by melting butter with minced garlic',
     'Drizzle sauce over grilled salmon and serve immediately'
   ],
-  tags: ['Seafood', 'Healthy', 'Gluten-Free', 'Quick Dinner']
+  tags: ['Seafood', 'Healthy', 'Quick', 'Gluten-Free']
 }
 
 const MOCK_REVIEWS = [
   { id: 1, author: 'Sarah M.', rating: 5, text: 'Absolutely delicious! The salmon was perfectly cooked.' },
-  { id: 2, author: 'John D.', rating: 4, text: 'Great recipe, very easy to follow. Highly recommend!' },
+  { id: 2, author: 'John D.', rating: 4, text: 'Great recipe, easy to follow. Highly recommend!' },
   { id: 3, author: 'Emma L.', rating: 5, text: 'Restaurant quality at home. My family loved it!' }
 ]
 
@@ -46,9 +46,9 @@ export default function BuildDishDetails() {
     setServings(newServings)
   }
 
-  const adjustedIngredients = MOCK_DISH.ingredients.map(ing => ({
+  const scaledIngredients = MOCK_DISH.ingredients.map(ing => ({
     ...ing,
-    amount: parseFloat(ing.amount) ? (parseFloat(ing.amount) * (servings / MOCK_DISH.servings)).toFixed(1) : ing.amount
+    amount: ing.unit ? (parseFloat(ing.amount) * (servings / MOCK_DISH.servings)).toFixed(1) : ing.amount
   }))
 
   return (
@@ -73,7 +73,7 @@ export default function BuildDishDetails() {
           />
           <button
             onClick={() => setIsFavorite(!isFavorite)}
-            className="absolute top-4 right-4 bg-white rounded-full p-2 shadow-md hover:shadow-lg transition"
+            className="absolute top-4 right-4 bg-white rounded-full p-2 shadow-lg hover:shadow-xl transition-shadow"
           >
             <span className="text-2xl">{isFavorite ? '❤️' : '🤍'}</span>
           </button>
@@ -89,14 +89,14 @@ export default function BuildDishDetails() {
               <span className="font-semibold text-gray-900">{MOCK_DISH.rating}</span>
               <span className="text-gray-500">({MOCK_DISH.reviews} reviews)</span>
             </div>
-            <span className="text-gray-500">•</span>
+            <span className="text-gray-400">•</span>
             <span className="text-gray-600">{MOCK_DISH.prepTime}</span>
-            <span className="text-gray-500">•</span>
+            <span className="text-gray-400">•</span>
             <span className="text-gray-600">{MOCK_DISH.difficulty}</span>
           </div>
           <div className="flex flex-wrap gap-2">
             {MOCK_DISH.tags.map(tag => (
-              <span key={tag} className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm font-medium">
+              <span key={tag} className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">
                 {tag}
               </span>
             ))}
@@ -106,37 +106,42 @@ export default function BuildDishDetails() {
         {/* Price and Servings */}
         <div className="bg-white rounded-lg p-6 mb-6 shadow-sm border border-gray-200">
           <div className="flex items-center justify-between mb-4">
-            <span className="text-gray-600">Price per serving</span>
-            <span className="text-3xl font-bold text-gray-900">${MOCK_DISH.price}</span>
-          </div>
-          <div className="flex items-center justify-between">
-            <span className="text-gray-600">Servings</span>
-            <div className="flex items-center gap-4 bg-gray-100 rounded-lg p-2">
-              <button
-                onClick={() => handleServingsChange(-1)}
-                className="w-8 h-8 flex items-center justify-center text-gray-700 hover:bg-gray-200 rounded transition"
-              >
-                −
-              </button>
-              <span className="font-semibold text-gray-900 w-8 text-center">{servings}</span>
-              <button
-                onClick={() => handleServingsChange(1)}
-                className="w-8 h-8 flex items-center justify-center text-gray-700 hover:bg-gray-200 rounded transition"
-              >
-                +
-              </button>
+            <div>
+              <p className="text-gray-600 text-sm">Price per serving</p>
+              <p className="text-3xl font-bold text-gray-900">${MOCK_DISH.price}</p>
+            </div>
+            <div className="text-right">
+              <p className="text-gray-600 text-sm mb-2">Servings</p>
+              <div className="flex items-center gap-3 bg-gray-100 rounded-lg p-2">
+                <button
+                  onClick={() => handleServingsChange(-1)}
+                  className="w-8 h-8 flex items-center justify-center text-gray-700 hover:bg-gray-200 rounded"
+                >
+                  −
+                </button>
+                <span className="w-8 text-center font-semibold text-gray-900">{servings}</span>
+                <button
+                  onClick={() => handleServingsChange(1)}
+                  className="w-8 h-8 flex items-center justify-center text-gray-700 hover:bg-gray-200 rounded"
+                >
+                  +
+                </button>
+              </div>
             </div>
           </div>
+          <button className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg transition-colors">
+            Add to Cart
+          </button>
         </div>
 
         {/* Tabs */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 mb-6">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
           <div className="flex border-b border-gray-200">
             {(['ingredients', 'instructions', 'reviews'] as const).map(tab => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
-                className={`flex-1 py-4 px-4 font-medium transition ${
+                className={`flex-1 py-4 px-4 font-semibold text-center transition-colors ${
                   activeTab === tab
                     ? 'text-blue-600 border-b-2 border-blue-600'
                     : 'text-gray-600 hover:text-gray-900'
@@ -147,17 +152,14 @@ export default function BuildDishDetails() {
             ))}
           </div>
 
+          {/* Tab Content */}
           <div className="p-6">
-            {/* Ingredients Tab */}
             {activeTab === 'ingredients' && (
               <div className="space-y-3">
-                {adjustedIngredients.map(ingredient => (
+                {scaledIngredients.map(ingredient => (
                   <div key={ingredient.id} className="flex items-center justify-between py-2 border-b border-gray-100 last:border-b-0">
-                    <div className="flex items-center gap-3">
-                      <input type="checkbox" className="w-5 h-5 text-blue-600 rounded" />
-                      <span className="text-gray-900">{ingredient.name}</span>
-                    </div>
-                    <span className="text-gray-600 font-medium">
+                    <span className="text-gray-700">{ingredient.name}</span>
+                    <span className="font-semibold text-gray-900">
                       {ingredient.amount} {ingredient.unit}
                     </span>
                   </div>
@@ -165,27 +167,25 @@ export default function BuildDishDetails() {
               </div>
             )}
 
-            {/* Instructions Tab */}
             {activeTab === 'instructions' && (
-              <div className="space-y-4">
+              <ol className="space-y-4">
                 {MOCK_DISH.instructions.map((instruction, index) => (
-                  <div key={index} className="flex gap-4">
-                    <div className="flex-shrink-0 w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold">
+                  <li key={index} className="flex gap-4">
+                    <span className="flex-shrink-0 w-8 h-8 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center font-semibold">
                       {index + 1}
-                    </div>
-                    <p className="text-gray-700 pt-1">{instruction}</p>
-                  </div>
+                    </span>
+                    <span className="text-gray-700 pt-1">{instruction}</span>
+                  </li>
                 ))}
-              </div>
+              </ol>
             )}
 
-            {/* Reviews Tab */}
             {activeTab === 'reviews' && (
               <div className="space-y-4">
                 {MOCK_REVIEWS.map(review => (
                   <div key={review.id} className="pb-4 border-b border-gray-100 last:border-b-0">
                     <div className="flex items-center justify-between mb-2">
-                      <span className="font-semibold text-gray-900">{review.author}</span>
+                      <p className="font-semibold text-gray-900">{review.author}</p>
                       <div className="flex gap-1">
                         {[...Array(5)].map((_, i) => (
                           <span key={i} className={i < review.rating ? 'text-yellow-400' : 'text-gray-300'}>
@@ -200,16 +200,6 @@ export default function BuildDishDetails() {
               </div>
             )}
           </div>
-        </div>
-
-        {/* Action Buttons */}
-        <div className="flex gap-3 mb-6">
-          <button className="flex-1 bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition">
-            Add to Cart
-          </button>
-          <button className="flex-1 bg-gray-200 text-gray-900 py-3 rounded-lg font-semibold hover:bg-gray-300 transition">
-            Save Recipe
-          </button>
         </div>
       </div>
     </div>
