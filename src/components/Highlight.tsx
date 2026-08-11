@@ -1,12 +1,11 @@
-import React, { useState } from 'react'
+import React, { useState } from 'react';
 
 interface MenuItem {
-  id: string
-  name: string
-  description: string
-  price: number
-  isChefRecommendation: boolean
-  category: string
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  isChefRecommendation: boolean;
 }
 
 const MOCK_MENU_ITEMS: MenuItem[] = [
@@ -15,158 +14,146 @@ const MOCK_MENU_ITEMS: MenuItem[] = [
     name: 'Pan-Seared Salmon',
     description: 'Fresh Atlantic salmon with lemon butter sauce',
     price: 28.99,
-    isChefRecommendation: true,
-    category: 'Main Course'
+    isChefRecommendation: false,
   },
   {
     id: '2',
-    name: 'Grilled Chicken Breast',
-    description: 'Herb-marinated chicken with seasonal vegetables',
-    price: 22.99,
-    isChefRecommendation: false,
-    category: 'Main Course'
-  },
-  {
-    id: '3',
     name: 'Truffle Risotto',
     description: 'Creamy arborio rice with black truffle and parmesan',
     price: 24.99,
-    isChefRecommendation: true,
-    category: 'Main Course'
+    isChefRecommendation: false,
+  },
+  {
+    id: '3',
+    name: 'Wagyu Beef Steak',
+    description: 'Premium Japanese Wagyu with seasonal vegetables',
+    price: 45.99,
+    isChefRecommendation: false,
   },
   {
     id: '4',
-    name: 'Caesar Salad',
-    description: 'Crisp romaine with house-made dressing and croutons',
-    price: 14.99,
+    name: 'Lobster Bisque',
+    description: 'Silky smooth lobster soup with crème fraîche',
+    price: 16.99,
     isChefRecommendation: false,
-    category: 'Appetizer'
   },
   {
     id: '5',
-    name: 'Chocolate Lava Cake',
-    description: 'Warm chocolate cake with molten center and vanilla ice cream',
-    price: 12.99,
-    isChefRecommendation: true,
-    category: 'Dessert'
-  }
-]
+    name: 'Duck Confit',
+    description: 'Slow-cooked duck leg with cherry gastrique',
+    price: 32.99,
+    isChefRecommendation: false,
+  },
+];
+
+const MOCK_USER_ROLE = 'chef';
 
 export default function Highlight() {
-  const [selectedCategory, setSelectedCategory] = useState<string>('All')
+  const [menuItems, setMenuItems] = useState<MenuItem[]>(MOCK_MENU_ITEMS);
+  const [isChef] = useState(MOCK_USER_ROLE === 'chef');
 
-  const categories = ['All', ...new Set(MOCK_MENU_ITEMS.map(item => item.category))]
-  
-  const filteredItems = selectedCategory === 'All' 
-    ? MOCK_MENU_ITEMS 
-    : MOCK_MENU_ITEMS.filter(item => item.category === selectedCategory)
+  const toggleChefRecommendation = (itemId: string) => {
+    if (!isChef) return;
+    setMenuItems((prevItems) =>
+      prevItems.map((item) =>
+        item.id === itemId
+          ? { ...item, isChefRecommendation: !item.isChefRecommendation }
+          : item
+      )
+    );
+  };
+
+  const chefRecommendationCount = menuItems.filter(
+    (item) => item.isChefRecommendation
+  ).length;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-8">
-      <div className="max-w-6xl mx-auto">
+      <div className="max-w-4xl mx-auto">
         {/* Header */}
-        <div className="mb-12">
-          <h1 className="text-4xl font-bold text-slate-900 mb-2">Chef's Menu</h1>
-          <p className="text-lg text-slate-600">Discover our culinary creations</p>
+        <div className="mb-8">
+          <h1 className="text-4xl font-bold text-slate-900 mb-2">
+            Menu Management
+          </h1>
+          <p className="text-slate-600">
+            {isChef
+              ? 'You can highlight your chef recommendations'
+              : 'View chef recommendations'}
+          </p>
         </div>
 
-        {/* Category Filter */}
-        <div className="mb-8 flex flex-wrap gap-3">
-          {categories.map(category => (
-            <button
-              key={category}
-              onClick={() => setSelectedCategory(category)}
-              className={`px-6 py-2 rounded-full font-medium transition-all duration-200 ${
-                selectedCategory === category
-                  ? 'bg-amber-600 text-white shadow-lg'
-                  : 'bg-white text-slate-700 border-2 border-slate-200 hover:border-amber-600'
-              }`}
-            >
-              {category}
-            </button>
-          ))}
+        {/* Chef Status Badge */}
+        <div className="mb-6 flex items-center gap-3">
+          <div
+            className={`px-4 py-2 rounded-full text-sm font-semibold ${
+              isChef
+                ? 'bg-amber-100 text-amber-800'
+                : 'bg-slate-200 text-slate-800'
+            }`}
+          >
+            {isChef ? '👨‍🍳 Chef Mode' : '👤 Guest Mode'}
+          </div>
+          <div className="text-sm text-slate-600">
+            Chef Recommendations: <span className="font-bold">{chefRecommendationCount}</span>
+          </div>
         </div>
 
         {/* Menu Items Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredItems.map(item => (
+        <div className="grid gap-4">
+          {menuItems.map((item) => (
             <div
               key={item.id}
-              className={`rounded-lg overflow-hidden transition-all duration-300 transform hover:scale-105 ${
+              className={`p-6 rounded-lg border-2 transition-all duration-200 ${
                 item.isChefRecommendation
-                  ? 'bg-gradient-to-br from-amber-50 to-orange-50 border-2 border-amber-400 shadow-xl'
-                  : 'bg-white border border-slate-200 shadow-md'
+                  ? 'border-amber-400 bg-amber-50 shadow-lg shadow-amber-200'
+                  : 'border-slate-200 bg-white hover:border-slate-300'
               }`}
             >
-              {/* Chef Recommendation Badge */}
-              {item.isChefRecommendation && (
-                <div className="bg-gradient-to-r from-amber-500 to-orange-500 text-white px-4 py-2 text-center font-bold text-sm tracking-wide">
-                  ⭐ CHEF'S RECOMMENDATION ⭐
-                </div>
-              )}
-
-              {/* Content */}
-              <div className="p-6">
-                <div className="flex items-start justify-between mb-2">
-                  <h3 className={`text-xl font-bold ${
-                    item.isChefRecommendation ? 'text-amber-900' : 'text-slate-900'
-                  }`}>
-                    {item.name}
-                  </h3>
-                </div>
-
-                <p className="text-slate-600 text-sm mb-4 line-clamp-2">
-                  {item.description}
-                </p>
-
-                <div className="flex items-center justify-between pt-4 border-t border-slate-200">
-                  <span className={`text-2xl font-bold ${
-                    item.isChefRecommendation ? 'text-amber-600' : 'text-slate-900'
-                  }`}>
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-2">
+                    <h3 className="text-xl font-bold text-slate-900">
+                      {item.name}
+                    </h3>
+                    {item.isChefRecommendation && (
+                      <span className="inline-block px-3 py-1 bg-amber-400 text-amber-900 text-xs font-bold rounded-full">
+                        ⭐ Chef's Pick
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-slate-600 mb-3">{item.description}</p>
+                  <p className="text-lg font-semibold text-slate-900">
                     ${item.price.toFixed(2)}
-                  </span>
-                  <button className={`px-4 py-2 rounded-lg font-semibold transition-all duration-200 ${
-                    item.isChefRecommendation
-                      ? 'bg-amber-600 text-white hover:bg-amber-700 shadow-md'
-                      : 'bg-slate-200 text-slate-900 hover:bg-slate-300'
-                  }`}>
-                    Order
-                  </button>
+                  </p>
                 </div>
+
+                {/* Highlight Button - Only for Chef */}
+                {isChef && (
+                  <button
+                    onClick={() => toggleChefRecommendation(item.id)}
+                    className={`px-4 py-2 rounded-lg font-semibold transition-all duration-200 whitespace-nowrap ${
+                      item.isChefRecommendation
+                        ? 'bg-amber-400 text-amber-900 hover:bg-amber-500 shadow-md'
+                        : 'bg-slate-200 text-slate-700 hover:bg-slate-300'
+                    }`}
+                  >
+                    {item.isChefRecommendation ? '★ Highlighted' : '☆ Highlight'}
+                  </button>
+                )}
               </div>
             </div>
           ))}
         </div>
 
-        {/* Empty State */}
-        {filteredItems.length === 0 && (
-          <div className="text-center py-12">
-            <p className="text-xl text-slate-600">No items found in this category</p>
-          </div>
-        )}
-
-        {/* Stats Footer */}
-        <div className="mt-12 bg-white rounded-lg shadow-md p-6 border-l-4 border-amber-600">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-            <div>
-              <p className="text-3xl font-bold text-amber-600">{MOCK_MENU_ITEMS.filter(i => i.isChefRecommendation).length}</p>
-              <p className="text-slate-600 text-sm">Chef Recommendations</p>
-            </div>
-            <div>
-              <p className="text-3xl font-bold text-slate-900">{MOCK_MENU_ITEMS.length}</p>
-              <p className="text-slate-600 text-sm">Total Items</p>
-            </div>
-            <div>
-              <p className="text-3xl font-bold text-slate-900">${(MOCK_MENU_ITEMS.reduce((sum, item) => sum + item.price, 0) / MOCK_MENU_ITEMS.length).toFixed(2)}</p>
-              <p className="text-slate-600 text-sm">Average Price</p>
-            </div>
-            <div>
-              <p className="text-3xl font-bold text-slate-900">{categories.length - 1}</p>
-              <p className="text-slate-600 text-sm">Categories</p>
-            </div>
-          </div>
+        {/* Info Section */}
+        <div className="mt-8 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+          <p className="text-sm text-blue-900">
+            <span className="font-semibold">ℹ️ Info:</span> Only users with Chef role can
+            highlight menu items as chef recommendations. These highlighted items will be
+            featured on the menu page.
+          </p>
         </div>
       </div>
     </div>
-  )
+  );
 }
