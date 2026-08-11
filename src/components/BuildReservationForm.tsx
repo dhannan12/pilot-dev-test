@@ -3,8 +3,8 @@ import React, { useState } from 'react';
 const MOCK_PROPERTIES = [
   { id: 1, name: 'Beachfront Villa', location: 'Malibu, CA', price: 450 },
   { id: 2, name: 'Mountain Cabin', location: 'Aspen, CO', price: 320 },
-  { id: 3, name: 'City Apartment', location: 'New York, NY', price: 280 },
-  { id: 4, name: 'Desert Resort', location: 'Scottsdale, AZ', price: 380 },
+  { id: 3, name: 'City Penthouse', location: 'New York, NY', price: 550 },
+  { id: 4, name: 'Desert Resort', location: 'Phoenix, AZ', price: 280 },
 ];
 
 const MOCK_GUESTS = [
@@ -13,7 +13,7 @@ const MOCK_GUESTS = [
   { id: 3, name: 'Bob Johnson', email: 'bob@example.com' },
 ];
 
-interface ReservationFormData {
+interface FormData {
   propertyId: string;
   guestId: string;
   checkInDate: string;
@@ -23,12 +23,12 @@ interface ReservationFormData {
 }
 
 export default function BuildReservationForm() {
-  const [formData, setFormData] = useState<ReservationFormData>({
+  const [formData, setFormData] = useState<FormData>({
     propertyId: '',
     guestId: '',
     checkInDate: '',
     checkOutDate: '',
-    numberOfGuests: '1',
+    numberOfGuests: '',
     specialRequests: '',
   });
 
@@ -43,11 +43,11 @@ export default function BuildReservationForm() {
     if (!formData.checkInDate) newErrors.checkInDate = 'Check-in date is required';
     if (!formData.checkOutDate) newErrors.checkOutDate = 'Check-out date is required';
     if (!formData.numberOfGuests) newErrors.numberOfGuests = 'Number of guests is required';
-
-    if (formData.checkInDate && formData.checkOutDate) {
-      if (new Date(formData.checkInDate) >= new Date(formData.checkOutDate)) {
-        newErrors.checkOutDate = 'Check-out date must be after check-in date';
-      }
+    if (formData.checkInDate && formData.checkOutDate && formData.checkInDate >= formData.checkOutDate) {
+      newErrors.checkOutDate = 'Check-out date must be after check-in date';
+    }
+    if (formData.numberOfGuests && parseInt(formData.numberOfGuests) < 1) {
+      newErrors.numberOfGuests = 'Must have at least 1 guest';
     }
 
     setErrors(newErrors);
@@ -61,10 +61,11 @@ export default function BuildReservationForm() {
       [name]: value,
     }));
     if (errors[name]) {
-      setErrors((prev) => ({
-        ...prev,
-        [name]: '',
-      }));
+      setErrors((prev) => {
+        const newErrors = { ...prev };
+        delete newErrors[name];
+        return newErrors;
+      });
     }
   };
 
@@ -80,19 +81,16 @@ export default function BuildReservationForm() {
           guestId: '',
           checkInDate: '',
           checkOutDate: '',
-          numberOfGuests: '1',
+          numberOfGuests: '',
           specialRequests: '',
         });
       }, 3000);
     }
   };
 
-  const selectedProperty = MOCK_PROPERTIES.find((p) => p.id.toString() === formData.propertyId);
-  const totalPrice = selectedProperty
-    ? selectedProperty.price *
-      (formData.checkInDate && formData.checkOutDate
-        ? Math.ceil((new Date(formData.checkOutDate).getTime() - new Date(formData.checkInDate).getTime()) / (1000 * 60 * 60 * 24))
-        : 0)
+  const selectedProperty = MOCK_PROPERTIES.find((p) => p.id === parseInt(formData.propertyId));
+  const totalPrice = selectedProperty && formData.checkInDate && formData.checkOutDate
+    ? Math.ceil((new Date(formData.checkOutDate).getTime() - new Date(formData.checkInDate).getTime()) / (1000 * 60 * 60 * 24)) * selectedProperty.price
     : 0;
 
   return (
@@ -100,15 +98,23 @@ export default function BuildReservationForm() {
       <div className="max-w-2xl mx-auto">
         <div className="bg-white rounded-lg shadow-xl overflow-hidden">
           {/* Header */}
-          <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-8 sm:px-8">
-            <h1 className="text-3xl font-bold text-white mb-2">Create Reservation</h1>
-            <p className="text-blue-100">Book your perfect getaway today</p>
+          <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-8">
+            <h1 className="text-3xl font-bold text-white">Create Reservation</h1>
+            <p className="text-blue-100 mt-2">Book your perfect getaway</p>
           </div>
 
+          {/* Success Message */}
+          {submitted && (
+            <div className="bg-green-50 border-l-4 border-green-500 p-4 m-6">
+              <p className="text-green-700 font-semibold">✓ Reservation submitted successfully!</p>
+              <p className="text-green-600 text-sm mt-1">Your booking confirmation has been sent to your email.</p>
+            </div>
+          )}
+
           {/* Form */}
-          <form onSubmit={handleSubmit} className="px-6 py-8 sm:px-8">
+          <form onSubmit={handleSubmit} className="p-6 space-y-6">
             {/* Property Selection */}
-            <div className="mb-6">
+            <div>
               <label htmlFor="propertyId" className="block text-sm font-semibold text-gray-700 mb-2">
                 Select Property *
               </label>
@@ -122,9 +128,9 @@ export default function BuildReservationForm() {
                 }`}
               >
                 <option value="">Choose a property...</option>
-                {MOCK_PROPERTIES.map((property) => (
-                  <option key={property.id} value={property.id}>
-                    {property.name} - {property.location} (${property.price}/night)
+                {MOCK_PROPERTIES.map((prop) => (
+                  <option key={prop.id} value={prop.id}>
+                    {prop.name} - {prop.location} (${prop.price}/night)
                   </option>
                 ))}
               </select>
@@ -132,7 +138,7 @@ export default function BuildReservationForm() {
             </div>
 
             {/* Guest Selection */}
-            <div className="mb-6">
+            <div>
               <label htmlFor="guestId" className="block text-sm font-semibold text-gray-700 mb-2">
                 Select Guest *
               </label>
@@ -156,7 +162,7 @@ export default function BuildReservationForm() {
             </div>
 
             {/* Dates Row */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label htmlFor="checkInDate" className="block text-sm font-semibold text-gray-700 mb-2">
                   Check-in Date *
@@ -192,7 +198,7 @@ export default function BuildReservationForm() {
             </div>
 
             {/* Number of Guests */}
-            <div className="mb-6">
+            <div>
               <label htmlFor="numberOfGuests" className="block text-sm font-semibold text-gray-700 mb-2">
                 Number of Guests *
               </label>
@@ -201,7 +207,7 @@ export default function BuildReservationForm() {
                 id="numberOfGuests"
                 name="numberOfGuests"
                 min="1"
-                max="10"
+                max="20"
                 value={formData.numberOfGuests}
                 onChange={handleChange}
                 className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
@@ -212,7 +218,7 @@ export default function BuildReservationForm() {
             </div>
 
             {/* Special Requests */}
-            <div className="mb-6">
+            <div>
               <label htmlFor="specialRequests" className="block text-sm font-semibold text-gray-700 mb-2">
                 Special Requests
               </label>
@@ -221,56 +227,33 @@ export default function BuildReservationForm() {
                 name="specialRequests"
                 value={formData.specialRequests}
                 onChange={handleChange}
-                placeholder="Any special requests or requirements?"
                 rows={4}
+                placeholder="Any special requests or preferences?"
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
 
             {/* Price Summary */}
-            {selectedProperty && formData.checkInDate && formData.checkOutDate && (
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-                <div className="flex justify-between items-center mb-2">
-                  <span className="text-gray-700">Nightly Rate:</span>
-                  <span className="font-semibold text-gray-900">${selectedProperty.price}</span>
-                </div>
-                <div className="flex justify-between items-center mb-2">
-                  <span className="text-gray-700">Number of Nights:</span>
-                  <span className="font-semibold text-gray-900">
-                    {Math.ceil((new Date(formData.checkOutDate).getTime() - new Date(formData.checkInDate).getTime()) / (1000 * 60 * 60 * 24))}
-                  </span>
-                </div>
-                <div className="border-t border-blue-200 pt-2 flex justify-between items-center">
-                  <span className="text-lg font-bold text-gray-900">Total Price:</span>
+            {totalPrice > 0 && (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-700 font-semibold">Total Price:</span>
                   <span className="text-2xl font-bold text-blue-600">${totalPrice}</span>
                 </div>
+                <p className="text-gray-600 text-sm mt-2">
+                  {Math.ceil((new Date(formData.checkOutDate).getTime() - new Date(formData.checkInDate).getTime()) / (1000 * 60 * 60 * 24))} nights × ${selectedProperty?.price}/night
+                </p>
               </div>
             )}
 
             {/* Submit Button */}
             <button
               type="submit"
-              className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold py-3 px-4 rounded-lg hover:from-blue-700 hover:to-indigo-700 transition duration-200 transform hover:scale-105"
+              className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold py-3 rounded-lg hover:from-blue-700 hover:to-indigo-700 transition duration-200 transform hover:scale-105"
             >
-              {submitted ? 'Reservation Confirmed!' : 'Complete Reservation'}
+              Complete Reservation
             </button>
           </form>
-
-          {/* Success Message */}
-          {submitted && (
-            <div className="bg-green-50 border-t border-green-200 px-6 py-4 sm:px-8">
-              <div className="flex items-center">
-                <div className="flex-shrink-0">
-                  <svg className="h-5 w-5 text-green-400" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                  </svg>
-                </div>
-                <div className="ml-3">
-                  <p className="text-sm font-medium text-green-800">Your reservation has been successfully created!</p>
-                </div>
-              </div>
-            </div>
-          )}
         </div>
       </div>
     </div>
