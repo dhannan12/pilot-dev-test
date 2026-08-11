@@ -1,2 +1,283 @@
-{
-  "component_code": "import React, { useState } from 'react';\n\ninterface MenuItem {\n  id: string;\n  name: string;\n  description: string;\n  price: number;\n  category: string;\n  available: boolean;\n}\n\ninterface Restaurant {\n  id: string;\n  name: string;\n  manager: string;\n  menuItems: MenuItem[];\n}\n\nconst MOCK_RESTAURANT: Restaurant = {\n  id: 'rest-001',\n  name: 'The Golden Fork',\n  manager: 'John Smith',\n  menuItems: [\n    {\n      id: 'item-001',\n      name: 'Grilled Salmon',\n      description: 'Fresh Atlantic salmon with lemon butter sauce',\n      price: 24.99,\n      category: 'Main Course',\n      available: true,\n    },\n    {\n      id: 'item-002',\n      name: 'Caesar Salad',\n      description: 'Crisp romaine with parmesan and croutons',\n      price: 12.99,\n      category: 'Appetizer',\n      available: true,\n    },\n    {\n      id: 'item-003',\n      name: 'Chocolate Lava Cake',\n      description: 'Warm chocolate cake with molten center',\n      price: 8.99,\n      category: 'Dessert',\n      available: false,\n    },\n    {\n      id: 'item-004',\n      name: 'Ribeye Steak',\n      description: '12oz premium cut with seasonal vegetables',\n      price: 34.99,\n      category: 'Main Course',\n      available: true,\n    },\n  ],\n};\n\nexport default function RestaurantUpdate() {\n  const [restaurant, setRestaurant] = useState<Restaurant>(MOCK_RESTAURANT);\n  const [editingId, setEditingId] = useState<string | null>(null);\n  const [editFormData, setEditFormData] = useState<MenuItem | null>(null);\n  const [showAddForm, setShowAddForm] = useState(false);\n  const [newItem, setNewItem] = useState<Partial<MenuItem>>({\n    name: '',\n    description: '',\n    price: 0,\n    category: 'Main Course',\n    available: true,\n  });\n\n  const handleEditClick = (item: MenuItem) => {\n    setEditingId(item.id);\n    setEditFormData({ ...item });\n    setShowAddForm(false);\n  };\n\n  const handleSaveEdit = () => {\n    if (editFormData) {\n      setRestaurant({\n        ...restaurant,\n        menuItems: restaurant.menuItems.map((item) =>\n          item.id === editFormData.id ? editFormData : item\n        ),\n      });\n      setEditingId(null);\n      setEditFormData(null);\n    }\n  };\n\n  const handleCancelEdit = () => {\n    setEditingId(null);\n    setEditFormData(null);\n  };\n\n  const handleDeleteItem = (id: string) => {\n    setRestaurant({\n      ...restaurant,\n      menuItems: restaurant.menuItems.filter((item) => item.id !== id),\n    });\n  };\n\n  const handleAddItem = () => {\n    if (newItem.name && newItem.description && newItem.price) {\n      const addedItem: MenuItem = {\n        id: `item-${Date.now()}`,\n        name: newItem.name,\n        description: newItem.description,\n        price: newItem.price,\n        category: newItem.category || 'Main Course',\n        available: newItem.available !== undefined ? newItem.available : true,\n      };\n      setRestaurant({\n        ...restaurant,\n        menuItems: [...restaurant.menuItems, addedItem],\n      });\n      setNewItem({\n        name: '',\n        description: '',\n        price: 0,\n        category: 'Main Course',\n        available: true,\n      });\n      setShowAddForm(false);\n    }\n  };\n\n  const handleToggleAvailability = (id: string) => {\n    setRestaurant({\n      ...restaurant,\n      menuItems: restaurant.menuItems.map((item) =>\n        item.id === id ? { ...item, available: !item.available } : item\n      ),\n    });\n  };\n\n  return (\n    <div className=\"min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-8\">\n      <div className=\"max-w-6xl mx-auto\">\n        {/* Header */}\n        <div className=\"mb-8\">\n          <h1 className=\"text-4xl font-bold text-slate-900 mb-2\">\n            {restaurant.name}\n          </h1>\n          <p className=\"text-lg text-slate-600\">\n            Manager: <span className=\"font-semibold\">{restaurant.manager}</span>\n          </p>\n        </div>\n\n        {/* Add New Item Button */}\n        <div className=\"mb-8\">\n          <button\n            onClick={() => setShowAddForm(!showAddForm)}\n            className=\"px-6 py-3 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition-colors duration-200 shadow-md\"\n          >\n            {showAddForm ? '✕ Cancel' : '+ Add New Menu Item'}\n          </button>\n        </div>\n\n        {/* Add New Item Form */}\n        {showAddForm && (\n          <div className=\"bg-white rounded-lg shadow-lg p-6 mb-8 border-l-4 border-green-600\">\n            <h2 className=\"text-2xl font-bold text-slate-900 mb-6\">Add New Menu Item</h2>\n            <div className=\"grid grid-cols-1 md:grid-cols-2 gap-4 mb-6\">\n              <div>\n                <label className=\"block text-sm font-medium text-slate-700 mb-2\">\n                  Item Name\n                </label>\n                <input\n                  type=\"text\"\n                  value={newItem.name || ''}\n                  onChange={(e) =>\n                    setNewItem({ ...newItem, name: e.target.value })\n                  }\n                  className=\"w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500\"\n                  placeholder=\"e.g., Pasta Carbonara\"\n                />\n              </div>\n              <div>\n                <label className=\"block text-sm font-medium text-slate-700 mb-2\">\n                  Category\n                </label>\n                <select\n                  value={newItem.category || 'Main Course'}\n                  onChange={(e) =>\n                    setNewItem({ ...newItem, category: e.target.value })\n                  }\n                  className=\"w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500\"\n                >\n                  <option>Appetizer</option>\n                  <option>Main Course</option>\n                  <option>Dessert</option>\n                  <option>Beverage</option>\n                </select>\n              </div>\n              <div>\n                <label className=\"block text-sm font-medium text-slate-700 mb-2\">\n                  Price ($)\n                </label>\n                <input\n                  type=\"number\"\n                  step=\"0.01\"\n                  value={newItem.price || 0}\n                  onChange={(e) =>\n                    setNewItem({ ...newItem, price: parseFloat(e.target.value) })\n                  }\n                  className=\"w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500\"\n                  placeholder=\"0.00\"\n                />\n              </div>\n              <div className=\"flex items-end\">\n                <label className=\"flex items-center\">\n                  <input\n                    type=\"checkbox\"\n                    checked={newItem.available !== undefined ? newItem.available : true}\n                    onChange={(e) =>\n                      setNewItem({ ...newItem, available: e.target.checked })\n                    }\n                    className=\"w-4 h-4 text-green-600 rounded focus:ring-2 focus:ring-green-500\"\n                  />\n                  <span className=\"ml-2 text-sm font-medium text-slate-700\">\n                    Available\n                  </span>\n                </label>\n              </div>\n              <div className=\"md:col-span-2\">\n                <label className=\"block text-sm font-medium text-slate-700 mb-2\">\n                  Description\n                </label>\n                <textarea\n                  value={newItem.description || ''}\n                  onChange={(e) =>\n                    setNewItem({ ...newItem, description: e.target.value })\n                  }\n                  className=\"w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500\"\n                  placeholder=\"Describe the menu item...\"\n                  rows={3}\n                />\n              </div>\n            </div>\n            <button\n              onClick={handleAddItem}\n              className=\"px-6 py-2 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition-colors duration-200\"\n            >\n              Add Item\n            </button>\n          </div>\n        )}\n\n        {/* Menu Items List */}\n        <div className=\"space-y-4\">\n          <h2 className=\"text-2xl font-bold text-slate-900 mb-6\">\n            Menu Items ({restaurant.menuItems.length})\n          </h2>\n          {restaurant.menuItems.length === 0 ? (\n            <div className=\"bg-white rounded-lg shadow p-8 text-center\">\n              <p className=\"text-slate-600 text-lg\">No menu items yet. Add one to get started!</p>\n            </div>\n          ) : (\n            restaurant.menuItems.map((item) => (\n              <div\n                key={item.id}\n                className=\"bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-200 overflow-hidden\"\n              >\n                {editingId === item.id && editFormData ? (\n                  // Edit Mode\n                  <div className=\"p-6 bg-blue-50 border-l-4 border-blue-600\">\n                    <h3 className=\"text-xl font-bold text-slate-900 mb-4\">Edit Menu Item</h3>\n                    <div className=\"grid grid-cols-1 md:grid-cols-2 gap-4 mb-4\">\n                      <div>\n                        <label className=\"block text-sm font-medium text-slate-700 mb-2\">\n                          Item Name\n                        </label>\n                        <input\n                          type=\"text\"\n                          value={editFormData.name}\n                          onChange={(e) =>\n                            setEditFormData({\n                              ...editFormData,\n                              name: e.target.value,\n                            })\n                          }\n                          className=\"w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500\"\n                        />\n                      </div>\n                      <div>\n                        <label className=\"block text-sm font-medium text-slate-700 mb-2\">\n                          Category\n                        </label>\n                        <select\n                          value={editFormData.category}\n                          onChange={(e) =>\n                            setEditFormData({\n                              ...editFormData,\n                              category: e.target.value,\n                            })\n                          }\n                          className=\"w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500\"\n                        >\n                          <option>Appetizer</option>\n                          <option>Main Course</option>\n                          <option>Dessert</option>\n                          <option>Beverage</option>\n                        </select>\n                      </div>\n                      <div>\n                        <label className=\"block text-sm font-medium text-slate-700 mb-2\">\n                          Price ($)\n                        </label>\n                        <input\n                          type=\"number\"\n                          step=\"0.01\"\n                          value={editFormData.price}\n                          onChange={(e) =>\n                            setEditFormData({\n                              ...editFormData,\n                              price: parseFloat(e.target.value),\n                            })\n                          }\n                          className=\"w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500\"\n                        />\n                      </div>\n                      <div className=\"flex items-end\">\n                        <label className=\"flex items-center\">\n                          <input\n                            type=\"checkbox\"\n                            checked={editFormData.available}\n                            onChange={(e) =>\n                              setEditFormData({\n                                ...editFormData,\n                                available: e.target.checked,\n                              })\n                            }\n                            className=\"w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500\"\n                          />\n                          <span className=\"ml-2 text-sm font-medium text-slate-700\">\n                            Available\n                          </span>\n                        </label>\n                      </div>\n                      <div className=\"md:col-span-2\">\n                        <label className=\"block text-sm font-medium text-slate-700 mb-2\">\n                          Description\n                        </label>\n                        <textarea\n                          value={editFormData.description}\n                          onChange={(e) =>\n                            setEditFormData({\n                              ...editFormData,\n                              description: e.target.value,\n                            })\n                          }\n                          className=\"w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500\"\n                          rows={3}\n                        />\n                      </div>\n                    </div>\n                    <div className=\"flex gap-3\">\n                      <button\n                        onClick={handleSaveEdit}\n                        className=\"px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors duration-200\"\n                      >\n                        Save Changes\n                      </button>\n                      <button\n                        onClick={handleCancelEdit}\n
+import React, { useState } from 'react';
+
+interface MenuItem {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  category: string;
+  available: boolean;
+}
+
+interface Restaurant {
+  id: string;
+  name: string;
+  managerRole: boolean;
+}
+
+const MOCK_MENU_ITEMS: MenuItem[] = [
+  {
+    id: '1',
+    name: 'Margherita Pizza',
+    description: 'Classic pizza with tomato, mozzarella, and basil',
+    price: 12.99,
+    category: 'Pizza',
+    available: true,
+  },
+  {
+    id: '2',
+    name: 'Caesar Salad',
+    description: 'Fresh romaine lettuce with parmesan and croutons',
+    price: 8.99,
+    category: 'Salads',
+    available: true,
+  },
+  {
+    id: '3',
+    name: 'Grilled Salmon',
+    description: 'Atlantic salmon with lemon butter sauce',
+    price: 18.99,
+    category: 'Main Course',
+    available: false,
+  },
+  {
+    id: '4',
+    name: 'Chocolate Cake',
+    description: 'Rich chocolate cake with ganache',
+    price: 6.99,
+    category: 'Desserts',
+    available: true,
+  },
+];
+
+const MOCK_RESTAURANT: Restaurant = {
+  id: 'rest-001',
+  name: 'The Golden Fork',
+  managerRole: true,
+};
+
+export default function RestaurantUpdate() {
+  const [menuItems, setMenuItems] = useState<MenuItem[]>(MOCK_MENU_ITEMS);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [formData, setFormData] = useState<MenuItem | null>(null);
+  const [successMessage, setSuccessMessage] = useState('');
+
+  const handleEdit = (item: MenuItem) => {
+    setEditingId(item.id);
+    setFormData({ ...item });
+    setSuccessMessage('');
+  };
+
+  const handleCancel = () => {
+    setEditingId(null);
+    setFormData(null);
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    if (!formData) return;
+    const { name, value, type } = e.target;
+    setFormData({
+      ...formData,
+      [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked : type === 'number' ? parseFloat(value) : value,
+    });
+  };
+
+  const handleSave = () => {
+    if (!formData) return;
+    setMenuItems(menuItems.map((item) => (item.id === formData.id ? formData : item)));
+    setSuccessMessage(`${formData.name} updated successfully!`);
+    setEditingId(null);
+    setFormData(null);
+    setTimeout(() => setSuccessMessage(''), 3000);
+  };
+
+  const handleDelete = (id: string) => {
+    const itemName = menuItems.find((item) => item.id === id)?.name;
+    setMenuItems(menuItems.filter((item) => item.id !== id));
+    setSuccessMessage(`${itemName} deleted successfully!`);
+    setTimeout(() => setSuccessMessage(''), 3000);
+  };
+
+  const handleAddNew = () => {
+    const newItem: MenuItem = {
+      id: Date.now().toString(),
+      name: '',
+      description: '',
+      price: 0,
+      category: 'Pizza',
+      available: true,
+    };
+    setMenuItems([...menuItems, newItem]);
+    setEditingId(newItem.id);
+    setFormData(newItem);
+  };
+
+  if (!MOCK_RESTAURANT.managerRole) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-red-50">
+        <div className="bg-white p-8 rounded-lg shadow-lg text-center">
+          <h1 className="text-2xl font-bold text-red-600 mb-4">Access Denied</h1>
+          <p className="text-gray-600">Only Restaurant Managers can update menu items.</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-6xl mx-auto">
+        <div className="mb-8">
+          <h1 className="text-4xl font-bold text-gray-900 mb-2">{MOCK_RESTAURANT.name}</h1>
+          <p className="text-gray-600">Manage your restaurant menu items</p>
+        </div>
+
+        {successMessage && (
+          <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
+            <p className="text-green-800 font-medium">{successMessage}</p>
+          </div>
+        )}
+
+        <div className="mb-6">
+          <button
+            onClick={handleAddNew}
+            className="px-6 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            + Add New Item
+          </button>
+        </div>
+
+        <div className="grid gap-6">
+          {menuItems.map((item) => (
+            <div key={item.id} className="bg-white rounded-lg shadow-md overflow-hidden">
+              {editingId === item.id && formData ? (
+                <div className="p-6 border-l-4 border-blue-600 bg-blue-50">
+                  <h3 className="text-xl font-bold text-gray-900 mb-4">Edit Menu Item</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Item Name</label>
+                      <input
+                        type="text"
+                        name="name"
+                        value={formData.name}
+                        onChange={handleInputChange}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                      <select
+                        name="category"
+                        value={formData.category}
+                        onChange={handleInputChange}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      >
+                        <option>Pizza</option>
+                        <option>Salads</option>
+                        <option>Main Course</option>
+                        <option>Desserts</option>
+                        <option>Beverages</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Price ($)</label>
+                      <input
+                        type="number"
+                        name="price"
+                        value={formData.price}
+                        onChange={handleInputChange}
+                        step="0.01"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div className="flex items-end">
+                      <label className="flex items-center">
+                        <input
+                          type="checkbox"
+                          name="available"
+                          checked={formData.available}
+                          onChange={handleInputChange}
+                          className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
+                        />
+                        <span className="ml-2 text-sm font-medium text-gray-700">Available</span>
+                      </label>
+                    </div>
+                    <div className="md:col-span-2">
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                      <textarea
+                        name="description"
+                        value={formData.description}
+                        onChange={handleInputChange}
+                        rows={3}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                  </div>
+                  <div className="flex gap-3 mt-6">
+                    <button
+                      onClick={handleSave}
+                      className="px-4 py-2 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 transition-colors"
+                    >
+                      Save Changes
+                    </button>
+                    <button
+                      onClick={handleCancel}
+                      className="px-4 py-2 bg-gray-400 text-white font-medium rounded-lg hover:bg-gray-500 transition-colors"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="p-6">
+                  <div className="flex justify-between items-start mb-3">
+                    <div>
+                      <h3 className="text-xl font-bold text-gray-900">{item.name}</h3>
+                      <p className="text-sm text-gray-500">{item.category}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-2xl font-bold text-gray-900">${item.price.toFixed(2)}</p>
+                      <span
+                        className={`inline-block px-3 py-1 rounded-full text-xs font-medium mt-1 ${
+                          item.available ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                        }`}
+                      >
+                        {item.available ? 'Available' : 'Unavailable'}
+                      </span>
+                    </div>
+                  </div>
+                  <p className="text-gray-600 mb-4">{item.description}</p>
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => handleEdit(item)}
+                      className="px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      onClick={() => handleDelete(item.id)}
+                      className="px-4 py-2 bg-red-600 text-white font-medium rounded-lg hover:bg-red-700 transition-colors"
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+
+        {menuItems.length === 0 && (
+          <div className="text-center py-12 bg-white rounded-lg shadow-md">
+            <p className="text-gray-500 text-lg mb-4">No menu items found</p>
+            <button
+              onClick={handleAddNew}
+              className="px-6 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              Add First Item
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
