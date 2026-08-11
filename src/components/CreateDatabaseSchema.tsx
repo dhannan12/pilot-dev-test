@@ -7,9 +7,9 @@ const MOCK_SCHEMA = [
     columns: [
       { name: 'id', type: 'INT', constraint: 'PRIMARY KEY AUTO_INCREMENT' },
       { name: 'name', type: 'VARCHAR(255)', constraint: 'NOT NULL' },
-      { name: 'cuisine', type: 'VARCHAR(100)', constraint: 'NOT NULL' },
-      { name: 'address', type: 'TEXT', constraint: 'NOT NULL' },
-      { name: 'phone', type: 'VARCHAR(20)', constraint: '' },
+      { name: 'cuisine_type', type: 'VARCHAR(100)', constraint: 'NOT NULL' },
+      { name: 'location', type: 'VARCHAR(255)', constraint: 'NOT NULL' },
+      { name: 'rating', type: 'DECIMAL(3,2)', constraint: 'DEFAULT 0' },
       { name: 'created_at', type: 'TIMESTAMP', constraint: 'DEFAULT CURRENT_TIMESTAMP' }
     ]
   },
@@ -18,9 +18,9 @@ const MOCK_SCHEMA = [
     tableName: 'menu_categories',
     columns: [
       { name: 'id', type: 'INT', constraint: 'PRIMARY KEY AUTO_INCREMENT' },
-      { name: 'restaurant_id', type: 'INT', constraint: 'NOT NULL, FOREIGN KEY (restaurant_id) REFERENCES restaurants(id)' },
-      { name: 'name', type: 'VARCHAR(100)', constraint: 'NOT NULL' },
-      { name: 'description', type: 'TEXT', constraint: '' },
+      { name: 'restaurant_id', type: 'INT', constraint: 'FOREIGN KEY' },
+      { name: 'category_name', type: 'VARCHAR(100)', constraint: 'NOT NULL' },
+      { name: 'description', type: 'TEXT', constraint: 'NULL' },
       { name: 'display_order', type: 'INT', constraint: 'DEFAULT 0' }
     ]
   },
@@ -29,124 +29,139 @@ const MOCK_SCHEMA = [
     tableName: 'menu_items',
     columns: [
       { name: 'id', type: 'INT', constraint: 'PRIMARY KEY AUTO_INCREMENT' },
-      { name: 'category_id', type: 'INT', constraint: 'NOT NULL, FOREIGN KEY (category_id) REFERENCES menu_categories(id)' },
-      { name: 'name', type: 'VARCHAR(255)', constraint: 'NOT NULL' },
-      { name: 'description', type: 'TEXT', constraint: '' },
-      { name: 'price', type: 'DECIMAL(10, 2)', constraint: 'NOT NULL' },
+      { name: 'category_id', type: 'INT', constraint: 'FOREIGN KEY' },
+      { name: 'item_name', type: 'VARCHAR(255)', constraint: 'NOT NULL' },
+      { name: 'description', type: 'TEXT', constraint: 'NULL' },
+      { name: 'price', type: 'DECIMAL(10,2)', constraint: 'NOT NULL' },
       { name: 'is_available', type: 'BOOLEAN', constraint: 'DEFAULT TRUE' },
-      { name: 'created_at', type: 'TIMESTAMP', constraint: 'DEFAULT CURRENT_TIMESTAMP' }
+      { name: 'image_url', type: 'VARCHAR(500)', constraint: 'NULL' },
+      { name: 'allergens', type: 'JSON', constraint: 'NULL' }
     ]
   },
   {
     id: 4,
-    tableName: 'menu_item_allergens',
+    tableName: 'menu_reviews',
     columns: [
       { name: 'id', type: 'INT', constraint: 'PRIMARY KEY AUTO_INCREMENT' },
-      { name: 'item_id', type: 'INT', constraint: 'NOT NULL, FOREIGN KEY (item_id) REFERENCES menu_items(id)' },
-      { name: 'allergen', type: 'VARCHAR(100)', constraint: 'NOT NULL' }
+      { name: 'item_id', type: 'INT', constraint: 'FOREIGN KEY' },
+      { name: 'user_id', type: 'INT', constraint: 'FOREIGN KEY' },
+      { name: 'rating', type: 'INT', constraint: 'CHECK (rating >= 1 AND rating <= 5)' },
+      { name: 'comment', type: 'TEXT', constraint: 'NULL' },
+      { name: 'created_at', type: 'TIMESTAMP', constraint: 'DEFAULT CURRENT_TIMESTAMP' }
     ]
   }
 ]
 
 export default function CreateDatabaseSchema() {
   const [expandedTable, setExpandedTable] = useState<number | null>(0)
+  const [copiedCode, setCopiedCode] = useState(false)
+
+  const generateSQL = () => {
+    return MOCK_SCHEMA.map(table => {
+      const columnDefs = table.columns
+        .map(col => `  ${col.name} ${col.type} ${col.constraint}`)
+        .join(',\n')
+      return `CREATE TABLE ${table.tableName} (\n${columnDefs}\n);`
+    }).join('\n\n')
+  }
+
+  const handleCopySQL = () => {
+    navigator.clipboard.writeText(generateSQL())
+    setCopiedCode(true)
+    setTimeout(() => setCopiedCode(false), 2000)
+  }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-8">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-8">
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="mb-12">
-          <h1 className="text-4xl font-bold text-slate-900 mb-2">Database Schema</h1>
-          <p className="text-lg text-slate-600">Italian Restaurant Menu Page - SCRUM-577</p>
-          <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-            <p className="text-sm text-blue-900">This schema defines the database structure for managing restaurant menus with categories, items, and allergen information.</p>
+          <h1 className="text-4xl font-bold text-white mb-2">Restaurant Menu Database Schema</h1>
+          <p className="text-slate-400 text-lg">Italian Restaurant Menu Management System</p>
+          <p className="text-slate-500 text-sm mt-2">SCRUM-577: Database Schema Design</p>
+        </div>
+
+        {/* SQL Export Section */}
+        <div className="bg-slate-800 rounded-lg border border-slate-700 p-6 mb-8">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-semibold text-white">Generated SQL</h2>
+            <button
+              onClick={handleCopySQL}
+              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors duration-200 text-sm font-medium"
+            >
+              {copiedCode ? '✓ Copied!' : 'Copy SQL'}
+            </button>
           </div>
+          <pre className="bg-slate-900 p-4 rounded border border-slate-700 overflow-x-auto text-slate-300 text-xs leading-relaxed">
+            <code>{generateSQL()}</code>
+          </pre>
         </div>
 
         {/* Schema Tables */}
-        <div className="space-y-6">
+        <div className="space-y-4">
+          <h2 className="text-2xl font-bold text-white mb-6">Database Tables</h2>
           {MOCK_SCHEMA.map((table) => (
-            <div key={table.id} className="bg-white rounded-lg shadow-md overflow-hidden border border-slate-200">
-              {/* Table Header */}
+            <div key={table.id} className="bg-slate-800 rounded-lg border border-slate-700 overflow-hidden">
               <button
                 onClick={() => setExpandedTable(expandedTable === table.id ? null : table.id)}
-                className="w-full px-6 py-4 bg-gradient-to-r from-slate-700 to-slate-800 hover:from-slate-800 hover:to-slate-900 text-white font-semibold flex items-center justify-between transition-all duration-200"
+                className="w-full px-6 py-4 flex justify-between items-center hover:bg-slate-700 transition-colors duration-200"
               >
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 bg-blue-400 rounded-full flex items-center justify-center text-sm font-bold">T</div>
-                  <span className="text-lg">{table.tableName}</span>
+                  <span className="text-2xl text-blue-400">📊</span>
+                  <div className="text-left">
+                    <h3 className="text-lg font-semibold text-white">{table.tableName}</h3>
+                    <p className="text-slate-400 text-sm">{table.columns.length} columns</p>
+                  </div>
                 </div>
-                <span className="text-xl">{expandedTable === table.id ? '−' : '+'}</span>
+                <span className={`text-2xl text-slate-400 transition-transform duration-200 ${expandedTable === table.id ? 'rotate-180' : ''}`}>
+                  ▼
+                </span>
               </button>
 
-              {/* Table Columns */}
               {expandedTable === table.id && (
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead>
-                      <tr className="bg-slate-100 border-b border-slate-200">
-                        <th className="px-6 py-3 text-left text-sm font-semibold text-slate-700">Column Name</th>
-                        <th className="px-6 py-3 text-left text-sm font-semibold text-slate-700">Data Type</th>
-                        <th className="px-6 py-3 text-left text-sm font-semibold text-slate-700">Constraints</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {table.columns.map((column, idx) => (
-                        <tr key={idx} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
-                          <td className="px-6 py-3">
-                            <code className="bg-slate-100 px-3 py-1 rounded text-sm font-mono text-slate-900">
-                              {column.name}
-                            </code>
-                          </td>
-                          <td className="px-6 py-3">
-                            <span className="bg-blue-100 text-blue-900 px-3 py-1 rounded text-sm font-mono">
-                              {column.type}
-                            </span>
-                          </td>
-                          <td className="px-6 py-3">
-                            <span className="text-slate-700 text-sm">
-                              {column.constraint ? (
-                                <span className="bg-amber-50 text-amber-900 px-3 py-1 rounded inline-block">
-                                  {column.constraint}
-                                </span>
-                              ) : (
-                                <span className="text-slate-400">—</span>
-                              )}
-                            </span>
-                          </td>
+                <div className="border-t border-slate-700 bg-slate-900 p-6">
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b border-slate-700">
+                          <th className="text-left py-3 px-4 text-slate-300 font-semibold">Column Name</th>
+                          <th className="text-left py-3 px-4 text-slate-300 font-semibold">Data Type</th>
+                          <th className="text-left py-3 px-4 text-slate-300 font-semibold">Constraint</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                      </thead>
+                      <tbody>
+                        {table.columns.map((column, idx) => (
+                          <tr key={idx} className="border-b border-slate-700 hover:bg-slate-800 transition-colors">
+                            <td className="py-3 px-4 text-slate-200 font-mono">{column.name}</td>
+                            <td className="py-3 px-4 text-blue-400 font-mono">{column.type}</td>
+                            <td className="py-3 px-4 text-slate-400 text-xs">
+                              <span className="bg-slate-700 px-2 py-1 rounded">{column.constraint}</span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               )}
             </div>
           ))}
         </div>
 
-        {/* Relationships Section */}
-        <div className="mt-12 bg-white rounded-lg shadow-md p-6 border border-slate-200">
-          <h2 className="text-2xl font-bold text-slate-900 mb-4">Entity Relationships</h2>
-          <div className="space-y-3 text-slate-700">
-            <div className="flex items-start gap-3">
-              <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
-              <p><span className="font-semibold">restaurants</span> → <span className="font-semibold">menu_categories</span>: One restaurant has many categories (1:N)</p>
-            </div>
-            <div className="flex items-start gap-3">
-              <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
-              <p><span className="font-semibold">menu_categories</span> → <span className="font-semibold">menu_items</span>: One category has many items (1:N)</p>
-            </div>
-            <div className="flex items-start gap-3">
-              <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
-              <p><span className="font-semibold">menu_items</span> → <span className="font-semibold">menu_item_allergens</span>: One item has many allergens (1:N)</p>
-            </div>
+        {/* Schema Info */}
+        <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="bg-slate-800 border border-slate-700 rounded-lg p-6">
+            <h3 className="text-white font-semibold mb-2">📋 Tables</h3>
+            <p className="text-slate-400">{MOCK_SCHEMA.length} main tables</p>
           </div>
-        </div>
-
-        {/* Footer */}
-        <div className="mt-12 text-center text-slate-600 text-sm">
-          <p>Database Schema for Italian Restaurant Menu Management System</p>
-          <p className="mt-2 text-slate-500">Click on table headers to expand/collapse column details</p>
+          <div className="bg-slate-800 border border-slate-700 rounded-lg p-6">
+            <h3 className="text-white font-semibold mb-2">🔗 Relationships</h3>
+            <p className="text-slate-400">Foreign key constraints</p>
+          </div>
+          <div className="bg-slate-800 border border-slate-700 rounded-lg p-6">
+            <h3 className="text-white font-semibold mb-2">🍝 Purpose</h3>
+            <p className="text-slate-400">Italian menu management</p>
+          </div>
         </div>
       </div>
     </div>
