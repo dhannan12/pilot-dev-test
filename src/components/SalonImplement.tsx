@@ -1,376 +1,354 @@
-import React, { useState } from 'react'
+import { useState } from 'react'
 
 interface PromotionalOffer {
   id: string
-  name: string
+  title: string
   description: string
-  discountPercentage: number
-  startDate: string
-  endDate: string
-  status: 'active' | 'upcoming' | 'expired'
+  discountPercent: number
+  validFrom: string
+  validUntil: string
+  status: 'active' | 'inactive' | 'scheduled'
   applicableServices: string[]
 }
 
 const MOCK_OFFERS: PromotionalOffer[] = [
   {
     id: '1',
-    name: 'Summer Hair Special',
-    description: '20% off all haircuts and styling services',
-    discountPercentage: 20,
-    startDate: '2026-07-01',
-    endDate: '2026-08-31',
+    title: 'Summer Special - 20% Off',
+    description: 'Get 20% off on all haircuts during summer season',
+    discountPercent: 20,
+    validFrom: '2026-06-01',
+    validUntil: '2026-08-31',
     status: 'active',
-    applicableServices: ['Haircut', 'Styling', 'Blow Dry']
+    applicableServices: ['Haircut', 'Styling']
   },
   {
     id: '2',
-    name: 'Bridal Package Discount',
-    description: '15% off bridal hair and makeup packages',
-    discountPercentage: 15,
-    startDate: '2026-08-01',
-    endDate: '2026-12-31',
+    title: 'New Client Welcome',
+    description: 'First time clients get 15% off their first service',
+    discountPercent: 15,
+    validFrom: '2026-01-01',
+    validUntil: '2026-12-31',
     status: 'active',
-    applicableServices: ['Bridal Hair', 'Bridal Makeup', 'Trial Session']
+    applicableServices: ['All Services']
   },
   {
     id: '3',
-    name: 'New Client Welcome',
-    description: '25% off your first visit to our salon',
-    discountPercentage: 25,
-    startDate: '2026-06-01',
-    endDate: '2026-09-30',
-    status: 'active',
-    applicableServices: ['All Services']
+    title: 'Color Treatment Package',
+    description: 'Special package deal on color treatments',
+    discountPercent: 25,
+    validFrom: '2026-09-01',
+    validUntil: '2026-09-30',
+    status: 'scheduled',
+    applicableServices: ['Coloring', 'Highlights']
   },
   {
     id: '4',
-    name: 'Fall Color Promotion',
-    description: '10% off all hair coloring services',
-    discountPercentage: 10,
-    startDate: '2026-09-01',
-    endDate: '2026-11-30',
-    status: 'upcoming',
-    applicableServices: ['Hair Coloring', 'Highlights', 'Balayage']
+    title: 'Weekend Warrior',
+    description: 'Saturday and Sunday appointments get 10% off',
+    discountPercent: 10,
+    validFrom: '2026-07-01',
+    validUntil: '2026-07-31',
+    status: 'inactive',
+    applicableServices: ['Haircut', 'Styling', 'Coloring']
   },
   {
     id: '5',
-    name: 'Spring Refresh Special',
-    description: '30% off keratin treatments',
-    discountPercentage: 30,
-    startDate: '2026-03-01',
-    endDate: '2026-05-31',
-    status: 'expired',
-    applicableServices: ['Keratin Treatment', 'Hair Smoothing']
-  },
-  {
-    id: '6',
-    name: 'Weekend Special',
-    description: '15% off all services booked on Saturdays',
-    discountPercentage: 15,
-    startDate: '2026-07-15',
-    endDate: '2026-12-31',
+    title: 'Loyalty Bonus',
+    description: 'Returning clients with 5+ bookings get 30% off',
+    discountPercent: 30,
+    validFrom: '2026-01-01',
+    validUntil: '2026-12-31',
     status: 'active',
     applicableServices: ['All Services']
-  },
-  {
-    id: '7',
-    name: 'Holiday Glam Package',
-    description: '20% off styling for holiday parties',
-    discountPercentage: 20,
-    startDate: '2026-12-01',
-    endDate: '2026-12-31',
-    status: 'upcoming',
-    applicableServices: ['Styling', 'Updo', 'Makeup']
   }
+]
+
+const SERVICE_OPTIONS = [
+  'All Services',
+  'Haircut',
+  'Styling',
+  'Coloring',
+  'Highlights',
+  'Treatment',
+  'Wash & Blow-dry'
 ]
 
 export default function SalonImplement() {
   const [offers, setOffers] = useState<PromotionalOffer[]>(MOCK_OFFERS)
-  const [selectedTab, setSelectedTab] = useState<'all' | 'active' | 'upcoming' | 'expired'>('all')
   const [showCreateForm, setShowCreateForm] = useState(false)
-  const [newOffer, setNewOffer] = useState({
-    name: '',
+  const [formData, setFormData] = useState({
+    title: '',
     description: '',
-    discountPercentage: 0,
-    startDate: '',
-    endDate: '',
-    applicableServices: ''
+    discountPercent: 10,
+    validFrom: '',
+    validUntil: '',
+    applicableServices: [] as string[]
   })
 
-  const filteredOffers = selectedTab === 'all' 
-    ? offers 
-    : offers.filter(offer => offer.status === selectedTab)
-
   const handleCreateOffer = () => {
-    if (!newOffer.name || !newOffer.startDate || !newOffer.endDate) {
+    if (!formData.title || !formData.validFrom || !formData.validUntil) {
       alert('Please fill in all required fields')
       return
     }
 
-    const today = new Date().toISOString().split('T')[0]
-    const start = newOffer.startDate
-    const end = newOffer.endDate
-
-    let status: 'active' | 'upcoming' | 'expired' = 'upcoming'
-    if (start <= today && end >= today) {
-      status = 'active'
-    } else if (end < today) {
-      status = 'expired'
+    const newOffer: PromotionalOffer = {
+      id: String(Date.now()),
+      title: formData.title,
+      description: formData.description,
+      discountPercent: formData.discountPercent,
+      validFrom: formData.validFrom,
+      validUntil: formData.validUntil,
+      status: new Date(formData.validFrom) > new Date() ? 'scheduled' : 'active',
+      applicableServices: formData.applicableServices.length > 0 
+        ? formData.applicableServices 
+        : ['All Services']
     }
 
-    const offer: PromotionalOffer = {
-      id: (offers.length + 1).toString(),
-      name: newOffer.name,
-      description: newOffer.description,
-      discountPercentage: newOffer.discountPercentage,
-      startDate: newOffer.startDate,
-      endDate: newOffer.endDate,
-      status,
-      applicableServices: newOffer.applicableServices.split(',').map(s => s.trim()).filter(s => s)
-    }
-
-    setOffers([...offers, offer])
-    setNewOffer({
-      name: '',
+    setOffers([newOffer, ...offers])
+    setFormData({
+      title: '',
       description: '',
-      discountPercentage: 0,
-      startDate: '',
-      endDate: '',
-      applicableServices: ''
+      discountPercent: 10,
+      validFrom: '',
+      validUntil: '',
+      applicableServices: []
     })
     setShowCreateForm(false)
   }
 
-  const handleDeleteOffer = (id: string) => {
-    setOffers(offers.filter(offer => offer.id !== id))
+  const toggleOfferStatus = (id: string) => {
+    setOffers(offers.map(offer => {
+      if (offer.id === id) {
+        return {
+          ...offer,
+          status: offer.status === 'active' ? 'inactive' : 'active'
+        }
+      }
+      return offer
+    }))
   }
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'active':
-        return 'bg-green-100 text-green-800'
-      case 'upcoming':
-        return 'bg-blue-100 text-blue-800'
-      case 'expired':
-        return 'bg-gray-100 text-gray-800'
-      default:
-        return 'bg-gray-100 text-gray-800'
+  const deleteOffer = (id: string) => {
+    if (confirm('Are you sure you want to delete this promotional offer?')) {
+      setOffers(offers.filter(offer => offer.id !== id))
     }
   }
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString)
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+  const handleServiceToggle = (service: string) => {
+    setFormData(prev => ({
+      ...prev,
+      applicableServices: prev.applicableServices.includes(service)
+        ? prev.applicableServices.filter(s => s !== service)
+        : [...prev.applicableServices, service]
+    }))
   }
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-7xl mx-auto">
+      <div className="max-w-6xl mx-auto">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Promotional Offers Management
-          </h1>
-          <p className="text-gray-600">
-            Create and manage promotional offers for your salon. All offers must have a start and end date.
-          </p>
-        </div>
-
-        {/* Action Bar */}
-        <div className="mb-6 flex justify-between items-center">
-          <div className="flex gap-2">
+        <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">Promotional Offers Management</h1>
+              <p className="text-gray-600 mt-2">Create and manage promotional offers for your salon</p>
+              <p className="text-sm text-blue-600 mt-1">
+                <span className="font-semibold">Manager Access Only</span> - Only salon managers can implement promotional offers
+              </p>
+            </div>
             <button
-              onClick={() => setSelectedTab('all')}
-              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                selectedTab === 'all'
-                  ? 'bg-purple-600 text-white'
-                  : 'bg-white text-gray-700 hover:bg-gray-100'
-              }`}
+              onClick={() => setShowCreateForm(!showCreateForm)}
+              className="px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors"
             >
-              All Offers ({offers.length})
-            </button>
-            <button
-              onClick={() => setSelectedTab('active')}
-              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                selectedTab === 'active'
-                  ? 'bg-purple-600 text-white'
-                  : 'bg-white text-gray-700 hover:bg-gray-100'
-              }`}
-            >
-              Active ({offers.filter(o => o.status === 'active').length})
-            </button>
-            <button
-              onClick={() => setSelectedTab('upcoming')}
-              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                selectedTab === 'upcoming'
-                  ? 'bg-purple-600 text-white'
-                  : 'bg-white text-gray-700 hover:bg-gray-100'
-              }`}
-            >
-              Upcoming ({offers.filter(o => o.status === 'upcoming').length})
-            </button>
-            <button
-              onClick={() => setSelectedTab('expired')}
-              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                selectedTab === 'expired'
-                  ? 'bg-purple-600 text-white'
-                  : 'bg-white text-gray-700 hover:bg-gray-100'
-              }`}
-            >
-              Expired ({offers.filter(o => o.status === 'expired').length})
+              {showCreateForm ? 'Cancel' : '+ Create New Offer'}
             </button>
           </div>
-          <button
-            onClick={() => setShowCreateForm(!showCreateForm)}
-            className="px-6 py-2 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 transition-colors"
-          >
-            {showCreateForm ? 'Cancel' : '+ Create New Offer'}
-          </button>
         </div>
 
         {/* Create Form */}
         {showCreateForm && (
-          <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-            <h2 className="text-xl font-semibold mb-4 text-gray-900">Create New Promotional Offer</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+            <h2 className="text-xl font-bold text-gray-900 mb-4">Create New Promotional Offer</h2>
+            
+            <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Offer Name *
+                  Offer Title *
                 </label>
                 <input
                   type="text"
-                  value={newOffer.name}
-                  onChange={(e) => setNewOffer({ ...newOffer, name: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                  placeholder="e.g., Summer Special"
+                  value={formData.title}
+                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="e.g., Summer Special - 20% Off"
                 />
               </div>
+
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Discount Percentage *
-                </label>
-                <input
-                  type="number"
-                  value={newOffer.discountPercentage}
-                  onChange={(e) => setNewOffer({ ...newOffer, discountPercentage: parseInt(e.target.value) || 0 })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                  placeholder="e.g., 20"
-                  min="0"
-                  max="100"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Start Date *
-                </label>
-                <input
-                  type="date"
-                  value={newOffer.startDate}
-                  onChange={(e) => setNewOffer({ ...newOffer, startDate: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  End Date *
-                </label>
-                <input
-                  type="date"
-                  value={newOffer.endDate}
-                  onChange={(e) => setNewOffer({ ...newOffer, endDate: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                />
-              </div>
-              <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Description
                 </label>
                 <textarea
-                  value={newOffer.description}
-                  onChange={(e) => setNewOffer({ ...newOffer, description: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                  rows={2}
+                  value={formData.description}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  rows={3}
                   placeholder="Describe the promotional offer"
                 />
               </div>
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Applicable Services (comma-separated)
+
+              <div className="grid grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Discount % *
+                  </label>
+                  <input
+                    type="number"
+                    value={formData.discountPercent}
+                    onChange={(e) => setFormData({ ...formData, discountPercent: Number(e.target.value) })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    min="5"
+                    max="100"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Valid From *
+                  </label>
+                  <input
+                    type="date"
+                    value={formData.validFrom}
+                    onChange={(e) => setFormData({ ...formData, validFrom: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Valid Until *
+                  </label>
+                  <input
+                    type="date"
+                    value={formData.validUntil}
+                    onChange={(e) => setFormData({ ...formData, validUntil: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Applicable Services
                 </label>
-                <input
-                  type="text"
-                  value={newOffer.applicableServices}
-                  onChange={(e) => setNewOffer({ ...newOffer, applicableServices: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                  placeholder="e.g., Haircut, Coloring, Styling"
-                />
-              </div>
-            </div>
-            <div className="mt-4 flex justify-end">
-              <button
-                onClick={handleCreateOffer}
-                className="px-6 py-2 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 transition-colors"
-              >
-                Create Offer
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Offers Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredOffers.map((offer) => (
-            <div key={offer.id} className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow">
-              <div className="flex justify-between items-start mb-3">
-                <h3 className="text-lg font-semibold text-gray-900">{offer.name}</h3>
-                <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(offer.status)}`}>
-                  {offer.status}
-                </span>
-              </div>
-              <p className="text-gray-600 text-sm mb-4">{offer.description}</p>
-              
-              <div className="space-y-2 mb-4">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">Discount:</span>
-                  <span className="text-lg font-bold text-purple-600">{offer.discountPercentage}% OFF</span>
-                </div>
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-gray-600">Start:</span>
-                  <span className="text-gray-900 font-medium">{formatDate(offer.startDate)}</span>
-                </div>
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-gray-600">End:</span>
-                  <span className="text-gray-900 font-medium">{formatDate(offer.endDate)}</span>
-                </div>
-              </div>
-
-              <div className="mb-4">
-                <p className="text-xs text-gray-600 mb-1">Applicable Services:</p>
-                <div className="flex flex-wrap gap-1">
-                  {offer.applicableServices.map((service, idx) => (
-                    <span key={idx} className="px-2 py-1 bg-purple-50 text-purple-700 text-xs rounded">
-                      {service}
-                    </span>
+                <div className="grid grid-cols-3 gap-3">
+                  {SERVICE_OPTIONS.map(service => (
+                    <label key={service} className="flex items-center space-x-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={formData.applicableServices.includes(service)}
+                        onChange={() => handleServiceToggle(service)}
+                        className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                      />
+                      <span className="text-sm text-gray-700">{service}</span>
+                    </label>
                   ))}
                 </div>
               </div>
 
-              <button
-                onClick={() => handleDeleteOffer(offer.id)}
-                className="w-full py-2 text-sm text-red-600 border border-red-200 rounded-lg hover:bg-red-50 transition-colors"
-              >
-                Delete Offer
-              </button>
+              <div className="flex justify-end space-x-3 pt-4">
+                <button
+                  onClick={() => setShowCreateForm(false)}
+                  className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleCreateOffer}
+                  className="px-6 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors"
+                >
+                  Create Offer
+                </button>
+              </div>
             </div>
-          ))}
-        </div>
-
-        {filteredOffers.length === 0 && (
-          <div className="bg-white rounded-lg shadow-md p-12 text-center">
-            <p className="text-gray-500 text-lg">No {selectedTab !== 'all' ? selectedTab : ''} offers found.</p>
-            <p className="text-gray-400 text-sm mt-2">Create your first promotional offer to get started.</p>
           </div>
         )}
+
+        {/* Offers List */}
+        <div className="space-y-4">
+          <h2 className="text-xl font-bold text-gray-900">
+            Active & Scheduled Offers ({offers.length})
+          </h2>
+
+          {offers.length === 0 ? (
+            <div className="bg-white rounded-lg shadow-sm p-12 text-center">
+              <p className="text-gray-500 text-lg">No promotional offers yet. Create your first offer!</p>
+            </div>
+          ) : (
+            offers.map(offer => (
+              <div key={offer.id} className="bg-white rounded-lg shadow-sm p-6">
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <div className="flex items-center space-x-3 mb-2">
+                      <h3 className="text-xl font-bold text-gray-900">{offer.title}</h3>
+                      <span
+                        className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                          offer.status === 'active'
+                            ? 'bg-green-100 text-green-800'
+                            : offer.status === 'scheduled'
+                            ? 'bg-blue-100 text-blue-800'
+                            : 'bg-gray-100 text-gray-800'
+                        }`}
+                      >
+                        {offer.status.toUpperCase()}
+                      </span>
+                      <span className="px-3 py-1 bg-orange-100 text-orange-800 rounded-full text-xs font-semibold">
+                        {offer.discountPercent}% OFF
+                      </span>
+                    </div>
+
+                    <p className="text-gray-600 mb-3">{offer.description}</p>
+
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <span className="text-gray-500 font-medium">Valid Period:</span>
+                        <span className="text-gray-900 ml-2">
+                          {offer.validFrom} to {offer.validUntil}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-gray-500 font-medium">Applicable Services:</span>
+                        <span className="text-gray-900 ml-2">
+                          {offer.applicableServices.join(', ')}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex space-x-2 ml-4">
+                    <button
+                      onClick={() => toggleOfferStatus(offer.id)}
+                      className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                        offer.status === 'active'
+                          ? 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200'
+                          : 'bg-green-100 text-green-800 hover:bg-green-200'
+                      }`}
+                    >
+                      {offer.status === 'active' ? 'Deactivate' : 'Activate'}
+                    </button>
+                    <button
+                      onClick={() => deleteOffer(offer.id)}
+                      className="px-4 py-2 bg-red-100 text-red-800 rounded-lg font-medium hover:bg-red-200 transition-colors"
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
       </div>
     </div>
   )
