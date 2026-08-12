@@ -1,467 +1,381 @@
 /**
- * CommentsAnd — API documentation for comments and annotations endpoints
+ * CommentsAnd — Comments and annotations UI for document review
  *
- * Features: RESTful endpoints, CRUD operations, annotation support, threading, metadata display
+ * Features: threaded comments, annotation highlighting, user avatars, timestamp display, reply functionality
  *
- * Ticket: SCRUM-666 | Branch: proto/SCRUM-658
+ * Ticket: SCRUM-670 | Branch: proto/SCRUM-658
  */
 
 import React, { useState } from 'react'
-
-interface ApiEndpoint {
-  id: string
-  method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
-  path: string
-  description: string
-  requestBody?: string
-  responseExample: string
-  status: 'active' | 'deprecated' | 'beta'
-}
-
-interface Comment {
-  id: string
-  documentId: string
-  authorId: string
-  authorName: string
-  content: string
-  timestamp: string
-  parentId?: string
-  resolved: boolean
-}
 
 interface Annotation {
   id: string
   documentId: string
   pageNumber: number
-  authorId: string
-  authorName: string
-  content: string
+  position: { x: number; y: number }
+  selectedText: string
+  comment: string
+  author: string
+  authorInitials: string
+  authorColor: string
   timestamp: string
-  coordinates: { x: number; y: number; width: number; height: number }
-  type: 'highlight' | 'note' | 'redaction' | 'stamp'
+  replies: Reply[]
+  status: 'open' | 'resolved' | 'archived'
 }
 
-const mockApiEndpoints: ApiEndpoint[] = [
-  {
-    id: 'ep-1',
-    method: 'GET',
-    path: '/api/v1/documents/:docId/comments',
-    description: 'Retrieve all comments for a specific document',
-    responseExample: '{ "comments": [...], "total": 42, "page": 1 }',
-    status: 'active'
-  },
-  {
-    id: 'ep-2',
-    method: 'POST',
-    path: '/api/v1/documents/:docId/comments',
-    description: 'Create a new comment on a document',
-    requestBody: '{ "content": "string", "parentId": "string?" }',
-    responseExample: '{ "id": "cmt-123", "status": "created", "timestamp": "2026-08-12T10:30:00Z" }',
-    status: 'active'
-  },
-  {
-    id: 'ep-3',
-    method: 'GET',
-    path: '/api/v1/documents/:docId/annotations',
-    description: 'Retrieve all annotations for a specific document',
-    responseExample: '{ "annotations": [...], "total": 28, "page": 1 }',
-    status: 'active'
-  },
-  {
-    id: 'ep-4',
-    method: 'POST',
-    path: '/api/v1/documents/:docId/annotations',
-    description: 'Create a new annotation on a document page',
-    requestBody: '{ "pageNumber": 1, "content": "string", "type": "highlight|note|redaction|stamp", "coordinates": {...} }',
-    responseExample: '{ "id": "ann-456", "status": "created", "timestamp": "2026-08-12T10:35:00Z" }',
-    status: 'active'
-  },
-  {
-    id: 'ep-5',
-    method: 'PATCH',
-    path: '/api/v1/comments/:commentId',
-    description: 'Update an existing comment (edit content or mark as resolved)',
-    requestBody: '{ "content": "string?", "resolved": "boolean?" }',
-    responseExample: '{ "id": "cmt-123", "status": "updated", "timestamp": "2026-08-12T10:40:00Z" }',
-    status: 'active'
-  },
-  {
-    id: 'ep-6',
-    method: 'DELETE',
-    path: '/api/v1/comments/:commentId',
-    description: 'Delete a specific comment',
-    responseExample: '{ "id": "cmt-123", "status": "deleted" }',
-    status: 'active'
-  },
-  {
-    id: 'ep-7',
-    method: 'PATCH',
-    path: '/api/v1/annotations/:annotationId',
-    description: 'Update an existing annotation',
-    requestBody: '{ "content": "string?", "coordinates": {...}? }',
-    responseExample: '{ "id": "ann-456", "status": "updated", "timestamp": "2026-08-12T10:45:00Z" }',
-    status: 'active'
-  },
-  {
-    id: 'ep-8',
-    method: 'DELETE',
-    path: '/api/v1/annotations/:annotationId',
-    description: 'Delete a specific annotation',
-    responseExample: '{ "id": "ann-456", "status": "deleted" }',
-    status: 'active'
-  }
-]
+interface Reply {
+  id: string
+  comment: string
+  author: string
+  authorInitials: string
+  timestamp: string
+}
 
-const mockComments: Comment[] = [
+const MOCK_ANNOTATIONS: Annotation[] = [
   {
-    id: 'cmt-001',
-    documentId: 'doc-123',
-    authorId: 'user-001',
-    authorName: 'Sarah Chen',
-    content: 'This clause needs clarification regarding liability limits.',
-    timestamp: '2026-08-11T09:15:00Z',
-    resolved: false
-  },
-  {
-    id: 'cmt-002',
-    documentId: 'doc-123',
-    authorId: 'user-002',
-    authorName: 'Michael Torres',
-    content: 'Agreed. I recommend we add specific dollar amounts.',
-    timestamp: '2026-08-11T10:22:00Z',
-    parentId: 'cmt-001',
-    resolved: false
-  },
-  {
-    id: 'cmt-003',
-    documentId: 'doc-124',
-    authorId: 'user-003',
-    authorName: 'Emily Watson',
-    content: 'The termination notice period seems too short.',
-    timestamp: '2026-08-11T14:30:00Z',
-    resolved: true
-  },
-  {
-    id: 'cmt-004',
-    documentId: 'doc-125',
-    authorId: 'user-001',
-    authorName: 'Sarah Chen',
-    content: 'Payment terms look acceptable as drafted.',
-    timestamp: '2026-08-12T08:00:00Z',
-    resolved: true
-  },
-  {
-    id: 'cmt-005',
-    documentId: 'doc-126',
-    authorId: 'user-004',
-    authorName: 'David Kim',
-    content: 'We need to verify the jurisdiction clause with local counsel.',
-    timestamp: '2026-08-12T09:45:00Z',
-    resolved: false
-  }
-]
-
-const mockAnnotations: Annotation[] = [
-  {
-    id: 'ann-001',
-    documentId: 'doc-123',
+    id: 'ann-1',
+    documentId: 'doc-2023-001',
     pageNumber: 3,
-    authorId: 'user-001',
-    authorName: 'Sarah Chen',
-    content: 'Important: Review with financial team',
-    timestamp: '2026-08-11T09:20:00Z',
-    coordinates: { x: 120, y: 450, width: 280, height: 50 },
-    type: 'highlight'
+    position: { x: 120, y: 340 },
+    selectedText: 'This clause may present compliance issues under GDPR Article 6',
+    comment: 'We need to revise this section to align with current data protection regulations. The language is too vague.',
+    author: 'Sarah Chen',
+    authorInitials: 'SC',
+    authorColor: 'bg-blue-500',
+    timestamp: '2026-08-10 14:23',
+    status: 'open',
+    replies: [
+      {
+        id: 'rep-1',
+        comment: 'Agreed. I suggest we reference the specific GDPR article and add explicit consent requirements.',
+        author: 'Michael Torres',
+        authorInitials: 'MT',
+        timestamp: '2026-08-10 15:10'
+      },
+      {
+        id: 'rep-2',
+        comment: 'I will draft the revised language and share by EOD tomorrow.',
+        author: 'Sarah Chen',
+        authorInitials: 'SC',
+        timestamp: '2026-08-10 16:45'
+      }
+    ]
   },
   {
-    id: 'ann-002',
-    documentId: 'doc-123',
+    id: 'ann-2',
+    documentId: 'doc-2023-001',
     pageNumber: 5,
-    authorId: 'user-002',
-    authorName: 'Michael Torres',
-    content: 'Potential IP conflict here',
-    timestamp: '2026-08-11T11:00:00Z',
-    coordinates: { x: 80, y: 200, width: 350, height: 80 },
-    type: 'note'
+    position: { x: 200, y: 180 },
+    selectedText: 'The termination clause allows for immediate cancellation without notice',
+    comment: 'This is too aggressive. Industry standard requires 30-day notice period. Client may push back.',
+    author: 'James Wilson',
+    authorInitials: 'JW',
+    authorColor: 'bg-green-500',
+    timestamp: '2026-08-11 09:15',
+    status: 'open',
+    replies: [
+      {
+        id: 'rep-3',
+        comment: 'Checked with the client - they are open to 30-day notice period. Proceed with revision.',
+        author: 'Emily Rodriguez',
+        authorInitials: 'ER',
+        timestamp: '2026-08-11 11:30'
+      }
+    ]
   },
   {
-    id: 'ann-003',
-    documentId: 'doc-124',
+    id: 'ann-3',
+    documentId: 'doc-2023-001',
+    pageNumber: 7,
+    position: { x: 150, y: 420 },
+    selectedText: 'Limitation of liability is capped at $50,000',
+    comment: 'This cap seems low given the contract value of $2M. Recommend increasing to at least $500K.',
+    author: 'David Kim',
+    authorInitials: 'DK',
+    authorColor: 'bg-purple-500',
+    timestamp: '2026-08-11 13:45',
+    status: 'resolved',
+    replies: [
+      {
+        id: 'rep-4',
+        comment: 'Updated to $500K after client negotiation. Both parties agreed.',
+        author: 'David Kim',
+        authorInitials: 'DK',
+        timestamp: '2026-08-12 10:20'
+      }
+    ]
+  },
+  {
+    id: 'ann-4',
+    documentId: 'doc-2023-002',
     pageNumber: 2,
-    authorId: 'user-003',
-    authorName: 'Emily Watson',
-    content: '[REDACTED - Confidential]',
-    timestamp: '2026-08-11T15:15:00Z',
-    coordinates: { x: 150, y: 300, width: 200, height: 30 },
-    type: 'redaction'
+    position: { x: 180, y: 250 },
+    selectedText: 'Force majeure provisions do not include pandemic or epidemic events',
+    comment: 'Post-COVID, we should explicitly include pandemic scenarios in force majeure. This is now standard practice.',
+    author: 'Rachel Patel',
+    authorInitials: 'RP',
+    authorColor: 'bg-pink-500',
+    timestamp: '2026-08-12 08:30',
+    status: 'open',
+    replies: []
   },
   {
-    id: 'ann-004',
-    documentId: 'doc-125',
-    pageNumber: 8,
-    authorId: 'user-001',
-    authorName: 'Sarah Chen',
-    content: 'APPROVED',
-    timestamp: '2026-08-12T08:05:00Z',
-    coordinates: { x: 400, y: 100, width: 100, height: 40 },
-    type: 'stamp'
-  },
-  {
-    id: 'ann-005',
-    documentId: 'doc-126',
-    pageNumber: 1,
-    authorId: 'user-004',
-    authorName: 'David Kim',
-    content: 'Cross-reference with Section 12.4',
-    timestamp: '2026-08-12T09:50:00Z',
-    coordinates: { x: 200, y: 500, width: 250, height: 60 },
-    type: 'note'
+    id: 'ann-5',
+    documentId: 'doc-2023-002',
+    pageNumber: 9,
+    position: { x: 220, y: 310 },
+    selectedText: 'Intellectual property rights transfer upon final payment',
+    comment: 'Confirmed this aligns with our standard IP transfer policy. No changes needed.',
+    author: 'Tom Anderson',
+    authorInitials: 'TA',
+    authorColor: 'bg-orange-500',
+    timestamp: '2026-08-12 09:00',
+    status: 'resolved',
+    replies: [
+      {
+        id: 'rep-5',
+        comment: 'Great, marking as resolved.',
+        author: 'Sarah Chen',
+        authorInitials: 'SC',
+        timestamp: '2026-08-12 09:15'
+      }
+    ]
   }
 ]
 
 export default function CommentsAnd() {
-  const [activeTab, setActiveTab] = useState<'endpoints' | 'comments' | 'annotations'>('endpoints')
-  const [selectedMethod, setSelectedMethod] = useState<string>('ALL')
+  const [annotations, setAnnotations] = useState<Annotation[]>(MOCK_ANNOTATIONS)
+  const [selectedAnnotation, setSelectedAnnotation] = useState<string | null>(null)
+  const [replyText, setReplyText] = useState<{ [key: string]: string }>({})
+  const [filterStatus, setFilterStatus] = useState<'all' | 'open' | 'resolved' | 'archived'>('all')
 
-  const filteredEndpoints = selectedMethod === 'ALL'
-    ? mockApiEndpoints
-    : mockApiEndpoints.filter(ep => ep.method === selectedMethod)
+  const filteredAnnotations = annotations.filter(ann => 
+    filterStatus === 'all' ? true : ann.status === filterStatus
+  )
 
-  const getMethodColor = (method: string): string => {
-    switch (method) {
-      case 'GET': return 'bg-blue-100 text-blue-700'
-      case 'POST': return 'bg-green-100 text-green-700'
-      case 'PUT': return 'bg-yellow-100 text-yellow-700'
-      case 'PATCH': return 'bg-orange-100 text-orange-700'
-      case 'DELETE': return 'bg-red-100 text-red-700'
-      default: return 'bg-gray-100 text-gray-700'
-    }
+  const handleAddReply = (annotationId: string) => {
+    const text = replyText[annotationId]?.trim()
+    if (!text) return
+
+    setAnnotations(prev => prev.map(ann => {
+      if (ann.id === annotationId) {
+        const newReply: Reply = {
+          id: `rep-${Date.now()}`,
+          comment: text,
+          author: 'Current User',
+          authorInitials: 'CU',
+          timestamp: new Date().toLocaleString('en-US', { 
+            year: 'numeric', 
+            month: '2-digit', 
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit'
+          })
+        }
+        return { ...ann, replies: [...ann.replies, newReply] }
+      }
+      return ann
+    }))
+
+    setReplyText(prev => ({ ...prev, [annotationId]: '' }))
   }
 
-  const getStatusColor = (status: string): string => {
+  const handleToggleStatus = (annotationId: string) => {
+    setAnnotations(prev => prev.map(ann => {
+      if (ann.id === annotationId) {
+        return { 
+          ...ann, 
+          status: ann.status === 'open' ? 'resolved' : 'open'
+        }
+      }
+      return ann
+    }))
+  }
+
+  const getStatusBadgeClass = (status: string) => {
     switch (status) {
-      case 'active': return 'bg-green-100 text-green-700'
-      case 'deprecated': return 'bg-red-100 text-red-700'
-      case 'beta': return 'bg-purple-100 text-purple-700'
-      default: return 'bg-gray-100 text-gray-700'
-    }
-  }
-
-  const getAnnotationTypeColor = (type: string): string => {
-    switch (type) {
-      case 'highlight': return 'bg-yellow-100 text-yellow-800'
-      case 'note': return 'bg-blue-100 text-blue-800'
-      case 'redaction': return 'bg-red-100 text-red-800'
-      case 'stamp': return 'bg-green-100 text-green-800'
-      default: return 'bg-gray-100 text-gray-800'
+      case 'open':
+        return 'bg-yellow-100 text-yellow-800 border-yellow-300'
+      case 'resolved':
+        return 'bg-green-100 text-green-800 border-green-300'
+      case 'archived':
+        return 'bg-gray-100 text-gray-800 border-gray-300'
+      default:
+        return 'bg-gray-100 text-gray-800 border-gray-300'
     }
   }
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-7xl mx-auto">
-        <header className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Comments & Annotations API
-          </h1>
-          <p className="text-gray-600">
-            RESTful endpoints for managing document comments, threaded discussions, and page annotations
-          </p>
-        </header>
-
-        {/* Tab Navigation */}
-        <div className="mb-6 border-b border-gray-200">
-          <nav className="flex space-x-8">
-            <button
-              onClick={() => setActiveTab('endpoints')}
-              className={`py-3 px-1 border-b-2 font-medium text-sm transition-colors ${
-                activeTab === 'endpoints'
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-            >
-              API Endpoints
-            </button>
-            <button
-              onClick={() => setActiveTab('comments')}
-              className={`py-3 px-1 border-b-2 font-medium text-sm transition-colors ${
-                activeTab === 'comments'
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-            >
-              Sample Comments
-            </button>
-            <button
-              onClick={() => setActiveTab('annotations')}
-              className={`py-3 px-1 border-b-2 font-medium text-sm transition-colors ${
-                activeTab === 'annotations'
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-            >
-              Sample Annotations
-            </button>
-          </nav>
-        </div>
-
-        {/* API Endpoints Tab */}
-        {activeTab === 'endpoints' && (
-          <div>
-            <div className="mb-6 flex items-center space-x-4">
-              <label className="text-sm font-medium text-gray-700">Filter by method:</label>
-              <div className="flex space-x-2">
-                {['ALL', 'GET', 'POST', 'PATCH', 'DELETE'].map(method => (
-                  <button
-                    key={method}
-                    onClick={() => setSelectedMethod(method)}
-                    className={`px-3 py-1 rounded text-xs font-medium transition-colors ${
-                      selectedMethod === method
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
-                    }`}
-                  >
-                    {method}
-                  </button>
-                ))}
-              </div>
+      <div className="max-w-6xl mx-auto">
+        {/* Header */}
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">Comments & Annotations</h1>
+              <p className="text-gray-600 mt-1">Review and manage document annotations</p>
             </div>
-
-            <div className="space-y-4">
-              {filteredEndpoints.map(endpoint => (
-                <div key={endpoint.id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-5">
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex items-center space-x-3">
-                      <span className={`px-3 py-1 rounded text-xs font-bold ${getMethodColor(endpoint.method)}`}>
-                        {endpoint.method}
-                      </span>
-                      <code className="text-sm font-mono text-gray-800">{endpoint.path}</code>
-                    </div>
-                    <span className={`px-2 py-1 rounded text-xs font-medium ${getStatusColor(endpoint.status)}`}>
-                      {endpoint.status}
-                    </span>
-                  </div>
-                  
-                  <p className="text-gray-700 mb-3">{endpoint.description}</p>
-                  
-                  {endpoint.requestBody && (
-                    <div className="mb-3">
-                      <h4 className="text-xs font-semibold text-gray-600 mb-1">Request Body:</h4>
-                      <pre className="bg-gray-50 p-2 rounded text-xs font-mono text-gray-800 overflow-x-auto">
-                        {endpoint.requestBody}
-                      </pre>
-                    </div>
-                  )}
-                  
-                  <div>
-                    <h4 className="text-xs font-semibold text-gray-600 mb-1">Response Example:</h4>
-                    <pre className="bg-gray-50 p-2 rounded text-xs font-mono text-gray-800 overflow-x-auto">
-                      {endpoint.responseExample}
-                    </pre>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Comments Tab */}
-        {activeTab === 'comments' && (
-          <div className="space-y-4">
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
-              <p className="text-sm text-blue-800">
-                <strong>Total Comments:</strong> {mockComments.length} | 
-                <strong className="ml-3">Resolved:</strong> {mockComments.filter(c => c.resolved).length} | 
-                <strong className="ml-3">Pending:</strong> {mockComments.filter(c => !c.resolved).length}
-              </p>
-            </div>
-
-            {mockComments.map(comment => (
-              <div
-                key={comment.id}
-                className={`bg-white rounded-lg shadow-sm border p-5 ${
-                  comment.parentId ? 'ml-8 border-l-4 border-l-blue-300' : 'border-gray-200'
+            <div className="flex gap-2">
+              <button
+                onClick={() => setFilterStatus('all')}
+                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                  filterStatus === 'all'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                 }`}
               >
-                <div className="flex items-start justify-between mb-3">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-8 h-8 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center text-white font-bold text-sm">
-                      {comment.authorName.split(' ').map(n => n[0]).join('')}
-                    </div>
-                    <div>
-                      <div className="font-semibold text-gray-900">{comment.authorName}</div>
-                      <div className="text-xs text-gray-500">
-                        {new Date(comment.timestamp).toLocaleString()} • Doc: {comment.documentId}
-                      </div>
-                    </div>
-                  </div>
-                  <span
-                    className={`px-2 py-1 rounded text-xs font-medium ${
-                      comment.resolved ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'
-                    }`}
-                  >
-                    {comment.resolved ? 'Resolved' : 'Pending'}
-                  </span>
-                </div>
-                
-                <p className="text-gray-700 text-sm leading-relaxed">{comment.content}</p>
-                
-                {comment.parentId && (
-                  <div className="mt-2 text-xs text-blue-600">
-                    ↳ Reply to comment {comment.parentId}
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Annotations Tab */}
-        {activeTab === 'annotations' && (
-          <div className="space-y-4">
-            <div className="bg-purple-50 border border-purple-200 rounded-lg p-4 mb-4">
-              <p className="text-sm text-purple-800">
-                <strong>Total Annotations:</strong> {mockAnnotations.length} | 
-                <strong className="ml-3">Types:</strong> Highlight ({mockAnnotations.filter(a => a.type === 'highlight').length}), 
-                Note ({mockAnnotations.filter(a => a.type === 'note').length}), 
-                Redaction ({mockAnnotations.filter(a => a.type === 'redaction').length}), 
-                Stamp ({mockAnnotations.filter(a => a.type === 'stamp').length})
-              </p>
+                All ({annotations.length})
+              </button>
+              <button
+                onClick={() => setFilterStatus('open')}
+                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                  filterStatus === 'open'
+                    ? 'bg-yellow-600 text-white'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                Open ({annotations.filter(a => a.status === 'open').length})
+              </button>
+              <button
+                onClick={() => setFilterStatus('resolved')}
+                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                  filterStatus === 'resolved'
+                    ? 'bg-green-600 text-white'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                Resolved ({annotations.filter(a => a.status === 'resolved').length})
+              </button>
             </div>
+          </div>
+        </div>
 
-            {mockAnnotations.map(annotation => (
-              <div key={annotation.id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-5">
-                <div className="flex items-start justify-between mb-3">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-8 h-8 bg-gradient-to-br from-purple-400 to-pink-500 rounded-full flex items-center justify-center text-white font-bold text-sm">
-                      {annotation.authorName.split(' ').map(n => n[0]).join('')}
-                    </div>
-                    <div>
-                      <div className="font-semibold text-gray-900">{annotation.authorName}</div>
-                      <div className="text-xs text-gray-500">
-                        {new Date(annotation.timestamp).toLocaleString()} • Doc: {annotation.documentId} • Page {annotation.pageNumber}
+        {/* Annotations List */}
+        <div className="space-y-4">
+          {filteredAnnotations.length === 0 ? (
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-12 text-center">
+              <p className="text-gray-500 text-lg">No annotations found for this filter</p>
+            </div>
+          ) : (
+            filteredAnnotations.map(annotation => (
+              <div
+                key={annotation.id}
+                className={`bg-white rounded-lg shadow-sm border-2 transition-all ${
+                  selectedAnnotation === annotation.id
+                    ? 'border-blue-500 shadow-md'
+                    : 'border-gray-200 hover:border-gray-300'
+                }`}
+              >
+                <div className="p-6">
+                  {/* Annotation Header */}
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex items-start gap-3">
+                      <div className={`${annotation.authorColor} w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold`}>
+                        {annotation.authorInitials}
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-semibold text-gray-900">{annotation.author}</span>
+                          <span className="text-gray-500 text-sm">•</span>
+                          <span className="text-gray-500 text-sm">{annotation.timestamp}</span>
+                        </div>
+                        <div className="flex items-center gap-2 mt-1">
+                          <span className="text-xs text-gray-500">
+                            Document: {annotation.documentId} • Page {annotation.pageNumber}
+                          </span>
+                          <span className={`px-2 py-0.5 text-xs font-medium border rounded-full ${getStatusBadgeClass(annotation.status)}`}>
+                            {annotation.status.toUpperCase()}
+                          </span>
+                        </div>
                       </div>
                     </div>
+                    <button
+                      onClick={() => setSelectedAnnotation(
+                        selectedAnnotation === annotation.id ? null : annotation.id
+                      )}
+                      className="text-blue-600 hover:text-blue-800 font-medium text-sm"
+                    >
+                      {selectedAnnotation === annotation.id ? 'Collapse' : 'Expand'}
+                    </button>
                   </div>
-                  <span className={`px-2 py-1 rounded text-xs font-medium uppercase ${getAnnotationTypeColor(annotation.type)}`}>
-                    {annotation.type}
-                  </span>
-                </div>
-                
-                <p className="text-gray-700 text-sm leading-relaxed mb-3">{annotation.content}</p>
-                
-                <div className="bg-gray-50 rounded p-3 text-xs font-mono text-gray-600">
-                  <div className="grid grid-cols-2 gap-2">
-                    <div><span className="font-semibold">X:</span> {annotation.coordinates.x}px</div>
-                    <div><span className="font-semibold">Y:</span> {annotation.coordinates.y}px</div>
-                    <div><span className="font-semibold">Width:</span> {annotation.coordinates.width}px</div>
-                    <div><span className="font-semibold">Height:</span> {annotation.coordinates.height}px</div>
+
+                  {/* Selected Text */}
+                  <div className="bg-yellow-50 border-l-4 border-yellow-400 p-3 mb-4 rounded">
+                    <p className="text-sm text-gray-700 italic">"{annotation.selectedText}"</p>
                   </div>
+
+                  {/* Main Comment */}
+                  <div className="mb-4">
+                    <p className="text-gray-800">{annotation.comment}</p>
+                  </div>
+
+                  {/* Replies Section */}
+                  {selectedAnnotation === annotation.id && (
+                    <div className="border-t border-gray-200 pt-4 mt-4">
+                      {annotation.replies.length > 0 && (
+                        <div className="space-y-3 mb-4">
+                          <h3 className="text-sm font-semibold text-gray-700 mb-2">
+                            Replies ({annotation.replies.length})
+                          </h3>
+                          {annotation.replies.map(reply => (
+                            <div key={reply.id} className="flex gap-3 pl-4 border-l-2 border-gray-200">
+                              <div className="bg-gray-300 w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-semibold flex-shrink-0">
+                                {reply.authorInitials}
+                              </div>
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <span className="font-medium text-gray-900 text-sm">{reply.author}</span>
+                                  <span className="text-gray-400 text-xs">•</span>
+                                  <span className="text-gray-500 text-xs">{reply.timestamp}</span>
+                                </div>
+                                <p className="text-gray-700 text-sm">{reply.comment}</p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Reply Input */}
+                      <div className="flex gap-3">
+                        <div className="bg-blue-500 w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-semibold flex-shrink-0">
+                          CU
+                        </div>
+                        <div className="flex-1">
+                          <textarea
+                            value={replyText[annotation.id] || ''}
+                            onChange={(e) => setReplyText(prev => ({ ...prev, [annotation.id]: e.target.value }))}
+                            placeholder="Add a reply..."
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
+                            rows={2}
+                          />
+                          <div className="flex gap-2 mt-2">
+                            <button
+                              onClick={() => handleAddReply(annotation.id)}
+                              disabled={!replyText[annotation.id]?.trim()}
+                              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed font-medium text-sm"
+                            >
+                              Reply
+                            </button>
+                            <button
+                              onClick={() => handleToggleStatus(annotation.id)}
+                              className={`px-4 py-2 rounded-lg font-medium text-sm ${
+                                annotation.status === 'open'
+                                  ? 'bg-green-100 text-green-700 hover:bg-green-200'
+                                  : 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200'
+                              }`}
+                            >
+                              Mark as {annotation.status === 'open' ? 'Resolved' : 'Open'}
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
-            ))}
-          </div>
-        )}
+            ))
+          )}
+        </div>
       </div>
     </div>
   )
