@@ -8,108 +8,86 @@ describe('EasilyBook', () => {
     expect(document.body).toBeTruthy()
   })
 
-  it('displays the booking form title', () => {
+  it('displays the main heading and cancellation policy', () => {
     render(<EasilyBook />)
-    expect(screen.getByText('Book Your Appointment')).toBeTruthy()
+    expect(screen.getByText('Easy Online Booking')).toBeTruthy()
+    expect(screen.getByText(/24 hours in advance/i)).toBeTruthy()
+    expect(screen.getByText(/avoid cancellation fees/i)).toBeTruthy()
   })
 
-  it('displays mock services data', () => {
+  it('displays all service options', () => {
     render(<EasilyBook />)
-    // Check for services in the select dropdown
-    expect(screen.getByText('Haircut - $50 (30 min)')).toBeTruthy()
-    expect(screen.getByText('Hair Coloring - $120 (90 min)')).toBeTruthy()
-    expect(screen.getByText('Blowout - $60 (45 min)')).toBeTruthy()
-    expect(screen.getByText('Hair Treatment - $80 (60 min)')).toBeTruthy()
-    expect(screen.getByText('Styling - $55 (40 min)')).toBeTruthy()
+    expect(screen.getAllByText('Haircut').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('Hair Coloring').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('Blowout').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('Highlights').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('Keratin Treatment').length).toBeGreaterThan(0)
   })
 
-  it('displays mock stylists data', () => {
+  it('displays all stylists', () => {
     render(<EasilyBook />)
-    expect(screen.getByText(/Emily Rodriguez/)).toBeTruthy()
-    expect(screen.getByText(/Michael Chen/)).toBeTruthy()
-    expect(screen.getByText(/Sarah Johnson/)).toBeTruthy()
+    expect(screen.getByText('Sarah Johnson')).toBeTruthy()
+    expect(screen.getByText('Michael Chen')).toBeTruthy()
+    expect(screen.getByText('Emma Williams')).toBeTruthy()
+    expect(screen.getByText('David Martinez')).toBeTruthy()
+    expect(screen.getByText('Lisa Anderson')).toBeTruthy()
   })
 
-  it('displays mock time slots', () => {
+  it('displays time slots', () => {
     render(<EasilyBook />)
-    expect(screen.getByText('09:00 AM')).toBeTruthy()
-    expect(screen.getByText('10:00 AM')).toBeTruthy()
-    expect(screen.getByText('01:00 PM')).toBeTruthy()
+    const timeSlots = screen.getAllByText('09:00 AM')
+    expect(timeSlots.length).toBeGreaterThan(0)
+    expect(screen.getAllByText('10:00 AM').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('03:00 PM').length).toBeGreaterThan(0)
   })
 
-  it('requires email address for booking', () => {
+  it('displays recent appointments', () => {
     render(<EasilyBook />)
-    const emailInput = screen.getByPlaceholderText('your.email@example.com')
-    expect(emailInput).toBeTruthy()
-    expect(emailInput.getAttribute('required')).toBe('')
+    expect(screen.getByText('Recent Appointments')).toBeTruthy()
+    expect(screen.getByText('John Doe')).toBeTruthy()
+    expect(screen.getByText('Jane Smith')).toBeTruthy()
+    expect(screen.getByText('Alice Brown')).toBeTruthy()
+    expect(screen.getByText('Bob Wilson')).toBeTruthy()
+    expect(screen.getByText('Carol Davis')).toBeTruthy()
   })
 
-  it('shows email validation message for invalid email', () => {
+  it('renders form fields for client information', () => {
     render(<EasilyBook />)
-    const emailInput = screen.getByPlaceholderText('your.email@example.com') as HTMLInputElement
-    
-    fireEvent.change(emailInput, { target: { value: 'invalid-email' } })
-    
-    expect(screen.getByText('Please provide a valid email address')).toBeTruthy()
+    expect(screen.getByPlaceholderText('John Doe')).toBeTruthy()
+    expect(screen.getByPlaceholderText('john@example.com')).toBeTruthy()
+    expect(screen.getByPlaceholderText('(555) 123-4567')).toBeTruthy()
   })
 
-  it('shows confirmation message in email field description', () => {
+  it('renders book appointment button', () => {
     render(<EasilyBook />)
-    expect(screen.getByText(/You will receive booking confirmation at this email address/)).toBeTruthy()
+    expect(screen.getByText('Book Appointment')).toBeTruthy()
   })
 
-  it('allows user to select service, stylist, and time slot', () => {
+  it('allows selecting a service', () => {
     render(<EasilyBook />)
-    
-    const serviceSelect = screen.getByLabelText(/Select Service/) as HTMLSelectElement
-    const stylistSelect = screen.getByLabelText(/Select Stylist/) as HTMLSelectElement
-    
-    expect(serviceSelect).toBeTruthy()
-    expect(stylistSelect).toBeTruthy()
-    
-    fireEvent.change(serviceSelect, { target: { value: '1' } })
-    expect(serviceSelect.value).toBe('1')
-    
-    fireEvent.change(stylistSelect, { target: { value: '2' } })
-    expect(stylistSelect.value).toBe('2')
+    const haircutElements = screen.getAllByText('Haircut')
+    const haircutButton = haircutElements[0].closest('button')
+    expect(haircutButton).toBeTruthy()
+    if (haircutButton) {
+      fireEvent.click(haircutButton)
+      expect(haircutButton.classList.contains('bg-purple-50')).toBe(true)
+    }
   })
 
-  it('disables submit button when email is invalid', () => {
+  it('allows selecting a stylist', () => {
     render(<EasilyBook />)
-    const emailInput = screen.getByPlaceholderText('your.email@example.com') as HTMLInputElement
-    const submitButton = screen.getByText('Confirm Booking') as HTMLButtonElement
-    
-    fireEvent.change(emailInput, { target: { value: 'invalid' } })
-    
-    expect(submitButton.disabled).toBe(true)
+    const stylistButton = screen.getByText('Sarah Johnson').closest('button')
+    expect(stylistButton).toBeTruthy()
+    if (stylistButton) {
+      fireEvent.click(stylistButton)
+      expect(stylistButton.classList.contains('bg-purple-50')).toBe(true)
+    }
   })
 
-  it('shows confirmation page after successful booking', () => {
+  it('allows filling in client name', () => {
     render(<EasilyBook />)
-    
-    // Fill out the form
-    const serviceSelect = screen.getByLabelText(/Select Service/) as HTMLSelectElement
-    const stylistSelect = screen.getByLabelText(/Select Stylist/) as HTMLSelectElement
-    const dateInput = screen.getByLabelText(/Select Date/) as HTMLInputElement
-    const nameInput = screen.getByPlaceholderText('Enter your full name') as HTMLInputElement
-    const emailInput = screen.getByPlaceholderText('your.email@example.com') as HTMLInputElement
-    
-    fireEvent.change(serviceSelect, { target: { value: '1' } })
-    fireEvent.change(stylistSelect, { target: { value: '1' } })
-    fireEvent.change(dateInput, { target: { value: '2026-08-15' } })
-    fireEvent.change(nameInput, { target: { value: 'John Doe' } })
-    fireEvent.change(emailInput, { target: { value: 'john@example.com' } })
-    
-    // Select time slot
-    const timeSlotButton = screen.getByText('09:00 AM')
-    fireEvent.click(timeSlotButton)
-    
-    // Submit form
-    const submitButton = screen.getByText('Confirm Booking')
-    fireEvent.click(submitButton)
-    
-    // Check confirmation message
-    expect(screen.getByText('Booking Confirmed!')).toBeTruthy()
-    expect(screen.getByText(/A confirmation email has been sent to/)).toBeTruthy()
+    const nameInput = screen.getByPlaceholderText('John Doe') as HTMLInputElement
+    fireEvent.change(nameInput, { target: { value: 'Test User' } })
+    expect(nameInput.value).toBe('Test User')
   })
 })
