@@ -1,8 +1,32 @@
 import React, { useState } from 'react'
-
+import ApprovalWorkflow from './components/ApprovalWorkflow.tsx'
+import AuditTrail from './components/AuditTrail.tsx'
+import CommentsAnd from './components/CommentsAnd.tsx'
+import ComplianceView from './components/ComplianceView.tsx'
+import CreateAudit from './components/CreateAudit.tsx'
+import CreateCore from './components/CreateCore.tsx'
+import DocumentUpload from './components/DocumentUpload.tsx'
+import DocumentViewer from './components/DocumentViewer.tsx'
+import LegalAdd from './components/LegalAdd.tsx'
+import LegalTeam from './components/LegalTeam.tsx'
+import LegalUpload from './components/LegalUpload.tsx'
+import Pipeline from './components/Pipeline.tsx'
+import SetupRbac from './components/SetupRbac.tsx'
 
 const screens = [
-
+  { name: 'ApprovalWorkflow', component: <ApprovalWorkflow /> },
+  { name: 'AuditTrail', component: <AuditTrail /> },
+  { name: 'CommentsAnd', component: <CommentsAnd /> },
+  { name: 'ComplianceView', component: <ComplianceView /> },
+  { name: 'CreateAudit', component: <CreateAudit /> },
+  { name: 'CreateCore', component: <CreateCore /> },
+  { name: 'DocumentUpload', component: <DocumentUpload /> },
+  { name: 'DocumentViewer', component: <DocumentViewer /> },
+  { name: 'LegalAdd', component: <LegalAdd /> },
+  { name: 'LegalTeam', component: <LegalTeam /> },
+  { name: 'LegalUpload', component: <LegalUpload /> },
+  { name: 'Pipeline', component: <Pipeline /> },
+  { name: 'SetupRbac', component: <SetupRbac /> },
 ]
 
 export default function App() {
