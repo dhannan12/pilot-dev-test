@@ -26,6 +26,14 @@ interface Appointment {
   service: string
   stylist: string
   clientName: string
+  feedbackProvided: boolean
+  completed: boolean
+}
+
+interface Feedback {
+  appointmentId: number
+  rating: number
+  comment: string
 }
 
 const SERVICES: Service[] = [
@@ -56,11 +64,11 @@ const TIME_SLOTS: TimeSlot[] = [
 ]
 
 const MOCK_APPOINTMENTS: Appointment[] = [
-  { id: 1, date: '2026-08-15', time: '10:00 AM', service: 'Haircut', stylist: 'Sarah Johnson', clientName: 'John Doe' },
-  { id: 2, date: '2026-08-16', time: '02:00 PM', service: 'Hair Coloring', stylist: 'Emma Williams', clientName: 'Jane Smith' },
-  { id: 3, date: '2026-08-17', time: '11:00 AM', service: 'Blowout', stylist: 'Michael Chen', clientName: 'Alice Brown' },
-  { id: 4, date: '2026-08-18', time: '09:00 AM', service: 'Highlights', stylist: 'David Martinez', clientName: 'Bob Wilson' },
-  { id: 5, date: '2026-08-19', time: '03:00 PM', service: 'Keratin Treatment', stylist: 'Lisa Anderson', clientName: 'Carol Davis' }
+  { id: 1, date: '2026-08-01', time: '10:00 AM', service: 'Haircut', stylist: 'Sarah Johnson', clientName: 'John Doe', feedbackProvided: false, completed: true },
+  { id: 2, date: '2026-08-02', time: '02:00 PM', service: 'Hair Coloring', stylist: 'Emma Williams', clientName: 'Jane Smith', feedbackProvided: true, completed: true },
+  { id: 3, date: '2026-08-03', time: '11:00 AM', service: 'Blowout', stylist: 'Michael Chen', clientName: 'Alice Brown', feedbackProvided: false, completed: true },
+  { id: 4, date: '2026-08-18', time: '09:00 AM', service: 'Highlights', stylist: 'David Martinez', clientName: 'Bob Wilson', feedbackProvided: true, completed: true },
+  { id: 5, date: '2026-08-19', time: '03:00 PM', service: 'Keratin Treatment', stylist: 'Lisa Anderson', clientName: 'Carol Davis', feedbackProvided: false, completed: true }
 ]
 
 export default function EasilyBook() {
@@ -73,6 +81,11 @@ export default function EasilyBook() {
   const [clientPhone, setClientPhone] = useState('')
   const [confirmationMessage, setConfirmationMessage] = useState('')
   const [showConfirmation, setShowConfirmation] = useState(false)
+  const [showFeedbackPrompt, setShowFeedbackPrompt] = useState(false)
+  const [selectedAppointmentForFeedback, setSelectedAppointmentForFeedback] = useState<Appointment | null>(null)
+  const [feedbackRating, setFeedbackRating] = useState(0)
+  const [feedbackComment, setFeedbackComment] = useState('')
+  const [appointments, setAppointments] = useState<Appointment[]>(MOCK_APPOINTMENTS)
 
   // Calculate total cost of selected services
   const totalCost = selectedServices.reduce((sum, service) => sum + service.price, 0)
@@ -97,6 +110,25 @@ export default function EasilyBook() {
       return
     }
 
+    // Check if client has previous appointments without feedback
+    const clientPreviousAppointments = appointments.filter(
+      (apt) => apt.clientName.toLowerCase() === clientName.toLowerCase() && apt.completed && !apt.feedbackProvided
+    )
+
+    if (clientPreviousAppointments.length > 0) {
+      // Prompt for feedback first
+      setSelectedAppointmentForFeedback(clientPreviousAppointments[0])
+      setShowFeedbackPrompt(true)
+      return
+    }
+
+    // Proceed with booking
+    completeBooking()
+  }
+
+  const completeBooking = () => {
+    if (!selectedStylist || !selectedTime) return
+    
     const serviceNames = selectedServices.map((s) => s.name).join(', ')
     setConfirmationMessage(
       `Appointment booked successfully! ${clientName}, your services (${serviceNames}) with ${selectedStylist.name} are scheduled for ${selectedDate} at ${selectedTime.time}. Total cost: $${totalCost}`
@@ -115,6 +147,41 @@ export default function EasilyBook() {
       setShowConfirmation(false)
       setConfirmationMessage('')
     }, 5000)
+  }
+
+  const handleFeedbackSubmit = () => {
+    if (feedbackRating === 0) {
+      alert('Please provide a rating')
+      return
+    }
+
+    if (selectedAppointmentForFeedback) {
+      // Update the appointment with feedback
+      setAppointments((prev) =>
+        prev.map((apt) =>
+          apt.id === selectedAppointmentForFeedback.id
+            ? { ...apt, feedbackProvided: true }
+            : apt
+        )
+      )
+
+      // Close feedback prompt
+      setShowFeedbackPrompt(false)
+      setFeedbackRating(0)
+      setFeedbackComment('')
+      setSelectedAppointmentForFeedback(null)
+
+      // Now complete the booking
+      completeBooking()
+    }
+  }
+
+  const skipFeedback = () => {
+    setShowFeedbackPrompt(false)
+    setFeedbackRating(0)
+    setFeedbackComment('')
+    setSelectedAppointmentForFeedback(null)
+    completeBooking()
   }
 
   return (
@@ -227,6 +294,7 @@ export default function EasilyBook() {
                 value={selectedDate}
                 onChange={(e) => setSelectedDate(e.target.value)}
                 min={new Date().toISOString().split('T')[0]}
+                aria-label="Select Date"
                 className="w-full md:w-auto px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-purple-500 focus:outline-none text-lg"
               />
             </div>
@@ -317,11 +385,81 @@ export default function EasilyBook() {
           </form>
         </div>
 
+        {/* Feedback Prompt Modal */}
+        {showFeedbackPrompt && selectedAppointmentForFeedback && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-lg shadow-2xl p-8 max-w-md w-full">
+              <h2 className="text-2xl font-bold text-gray-900 mb-4">Feedback Required</h2>
+              <div className="mb-6 bg-blue-50 border-l-4 border-blue-400 p-4 rounded">
+                <p className="text-sm text-blue-800">
+                  Before booking your next appointment, please provide feedback for your previous visit.
+                </p>
+              </div>
+              
+              <div className="mb-6">
+                <p className="text-sm text-gray-600 mb-2">Previous appointment:</p>
+                <div className="bg-gray-50 p-3 rounded-lg">
+                  <p className="font-semibold text-gray-900">{selectedAppointmentForFeedback.service}</p>
+                  <p className="text-sm text-gray-600">with {selectedAppointmentForFeedback.stylist}</p>
+                  <p className="text-sm text-gray-500">{selectedAppointmentForFeedback.date} at {selectedAppointmentForFeedback.time}</p>
+                </div>
+              </div>
+
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Rating *</label>
+                <div className="flex gap-2">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <button
+                      key={star}
+                      type="button"
+                      onClick={() => setFeedbackRating(star)}
+                      className="text-3xl focus:outline-none transition-transform hover:scale-110"
+                    >
+                      {star <= feedbackRating ? '⭐' : '☆'}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="mb-6">
+                <label htmlFor="feedback-comment" className="block text-sm font-medium text-gray-700 mb-2">
+                  Comments (optional)
+                </label>
+                <textarea
+                  id="feedback-comment"
+                  value={feedbackComment}
+                  onChange={(e) => setFeedbackComment(e.target.value)}
+                  rows={4}
+                  placeholder="Tell us about your experience..."
+                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-purple-500 focus:outline-none"
+                />
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={handleFeedbackSubmit}
+                  className="flex-1 bg-purple-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-purple-700 transition-colors"
+                >
+                  Submit Feedback
+                </button>
+                <button
+                  type="button"
+                  onClick={skipFeedback}
+                  className="flex-1 bg-gray-200 text-gray-700 py-3 px-4 rounded-lg font-semibold hover:bg-gray-300 transition-colors"
+                >
+                  Skip for Now
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Recent Appointments */}
         <div className="mt-10 bg-white rounded-lg shadow-xl p-8">
           <h2 className="text-2xl font-semibold text-gray-900 mb-6">Recent Appointments</h2>
           <div className="space-y-4">
-            {MOCK_APPOINTMENTS.map((appointment) => (
+            {appointments.map((appointment) => (
               <div
                 key={appointment.id}
                 className="border-2 border-gray-200 rounded-lg p-4 hover:border-purple-300 transition-all"
@@ -331,6 +469,15 @@ export default function EasilyBook() {
                     <h3 className="font-semibold text-gray-900">{appointment.clientName}</h3>
                     <p className="text-sm text-gray-600">{appointment.service}</p>
                     <p className="text-sm text-gray-500">with {appointment.stylist}</p>
+                    {appointment.completed && (
+                      <span className={`inline-block mt-2 text-xs px-2 py-1 rounded-full ${
+                        appointment.feedbackProvided
+                          ? 'bg-green-100 text-green-800'
+                          : 'bg-yellow-100 text-yellow-800'
+                      }`}>
+                        {appointment.feedbackProvided ? '✓ Feedback provided' : '⚠ Feedback pending'}
+                      </span>
+                    )}
                   </div>
                   <div className="text-right">
                     <p className="font-medium text-purple-600">{appointment.date}</p>

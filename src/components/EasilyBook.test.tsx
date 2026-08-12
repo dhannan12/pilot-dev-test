@@ -151,4 +151,126 @@ describe('EasilyBook', () => {
     fireEvent.change(nameInput, { target: { value: 'Test User' } })
     expect(nameInput.value).toBe('Test User')
   })
+
+  it('displays feedback status for completed appointments', () => {
+    render(<EasilyBook />)
+    const feedbackProvided = screen.getAllByText(/Feedback provided/i)
+    const feedbackPending = screen.getAllByText(/Feedback pending/i)
+    expect(feedbackProvided.length).toBeGreaterThan(0)
+    expect(feedbackPending.length).toBeGreaterThan(0)
+  })
+
+  it('shows feedback prompt when client with pending feedback tries to book', () => {
+    render(<EasilyBook />)
+    
+    // Select a service
+    const haircutButton = screen.getAllByText('Haircut')[0].closest('button')
+    if (haircutButton) fireEvent.click(haircutButton)
+    
+    // Select a stylist
+    const stylistButton = screen.getByText('Sarah Johnson').closest('button')
+    if (stylistButton) fireEvent.click(stylistButton)
+    
+    // Select a date
+    const dateInput = screen.getByLabelText(/Select Date/i) as HTMLInputElement
+    fireEvent.change(dateInput, { target: { value: '2026-08-20' } })
+    
+    // Select a time
+    const timeButton = screen.getAllByText('09:00 AM')[0].closest('button')
+    if (timeButton) fireEvent.click(timeButton)
+    
+    // Fill in client information with a name that has pending feedback
+    const nameInput = screen.getByPlaceholderText('John Doe') as HTMLInputElement
+    fireEvent.change(nameInput, { target: { value: 'John Doe' } })
+    
+    const emailInput = screen.getByPlaceholderText('john@example.com') as HTMLInputElement
+    fireEvent.change(emailInput, { target: { value: 'john@example.com' } })
+    
+    const phoneInput = screen.getByPlaceholderText('(555) 123-4567') as HTMLInputElement
+    fireEvent.change(phoneInput, { target: { value: '555-1234' } })
+    
+    // Submit the form
+    const submitButton = screen.getByText('Book Appointment')
+    fireEvent.click(submitButton)
+    
+    // Should show feedback prompt
+    expect(screen.getByText('Feedback Required')).toBeTruthy()
+    expect(screen.getByText(/Before booking your next appointment/i)).toBeTruthy()
+  })
+
+  it('allows submitting feedback from the prompt', () => {
+    render(<EasilyBook />)
+    
+    // Trigger feedback prompt by booking with a client who has pending feedback
+    const haircutButton = screen.getAllByText('Haircut')[0].closest('button')
+    if (haircutButton) fireEvent.click(haircutButton)
+    
+    const stylistButton = screen.getByText('Sarah Johnson').closest('button')
+    if (stylistButton) fireEvent.click(stylistButton)
+    
+    const dateInput = document.querySelector('input[type="date"]') as HTMLInputElement
+    fireEvent.change(dateInput, { target: { value: '2026-08-20' } })
+    
+    const timeButton = screen.getAllByText('09:00 AM')[0].closest('button')
+    if (timeButton) fireEvent.click(timeButton)
+    
+    const nameInput = screen.getByPlaceholderText('John Doe') as HTMLInputElement
+    fireEvent.change(nameInput, { target: { value: 'John Doe' } })
+    
+    const emailInput = screen.getByPlaceholderText('john@example.com') as HTMLInputElement
+    fireEvent.change(emailInput, { target: { value: 'john@example.com' } })
+    
+    const phoneInput = screen.getByPlaceholderText('(555) 123-4567') as HTMLInputElement
+    fireEvent.change(phoneInput, { target: { value: '555-1234' } })
+    
+    const submitButton = screen.getByText('Book Appointment')
+    fireEvent.click(submitButton)
+    
+    // Now in feedback modal, click a rating star
+    const stars = screen.getAllByText('☆')
+    if (stars.length > 0) fireEvent.click(stars[4]) // 5th star
+    
+    // Submit feedback
+    const feedbackSubmitButton = screen.getByText('Submit Feedback')
+    fireEvent.click(feedbackSubmitButton)
+    
+    // Should show booking confirmation
+    expect(screen.getByText(/Appointment booked successfully/i)).toBeTruthy()
+  })
+
+  it('allows skipping feedback prompt', () => {
+    render(<EasilyBook />)
+    
+    // Trigger feedback prompt
+    const haircutButton = screen.getAllByText('Haircut')[0].closest('button')
+    if (haircutButton) fireEvent.click(haircutButton)
+    
+    const stylistButton = screen.getByText('Sarah Johnson').closest('button')
+    if (stylistButton) fireEvent.click(stylistButton)
+    
+    const dateInput = document.querySelector('input[type="date"]') as HTMLInputElement
+    fireEvent.change(dateInput, { target: { value: '2026-08-20' } })
+    
+    const timeButton = screen.getAllByText('09:00 AM')[0].closest('button')
+    if (timeButton) fireEvent.click(timeButton)
+    
+    const nameInput = screen.getByPlaceholderText('John Doe') as HTMLInputElement
+    fireEvent.change(nameInput, { target: { value: 'Alice Brown' } })
+    
+    const emailInput = screen.getByPlaceholderText('john@example.com') as HTMLInputElement
+    fireEvent.change(emailInput, { target: { value: 'alice@example.com' } })
+    
+    const phoneInput = screen.getByPlaceholderText('(555) 123-4567') as HTMLInputElement
+    fireEvent.change(phoneInput, { target: { value: '555-5678' } })
+    
+    const submitButton = screen.getByText('Book Appointment')
+    fireEvent.click(submitButton)
+    
+    // Skip feedback
+    const skipButton = screen.getByText('Skip for Now')
+    fireEvent.click(skipButton)
+    
+    // Should show booking confirmation
+    expect(screen.getByText(/Appointment booked successfully/i)).toBeTruthy()
+  })
 })
