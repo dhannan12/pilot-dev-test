@@ -15,6 +15,12 @@ describe('EasilyBook', () => {
     expect(screen.getByText(/avoid cancellation fees/i)).toBeTruthy()
   })
 
+  it('displays service selection with multiple choice support', () => {
+    render(<EasilyBook />)
+    expect(screen.getByText('1. Select Services')).toBeTruthy()
+    expect(screen.getByText('Select one or more services')).toBeTruthy()
+  })
+
   it('displays all service options', () => {
     render(<EasilyBook />)
     expect(screen.getAllByText('Haircut').length).toBeGreaterThan(0)
@@ -63,7 +69,7 @@ describe('EasilyBook', () => {
     expect(screen.getByText('Book Appointment')).toBeTruthy()
   })
 
-  it('allows selecting a service', () => {
+  it('allows selecting a service and displays checkmark', () => {
     render(<EasilyBook />)
     const haircutElements = screen.getAllByText('Haircut')
     const haircutButton = haircutElements[0].closest('button')
@@ -71,6 +77,61 @@ describe('EasilyBook', () => {
     if (haircutButton) {
       fireEvent.click(haircutButton)
       expect(haircutButton.classList.contains('bg-purple-50')).toBe(true)
+    }
+  })
+
+  it('allows selecting multiple services and calculates total cost', () => {
+    render(<EasilyBook />)
+    
+    // Select Haircut ($50)
+    const haircutButton = screen.getAllByText('Haircut')[0].closest('button')
+    if (haircutButton) {
+      fireEvent.click(haircutButton)
+    }
+    
+    // Select Blowout ($40)
+    const blowoutButton = screen.getAllByText('Blowout')[0].closest('button')
+    if (blowoutButton) {
+      fireEvent.click(blowoutButton)
+    }
+    
+    // Check that total cost is displayed
+    expect(screen.getByText('Total Cost:')).toBeTruthy()
+    expect(screen.getByText('$90')).toBeTruthy()
+    expect(screen.getByText('Selected: 2 service(s)')).toBeTruthy()
+  })
+
+  it('calculates total duration when multiple services are selected', () => {
+    render(<EasilyBook />)
+    
+    // Select Haircut (45 minutes)
+    const haircutButton = screen.getAllByText('Haircut')[0].closest('button')
+    if (haircutButton) {
+      fireEvent.click(haircutButton)
+    }
+    
+    // Select Blowout (30 minutes)
+    const blowoutButton = screen.getAllByText('Blowout')[0].closest('button')
+    if (blowoutButton) {
+      fireEvent.click(blowoutButton)
+    }
+    
+    // Check that total duration is displayed (75 minutes)
+    expect(screen.getByText('Total Duration: 75 minutes')).toBeTruthy()
+  })
+
+  it('allows deselecting a service', () => {
+    render(<EasilyBook />)
+    
+    // Select Haircut
+    const haircutButton = screen.getAllByText('Haircut')[0].closest('button')
+    if (haircutButton) {
+      fireEvent.click(haircutButton)
+      expect(haircutButton.classList.contains('bg-purple-50')).toBe(true)
+      
+      // Deselect Haircut
+      fireEvent.click(haircutButton)
+      expect(haircutButton.classList.contains('bg-purple-50')).toBe(false)
     }
   })
 

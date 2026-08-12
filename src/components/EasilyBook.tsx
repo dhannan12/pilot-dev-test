@@ -64,7 +64,7 @@ const MOCK_APPOINTMENTS: Appointment[] = [
 ]
 
 export default function EasilyBook() {
-  const [selectedService, setSelectedService] = useState<Service | null>(null)
+  const [selectedServices, setSelectedServices] = useState<Service[]>([])
   const [selectedStylist, setSelectedStylist] = useState<Stylist | null>(null)
   const [selectedDate, setSelectedDate] = useState('')
   const [selectedTime, setSelectedTime] = useState<TimeSlot | null>(null)
@@ -74,22 +74,38 @@ export default function EasilyBook() {
   const [confirmationMessage, setConfirmationMessage] = useState('')
   const [showConfirmation, setShowConfirmation] = useState(false)
 
+  // Calculate total cost of selected services
+  const totalCost = selectedServices.reduce((sum, service) => sum + service.price, 0)
+  const totalDuration = selectedServices.reduce((sum, service) => sum + service.duration, 0)
+
+  const toggleService = (service: Service) => {
+    setSelectedServices((prev) => {
+      const isSelected = prev.some((s) => s.id === service.id)
+      if (isSelected) {
+        return prev.filter((s) => s.id !== service.id)
+      } else {
+        return [...prev, service]
+      }
+    })
+  }
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (!selectedService || !selectedStylist || !selectedDate || !selectedTime || !clientName || !clientEmail || !clientPhone) {
-      alert('Please fill in all fields')
+    if (selectedServices.length === 0 || !selectedStylist || !selectedDate || !selectedTime || !clientName || !clientEmail || !clientPhone) {
+      alert('Please fill in all fields and select at least one service')
       return
     }
 
+    const serviceNames = selectedServices.map((s) => s.name).join(', ')
     setConfirmationMessage(
-      `Appointment booked successfully! ${clientName}, your ${selectedService.name} with ${selectedStylist.name} is scheduled for ${selectedDate} at ${selectedTime.time}.`
+      `Appointment booked successfully! ${clientName}, your services (${serviceNames}) with ${selectedStylist.name} are scheduled for ${selectedDate} at ${selectedTime.time}. Total cost: $${totalCost}`
     )
     setShowConfirmation(true)
 
     // Reset form
     setTimeout(() => {
-      setSelectedService(null)
+      setSelectedServices([])
       setSelectedStylist(null)
       setSelectedDate('')
       setSelectedTime(null)
@@ -133,25 +149,52 @@ export default function EasilyBook() {
           <form onSubmit={handleSubmit} className="space-y-8">
             {/* Service Selection */}
             <div>
-              <h2 className="text-2xl font-semibold text-gray-900 mb-4">1. Select Service</h2>
+              <h2 className="text-2xl font-semibold text-gray-900 mb-4">1. Select Services</h2>
+              <p className="text-sm text-gray-600 mb-3">Select one or more services</p>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {SERVICES.map((service) => (
-                  <button
-                    key={service.id}
-                    type="button"
-                    onClick={() => setSelectedService(service)}
-                    className={`p-4 border-2 rounded-lg text-left transition-all ${
-                      selectedService?.id === service.id
-                        ? 'border-purple-500 bg-purple-50'
-                        : 'border-gray-200 hover:border-purple-300'
-                    }`}
-                  >
-                    <h3 className="font-semibold text-gray-900">{service.name}</h3>
-                    <p className="text-sm text-gray-600">{service.duration} minutes</p>
-                    <p className="text-lg font-bold text-purple-600 mt-2">${service.price}</p>
-                  </button>
-                ))}
+                {SERVICES.map((service) => {
+                  const isSelected = selectedServices.some((s) => s.id === service.id)
+                  return (
+                    <button
+                      key={service.id}
+                      type="button"
+                      onClick={() => toggleService(service)}
+                      className={`p-4 border-2 rounded-lg text-left transition-all ${
+                        isSelected
+                          ? 'border-purple-500 bg-purple-50'
+                          : 'border-gray-200 hover:border-purple-300'
+                      }`}
+                    >
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <h3 className="font-semibold text-gray-900">{service.name}</h3>
+                          <p className="text-sm text-gray-600">{service.duration} minutes</p>
+                          <p className="text-lg font-bold text-purple-600 mt-2">${service.price}</p>
+                        </div>
+                        {isSelected && (
+                          <svg className="h-6 w-6 text-purple-500" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                          </svg>
+                        )}
+                      </div>
+                    </button>
+                  )
+                })}
               </div>
+              {selectedServices.length > 0 && (
+                <div className="mt-4 p-4 bg-purple-50 border-2 border-purple-200 rounded-lg">
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <p className="text-sm font-medium text-gray-700">Selected: {selectedServices.length} service(s)</p>
+                      <p className="text-xs text-gray-600">Total Duration: {totalDuration} minutes</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm text-gray-600">Total Cost:</p>
+                      <p className="text-2xl font-bold text-purple-600">${totalCost}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Stylist Selection */}
