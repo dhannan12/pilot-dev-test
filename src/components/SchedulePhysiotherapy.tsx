@@ -3,7 +3,7 @@
  *
  * Features: therapist selection, service type picker, calendar date/time slots, patient details form, instant booking confirmation
  *
- * Ticket: SCRUM-718 | Branch: proto/SCRUM-717
+ * Ticket: SCRUM-719 | Branch: proto/SCRUM-717
  */
 
 import { useState } from 'react'
