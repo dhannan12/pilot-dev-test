@@ -10,68 +10,59 @@ describe('ScheduleAppointments', () => {
 
   it('displays the main heading', () => {
     render(<ScheduleAppointments />)
-    expect(screen.getByText('Schedule Appointments')).toBeTruthy()
+    expect(screen.getByText('Appointment Scheduling')).toBeTruthy()
   })
 
-  it('displays 24-hour reminder information', () => {
+  it('displays schedule and appointments tabs', () => {
     render(<ScheduleAppointments />)
-    const elements = screen.getAllByText(/24 hours before/i)
-    expect(elements.length).toBeGreaterThan(0)
+    expect(screen.getByText('Schedule New Appointment')).toBeTruthy()
+    expect(screen.getByText('My Appointments')).toBeTruthy()
   })
 
-  it('displays dentist selection dropdown with mock dentists', () => {
+  it('displays doctor selection dropdown', () => {
     render(<ScheduleAppointments />)
-    expect(screen.getByText(/Dr. Sarah Johnson/i)).toBeTruthy()
-    expect(screen.getByText(/Dr. Michael Chen/i)).toBeTruthy()
-    expect(screen.getByText(/Dr. Emily Rodriguez/i)).toBeTruthy()
+    expect(screen.getByLabelText('Select Doctor')).toBeTruthy()
   })
 
-  it('displays available time slots', () => {
+  it('displays time slots', () => {
     render(<ScheduleAppointments />)
     expect(screen.getByText('09:00 AM')).toBeTruthy()
-    expect(screen.getByText('02:00 PM')).toBeTruthy()
+    expect(screen.getByText('10:00 AM')).toBeTruthy()
+    expect(screen.getByText('01:00 PM')).toBeTruthy()
   })
 
-  it('switches between schedule and list views', () => {
+  it('displays feedback notice about 7-day deadline', () => {
     render(<ScheduleAppointments />)
-    const listButton = screen.getByText('View Appointments')
-    fireEvent.click(listButton)
-    expect(screen.getByText('Scheduled Appointments')).toBeTruthy()
+    expect(screen.getByText(/7 days to submit feedback/i)).toBeTruthy()
   })
 
-  it('displays mock appointments in list view', () => {
+  it('switches to appointments tab when clicked', () => {
     render(<ScheduleAppointments />)
-    const listButton = screen.getByText('View Appointments')
-    fireEvent.click(listButton)
-    expect(screen.getByText('John Smith')).toBeTruthy()
-    expect(screen.getByText('Mary Williams')).toBeTruthy()
-    expect(screen.getByText('Robert Brown')).toBeTruthy()
+    const appointmentsTab = screen.getByRole('button', { name: 'My Appointments' })
+    fireEvent.click(appointmentsTab)
+    // After clicking, the h2 heading should appear
+    const appointmentsHeadings = screen.getAllByText('My Appointments')
+    expect(appointmentsHeadings.length).toBeGreaterThan(1)
   })
 
-  it('shows reminder status for appointments', () => {
+  it('displays mock appointments', () => {
     render(<ScheduleAppointments />)
-    const listButton = screen.getByText('View Appointments')
-    fireEvent.click(listButton)
-    const reminderElements = screen.getAllByText('Reminder Sent')
-    expect(reminderElements.length).toBeGreaterThan(0)
+    const appointmentsTab = screen.getByText('My Appointments')
+    fireEvent.click(appointmentsTab)
+    expect(screen.getByText('Dr. Sarah Johnson')).toBeTruthy()
+    expect(screen.getByText('Dr. Michael Chen')).toBeTruthy()
   })
 
-  it('allows input in patient name field', () => {
+  it('shows feedback pending status for appointments', () => {
     render(<ScheduleAppointments />)
-    const input = screen.getByPlaceholderText('Enter your full name') as HTMLInputElement
-    fireEvent.change(input, { target: { value: 'Test Patient' } })
-    expect(input.value).toBe('Test Patient')
+    const appointmentsTab = screen.getByText('My Appointments')
+    fireEvent.click(appointmentsTab)
+    const feedbackPendingElements = screen.getAllByText('Feedback Pending')
+    expect(feedbackPendingElements.length).toBeGreaterThan(0)
   })
 
-  it('displays appointment type selection', () => {
+  it('displays schedule appointment button', () => {
     render(<ScheduleAppointments />)
-    expect(screen.getByText('Regular Checkup')).toBeTruthy()
-    expect(screen.getByText('Teeth Cleaning')).toBeTruthy()
-  })
-
-  it('has schedule button disabled when form is incomplete', () => {
-    render(<ScheduleAppointments />)
-    const scheduleButton = screen.getByText('Schedule Appointment')
-    expect(scheduleButton.className).toContain('cursor-not-allowed')
+    expect(screen.getByText('Schedule Appointment')).toBeTruthy()
   })
 })

@@ -1,382 +1,364 @@
 /**
- * ScheduleAppointments — Patient appointment scheduling interface with 24-hour reminder system
+ * ScheduleAppointments — Patient appointment scheduling with feedback tracking
  *
- * Features: appointment booking calendar, time slot selection, dentist selection, appointment confirmation, 24-hour reminder display
+ * Features: appointment selection, time slot booking, appointment history, feedback reminders, 7-day feedback deadline
  *
- * Ticket: SCRUM-753 | Branch: proto/SCRUM-747
+ * Ticket: SCRUM-755 | Branch: proto/SCRUM-747
  */
 
-import React, { useState } from 'react'
+import { useState } from 'react'
+
+interface TimeSlot {
+  id: string
+  time: string
+  available: boolean
+}
 
 interface Appointment {
   id: string
-  patientName: string
-  dentistName: string
   date: string
   time: string
-  type: string
-  status: 'scheduled' | 'confirmed' | 'reminder-sent'
-  reminderSent: boolean
-  reminderTime?: string
-}
-
-interface TimeSlot {
-  time: string
-  available: boolean
-}
-
-interface Dentist {
-  id: string
-  name: string
+  doctorName: string
   specialty: string
-  available: boolean
+  status: 'upcoming' | 'completed' | 'feedback-pending'
+  appointmentDate: Date
+  feedbackDeadline: Date | null
 }
 
-const mockDentists: Dentist[] = [
-  { id: 'd1', name: 'Dr. Sarah Johnson', specialty: 'General Dentistry', available: true },
-  { id: 'd2', name: 'Dr. Michael Chen', specialty: 'Orthodontics', available: true },
-  { id: 'd3', name: 'Dr. Emily Rodriguez', specialty: 'Cosmetic Dentistry', available: true },
-  { id: 'd4', name: 'Dr. James Wilson', specialty: 'Pediatric Dentistry', available: true },
-  { id: 'd5', name: 'Dr. Lisa Thompson', specialty: 'Oral Surgery', available: true }
+const AVAILABLE_TIME_SLOTS: TimeSlot[] = [
+  { id: '1', time: '09:00 AM', available: true },
+  { id: '2', time: '10:00 AM', available: true },
+  { id: '3', time: '11:00 AM', available: false },
+  { id: '4', time: '01:00 PM', available: true },
+  { id: '5', time: '02:00 PM', available: true },
+  { id: '6', time: '03:00 PM', available: false },
+  { id: '7', time: '04:00 PM', available: true },
+  { id: '8', time: '05:00 PM', available: true },
 ]
 
-const mockTimeSlots: TimeSlot[] = [
-  { time: '09:00 AM', available: true },
-  { time: '10:00 AM', available: true },
-  { time: '11:00 AM', available: false },
-  { time: '01:00 PM', available: true },
-  { time: '02:00 PM', available: true },
-  { time: '03:00 PM', available: true },
-  { time: '04:00 PM', available: false }
+const DOCTORS = [
+  { id: '1', name: 'Dr. Sarah Johnson', specialty: 'General Dentistry' },
+  { id: '2', name: 'Dr. Michael Chen', specialty: 'Orthodontics' },
+  { id: '3', name: 'Dr. Emily Rodriguez', specialty: 'Pediatric Dentistry' },
+  { id: '4', name: 'Dr. James Williams', specialty: 'Oral Surgery' },
+  { id: '5', name: 'Dr. Lisa Anderson', specialty: 'Cosmetic Dentistry' },
 ]
 
-const mockAppointments: Appointment[] = [
+const MOCK_APPOINTMENTS: Appointment[] = [
   {
-    id: 'apt1',
-    patientName: 'John Smith',
-    dentistName: 'Dr. Sarah Johnson',
-    date: '2026-08-14',
-    time: '09:00 AM',
-    type: 'Regular Checkup',
-    status: 'reminder-sent',
-    reminderSent: true,
-    reminderTime: '2026-08-13 09:00 AM'
-  },
-  {
-    id: 'apt2',
-    patientName: 'Mary Williams',
-    dentistName: 'Dr. Michael Chen',
+    id: '1',
     date: '2026-08-15',
     time: '10:00 AM',
-    type: 'Teeth Cleaning',
-    status: 'confirmed',
-    reminderSent: false
+    doctorName: 'Dr. Sarah Johnson',
+    specialty: 'General Dentistry',
+    status: 'upcoming',
+    appointmentDate: new Date('2026-08-15'),
+    feedbackDeadline: null,
   },
   {
-    id: 'apt3',
-    patientName: 'Robert Brown',
-    dentistName: 'Dr. Emily Rodriguez',
-    date: '2026-08-14',
+    id: '2',
+    date: '2026-08-05',
     time: '02:00 PM',
-    type: 'Cosmetic Consultation',
-    status: 'reminder-sent',
-    reminderSent: true,
-    reminderTime: '2026-08-13 02:00 PM'
+    doctorName: 'Dr. Michael Chen',
+    specialty: 'Orthodontics',
+    status: 'feedback-pending',
+    appointmentDate: new Date('2026-08-05'),
+    feedbackDeadline: new Date('2026-08-12'),
   },
   {
-    id: 'apt4',
-    patientName: 'Jennifer Davis',
-    dentistName: 'Dr. James Wilson',
-    date: '2026-08-16',
+    id: '3',
+    date: '2026-07-28',
+    time: '11:00 AM',
+    doctorName: 'Dr. Emily Rodriguez',
+    specialty: 'Pediatric Dentistry',
+    status: 'completed',
+    appointmentDate: new Date('2026-07-28'),
+    feedbackDeadline: new Date('2026-08-04'),
+  },
+  {
+    id: '4',
+    date: '2026-07-15',
+    time: '09:00 AM',
+    doctorName: 'Dr. James Williams',
+    specialty: 'Oral Surgery',
+    status: 'completed',
+    appointmentDate: new Date('2026-07-15'),
+    feedbackDeadline: new Date('2026-07-22'),
+  },
+  {
+    id: '5',
+    date: '2026-08-20',
     time: '03:00 PM',
-    type: 'Pediatric Checkup',
-    status: 'scheduled',
-    reminderSent: false
+    doctorName: 'Dr. Lisa Anderson',
+    specialty: 'Cosmetic Dentistry',
+    status: 'upcoming',
+    appointmentDate: new Date('2026-08-20'),
+    feedbackDeadline: null,
   },
-  {
-    id: 'apt5',
-    patientName: 'Michael Garcia',
-    dentistName: 'Dr. Lisa Thompson',
-    date: '2026-08-17',
-    time: '01:00 PM',
-    type: 'Tooth Extraction',
-    status: 'scheduled',
-    reminderSent: false
-  }
-]
-
-const appointmentTypes = [
-  'Regular Checkup',
-  'Teeth Cleaning',
-  'Cosmetic Consultation',
-  'Orthodontic Consultation',
-  'Emergency Care',
-  'Root Canal',
-  'Tooth Extraction'
 ]
 
 export default function ScheduleAppointments() {
-  const [view, setView] = useState<'schedule' | 'list'>('schedule')
-  const [selectedDentist, setSelectedDentist] = useState<string>('')
+  const [appointments, setAppointments] = useState<Appointment[]>(MOCK_APPOINTMENTS)
   const [selectedDate, setSelectedDate] = useState<string>('')
-  const [selectedTime, setSelectedTime] = useState<string>('')
-  const [selectedType, setSelectedType] = useState<string>('')
-  const [patientName, setPatientName] = useState<string>('')
-  const [showConfirmation, setShowConfirmation] = useState<boolean>(false)
+  const [selectedDoctor, setSelectedDoctor] = useState<string>('')
+  const [selectedTimeSlot, setSelectedTimeSlot] = useState<string>('')
+  const [activeTab, setActiveTab] = useState<'schedule' | 'appointments'>('schedule')
+  const [showConfirmation, setShowConfirmation] = useState(false)
 
   const handleScheduleAppointment = () => {
-    if (patientName && selectedDentist && selectedDate && selectedTime && selectedType) {
-      setShowConfirmation(true)
-      setTimeout(() => {
-        setShowConfirmation(false)
-        // Reset form
-        setPatientName('')
-        setSelectedDentist('')
-        setSelectedDate('')
-        setSelectedTime('')
-        setSelectedType('')
-      }, 3000)
+    if (!selectedDate || !selectedDoctor || !selectedTimeSlot) {
+      alert('Please select a date, doctor, and time slot')
+      return
     }
+
+    const doctor = DOCTORS.find(d => d.id === selectedDoctor)
+    const timeSlot = AVAILABLE_TIME_SLOTS.find(t => t.id === selectedTimeSlot)
+    
+    if (!doctor || !timeSlot) return
+
+    const appointmentDate = new Date(selectedDate)
+    const newAppointment: Appointment = {
+      id: (appointments.length + 1).toString(),
+      date: selectedDate,
+      time: timeSlot.time,
+      doctorName: doctor.name,
+      specialty: doctor.specialty,
+      status: 'upcoming',
+      appointmentDate: appointmentDate,
+      feedbackDeadline: null,
+    }
+
+    setAppointments([...appointments, newAppointment])
+    setShowConfirmation(true)
+    
+    // Reset form
+    setSelectedDate('')
+    setSelectedDoctor('')
+    setSelectedTimeSlot('')
+
+    setTimeout(() => setShowConfirmation(false), 3000)
   }
 
-  const isFormValid = patientName && selectedDentist && selectedDate && selectedTime && selectedType
+  const getFeedbackStatus = (appointment: Appointment) => {
+    if (appointment.status === 'feedback-pending' && appointment.feedbackDeadline) {
+      const daysRemaining = Math.ceil((appointment.feedbackDeadline.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))
+      if (daysRemaining > 0) {
+        return `Feedback due in ${daysRemaining} day${daysRemaining === 1 ? '' : 's'}`
+      } else {
+        return 'Feedback overdue'
+      }
+    }
+    return null
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Schedule Appointments</h1>
-          <p className="text-gray-600">Book your dental appointment easily online. Reminders will be sent 24 hours before your scheduled time.</p>
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900">Appointment Scheduling</h1>
+          <p className="text-gray-600 mt-2">Schedule your dental appointments easily and track your visits</p>
         </div>
 
-        {/* View Toggle */}
-        <div className="flex gap-4 mb-6">
+        {/* Tab Navigation */}
+        <div className="flex space-x-4 mb-6 border-b border-gray-200">
           <button
-            onClick={() => setView('schedule')}
-            className={`px-6 py-3 rounded-lg font-semibold transition-colors ${
-              view === 'schedule'
-                ? 'bg-blue-600 text-white'
-                : 'bg-white text-gray-700 hover:bg-gray-100'
+            onClick={() => setActiveTab('schedule')}
+            className={`pb-3 px-4 font-medium transition-colors ${
+              activeTab === 'schedule'
+                ? 'border-b-2 border-blue-600 text-blue-600'
+                : 'text-gray-600 hover:text-gray-900'
             }`}
           >
             Schedule New Appointment
           </button>
           <button
-            onClick={() => setView('list')}
-            className={`px-6 py-3 rounded-lg font-semibold transition-colors ${
-              view === 'list'
-                ? 'bg-blue-600 text-white'
-                : 'bg-white text-gray-700 hover:bg-gray-100'
+            onClick={() => setActiveTab('appointments')}
+            className={`pb-3 px-4 font-medium transition-colors ${
+              activeTab === 'appointments'
+                ? 'border-b-2 border-blue-600 text-blue-600'
+                : 'text-gray-600 hover:text-gray-900'
             }`}
           >
-            View Appointments
+            My Appointments
           </button>
         </div>
 
         {/* Confirmation Message */}
         {showConfirmation && (
-          <div className="bg-green-100 border border-green-400 text-green-700 px-6 py-4 rounded-lg mb-6">
+          <div className="mb-6 bg-green-50 border border-green-200 rounded-lg p-4">
             <div className="flex items-center">
-              <span className="text-xl mr-3">✓</span>
-              <div>
-                <p className="font-semibold">Appointment Scheduled Successfully!</p>
-                <p className="text-sm">You will receive a reminder 24 hours before your appointment.</p>
+              <div className="flex-shrink-0">
+                <svg className="h-5 w-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <div className="ml-3">
+                <p className="text-sm font-medium text-green-800">
+                  Appointment scheduled successfully! Remember to submit feedback within 7 days after your appointment.
+                </p>
               </div>
             </div>
           </div>
         )}
 
-        {view === 'schedule' ? (
+        {activeTab === 'schedule' ? (
           <div className="bg-white rounded-lg shadow-md p-6">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">Book Your Appointment</h2>
+            <h2 className="text-2xl font-semibold text-gray-900 mb-6">Schedule a New Appointment</h2>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Patient Information */}
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Patient Name *
-                </label>
-                <input
-                  type="text"
-                  value={patientName}
-                  onChange={(e) => setPatientName(e.target.value)}
-                  placeholder="Enter your full name"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                />
-              </div>
-
-              {/* Appointment Type */}
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Appointment Type *
-                </label>
-                <select
-                  value={selectedType}
-                  onChange={(e) => setSelectedType(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                >
-                  <option value="">Select appointment type</option>
-                  {appointmentTypes.map((type) => (
-                    <option key={type} value={type}>
-                      {type}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
+            <div className="space-y-6">
               {/* Date Selection */}
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Appointment Date *
+                <label htmlFor="date" className="block text-sm font-medium text-gray-700 mb-2">
+                  Select Date
                 </label>
                 <input
                   type="date"
+                  id="date"
                   value={selectedDate}
                   onChange={(e) => setSelectedDate(e.target.value)}
                   min={new Date().toISOString().split('T')[0]}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
               </div>
 
-              {/* Dentist Selection */}
+              {/* Doctor Selection */}
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Select Dentist *
+                <label htmlFor="doctor" className="block text-sm font-medium text-gray-700 mb-2">
+                  Select Doctor
                 </label>
                 <select
-                  value={selectedDentist}
-                  onChange={(e) => setSelectedDentist(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  id="doctor"
+                  value={selectedDoctor}
+                  onChange={(e) => setSelectedDoctor(e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
-                  <option value="">Choose a dentist</option>
-                  {mockDentists.map((dentist) => (
-                    <option key={dentist.id} value={dentist.name}>
-                      {dentist.name} - {dentist.specialty}
+                  <option value="">Choose a doctor...</option>
+                  {DOCTORS.map((doctor) => (
+                    <option key={doctor.id} value={doctor.id}>
+                      {doctor.name} - {doctor.specialty}
                     </option>
                   ))}
                 </select>
               </div>
-            </div>
 
-            {/* Time Slots */}
-            <div className="mt-6">
-              <label className="block text-sm font-semibold text-gray-700 mb-3">
-                Available Time Slots *
-              </label>
-              <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-3">
-                {mockTimeSlots.map((slot) => (
-                  <button
-                    key={slot.time}
-                    onClick={() => slot.available && setSelectedTime(slot.time)}
-                    disabled={!slot.available}
-                    className={`px-4 py-3 rounded-lg font-medium transition-all ${
-                      selectedTime === slot.time
-                        ? 'bg-blue-600 text-white'
-                        : slot.available
-                        ? 'bg-gray-100 text-gray-900 hover:bg-gray-200'
-                        : 'bg-gray-50 text-gray-400 cursor-not-allowed'
-                    }`}
-                  >
-                    {slot.time}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Reminder Notice */}
-            <div className="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <div className="flex items-start">
-                <span className="text-blue-600 text-xl mr-3">ℹ️</span>
-                <div>
-                  <p className="font-semibold text-blue-900">24-Hour Reminder Service</p>
-                  <p className="text-sm text-blue-700">
-                    You will automatically receive a reminder notification 24 hours before your scheduled appointment time.
-                  </p>
+              {/* Time Slot Selection */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-3">
+                  Select Time Slot
+                </label>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  {AVAILABLE_TIME_SLOTS.map((slot) => (
+                    <button
+                      key={slot.id}
+                      onClick={() => slot.available && setSelectedTimeSlot(slot.id)}
+                      disabled={!slot.available}
+                      className={`py-3 px-4 rounded-lg font-medium transition-colors ${
+                        selectedTimeSlot === slot.id
+                          ? 'bg-blue-600 text-white'
+                          : slot.available
+                          ? 'bg-gray-100 text-gray-900 hover:bg-gray-200'
+                          : 'bg-gray-50 text-gray-400 cursor-not-allowed'
+                      }`}
+                    >
+                      {slot.time}
+                      {!slot.available && (
+                        <span className="block text-xs mt-1">Unavailable</span>
+                      )}
+                    </button>
+                  ))}
                 </div>
               </div>
-            </div>
 
-            {/* Schedule Button */}
-            <div className="mt-6">
-              <button
-                onClick={handleScheduleAppointment}
-                disabled={!isFormValid}
-                className={`w-full py-3 rounded-lg font-semibold transition-colors ${
-                  isFormValid
-                    ? 'bg-blue-600 text-white hover:bg-blue-700'
-                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                }`}
-              >
-                Schedule Appointment
-              </button>
+              {/* Submit Button */}
+              <div className="pt-4">
+                <button
+                  onClick={handleScheduleAppointment}
+                  className="w-full bg-blue-600 text-white py-3 px-6 rounded-lg font-medium hover:bg-blue-700 transition-colors focus:ring-4 focus:ring-blue-200"
+                >
+                  Schedule Appointment
+                </button>
+              </div>
+
+              {/* Feedback Notice */}
+              <div className="mt-4 bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <p className="text-sm text-blue-800">
+                  <strong>Important:</strong> After your appointment, you'll have 7 days to submit feedback about your visit.
+                </p>
+              </div>
             </div>
           </div>
         ) : (
           <div className="space-y-4">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">Scheduled Appointments</h2>
+            <h2 className="text-2xl font-semibold text-gray-900 mb-4">My Appointments</h2>
             
-            {mockAppointments.map((appointment) => (
-              <div
-                key={appointment.id}
-                className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow"
-              >
-                <div className="flex flex-col md:flex-row md:items-center md:justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
-                      <h3 className="text-xl font-bold text-gray-900">{appointment.patientName}</h3>
-                      <span
-                        className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                          appointment.status === 'reminder-sent'
-                            ? 'bg-green-100 text-green-800'
-                            : appointment.status === 'confirmed'
-                            ? 'bg-blue-100 text-blue-800'
-                            : 'bg-yellow-100 text-yellow-800'
-                        }`}
-                      >
-                        {appointment.status === 'reminder-sent'
-                          ? 'Reminder Sent'
-                          : appointment.status === 'confirmed'
-                          ? 'Confirmed'
-                          : 'Scheduled'}
-                      </span>
-                    </div>
-                    
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-gray-600">
-                      <p>
-                        <span className="font-semibold">Dentist:</span> {appointment.dentistName}
-                      </p>
-                      <p>
-                        <span className="font-semibold">Type:</span> {appointment.type}
-                      </p>
-                      <p>
-                        <span className="font-semibold">Date:</span> {appointment.date}
-                      </p>
-                      <p>
-                        <span className="font-semibold">Time:</span> {appointment.time}
-                      </p>
-                    </div>
-
-                    {appointment.reminderSent && appointment.reminderTime && (
-                      <div className="mt-3 bg-green-50 border border-green-200 rounded px-3 py-2">
-                        <p className="text-sm text-green-800">
-                          <span className="font-semibold">✓ Reminder sent:</span> {appointment.reminderTime}
-                        </p>
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="mt-4 md:mt-0 md:ml-4 flex gap-2">
-                    <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-                      Reschedule
-                    </button>
-                    <button className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors">
-                      Cancel
-                    </button>
-                  </div>
-                </div>
+            {appointments.length === 0 ? (
+              <div className="bg-white rounded-lg shadow-md p-12 text-center">
+                <p className="text-gray-500">No appointments scheduled yet</p>
               </div>
-            ))}
+            ) : (
+              <div className="space-y-4">
+                {appointments
+                  .sort((a, b) => b.appointmentDate.getTime() - a.appointmentDate.getTime())
+                  .map((appointment) => {
+                    const feedbackStatus = getFeedbackStatus(appointment)
+                    return (
+                      <div
+                        key={appointment.id}
+                        className="bg-white rounded-lg shadow-md p-6 border-l-4 border-blue-600"
+                      >
+                        <div className="flex flex-col md:flex-row md:items-center md:justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center space-x-3 mb-2">
+                              <h3 className="text-lg font-semibold text-gray-900">
+                                {appointment.doctorName}
+                              </h3>
+                              <span
+                                className={`px-3 py-1 rounded-full text-xs font-medium ${
+                                  appointment.status === 'upcoming'
+                                    ? 'bg-green-100 text-green-800'
+                                    : appointment.status === 'feedback-pending'
+                                    ? 'bg-yellow-100 text-yellow-800'
+                                    : 'bg-gray-100 text-gray-800'
+                                }`}
+                              >
+                                {appointment.status === 'upcoming'
+                                  ? 'Upcoming'
+                                  : appointment.status === 'feedback-pending'
+                                  ? 'Feedback Pending'
+                                  : 'Completed'}
+                              </span>
+                            </div>
+                            <p className="text-gray-600 mb-1">{appointment.specialty}</p>
+                            <div className="flex items-center space-x-4 text-sm text-gray-500">
+                              <span>📅 {appointment.date}</span>
+                              <span>🕐 {appointment.time}</span>
+                            </div>
+                            {feedbackStatus && (
+                              <div className={`mt-3 text-sm font-medium ${
+                                feedbackStatus.includes('overdue') ? 'text-red-600' : 'text-yellow-600'
+                              }`}>
+                                ⚠️ {feedbackStatus}
+                              </div>
+                            )}
+                          </div>
+                          <div className="mt-4 md:mt-0 flex space-x-2">
+                            {appointment.status === 'feedback-pending' && (
+                              <button className="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors text-sm font-medium">
+                                Submit Feedback
+                              </button>
+                            )}
+                            {appointment.status === 'upcoming' && (
+                              <button className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors text-sm font-medium">
+                                Reschedule
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  })}
+              </div>
+            )}
           </div>
         )}
       </div>
