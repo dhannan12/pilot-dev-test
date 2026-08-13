@@ -8,33 +8,42 @@ describe('SchedulePhysiotherapy', () => {
     expect(document.body).toBeTruthy()
   })
 
-  it('displays the main title', () => {
+  it('displays the page title', () => {
     render(<SchedulePhysiotherapy />)
-    expect(screen.getByText('Physiotherapy Management')).toBeTruthy()
+    expect(screen.getByText('Schedule Physiotherapy Appointment')).toBeTruthy()
   })
 
-  it('displays mock physiotherapists', () => {
+  it('displays filter options for training times', () => {
     render(<SchedulePhysiotherapy />)
-    expect(screen.getByText('Dr. Sarah Johnson')).toBeTruthy()
-    expect(screen.getByText('Dr. Michael Chen')).toBeTruthy()
-    expect(screen.getByText('Dr. Emily Rodriguez')).toBeTruthy()
-    expect(screen.getByText('Dr. James Wilson')).toBeTruthy()
-    expect(screen.getByText('Dr. Lisa Anderson')).toBeTruthy()
+    expect(screen.getByText('Training Time')).toBeTruthy()
+    expect(screen.getByText('Morning (8AM - 12PM)')).toBeTruthy()
+    expect(screen.getByText('Afternoon (12PM - 6PM)')).toBeTruthy()
+    expect(screen.getByText('Evening (6PM - 9PM)')).toBeTruthy()
   })
 
-  it('displays schedule appointment button', () => {
+  it('displays therapist filter options', () => {
     render(<SchedulePhysiotherapy />)
-    expect(screen.getAllByText('Schedule Appointment').length).toBeGreaterThan(0)
+    expect(screen.getByText('Therapist')).toBeTruthy()
+    expect(screen.getAllByText('Dr. Sarah Johnson').length).toBeGreaterThan(0)
   })
 
-  it('displays appointment history button', () => {
+  it('displays available appointment slots', () => {
     render(<SchedulePhysiotherapy />)
-    expect(screen.getByText('Appointment History')).toBeTruthy()
+    expect(screen.getAllByText('Book Appointment').length).toBeGreaterThan(0)
   })
 
-  it('displays time slots', () => {
+  it('displays session type filter', () => {
     render(<SchedulePhysiotherapy />)
-    expect(screen.getByText('09:00 AM')).toBeTruthy()
-    expect(screen.getByText('02:00 PM')).toBeTruthy()
+    expect(screen.getByText('Session Type')).toBeTruthy()
+  })
+
+  it('displays clear filters button', () => {
+    render(<SchedulePhysiotherapy />)
+    expect(screen.getByText('Clear All Filters')).toBeTruthy()
+  })
+
+  it('shows available appointments count', () => {
+    render(<SchedulePhysiotherapy />)
+    expect(screen.getByText(/available appointments found/i)).toBeTruthy()
   })
 })
