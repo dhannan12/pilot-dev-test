@@ -1,22 +1,18 @@
 /**
- * SchedulePhysiotherapy — Patients can easily schedule physiotherapy appointments with automated 24-hour reminders
+ * SchedulePhysiotherapy — Patient appointment scheduling with physiotherapist progress notes
  *
- * Features: appointment calendar view, time slot selection, therapist selection, booking confirmation, 24-hour reminder display
+ * Features: appointment booking calendar, available time slots, physiotherapist selection, session progress notes entry, appointment history
  *
- * Ticket: SCRUM-723 | Branch: proto/SCRUM-717
+ * Ticket: SCRUM-724 | Branch: proto/SCRUM-717
  */
 
-import React, { useState } from 'react'
+import { useState } from 'react'
 
-interface PhysiotherapyAppointment {
+interface Physiotherapist {
   id: string
-  patientName: string
-  therapistName: string
-  date: string
-  time: string
-  service: string
-  reminderSent: boolean
-  status: 'scheduled' | 'confirmed' | 'completed' | 'cancelled'
+  name: string
+  specialization: string
+  available: boolean
 }
 
 interface TimeSlot {
@@ -25,277 +21,340 @@ interface TimeSlot {
   available: boolean
 }
 
-interface Therapist {
+interface Appointment {
   id: string
-  name: string
-  specialty: string
-  avatar: string
+  patientName: string
+  physiotherapistId: string
+  physiotherapistName: string
+  date: string
+  time: string
+  status: 'scheduled' | 'completed' | 'cancelled'
+  progressNotes?: string
 }
 
-const mockTherapists: Therapist[] = [
-  { id: '1', name: 'Dr. Sarah Johnson', specialty: 'Sports Injury', avatar: 'SJ' },
-  { id: '2', name: 'Dr. Michael Chen', specialty: 'Post-Surgery Recovery', avatar: 'MC' },
-  { id: '3', name: 'Dr. Emily Davis', specialty: 'Chronic Pain Management', avatar: 'ED' },
-  { id: '4', name: 'Dr. James Wilson', specialty: 'Orthopedic Rehab', avatar: 'JW' },
-  { id: '5', name: 'Dr. Amanda Brown', specialty: 'Neurological Rehab', avatar: 'AB' },
+const MOCK_PHYSIOTHERAPISTS: Physiotherapist[] = [
+  { id: 'pt1', name: 'Dr. Sarah Johnson', specialization: 'Sports Injury', available: true },
+  { id: 'pt2', name: 'Dr. Michael Chen', specialization: 'Orthopedic', available: true },
+  { id: 'pt3', name: 'Dr. Emily Rodriguez', specialization: 'Neurological', available: true },
+  { id: 'pt4', name: 'Dr. James Wilson', specialization: 'Pediatric', available: false },
+  { id: 'pt5', name: 'Dr. Lisa Anderson', specialization: 'Geriatric', available: true },
 ]
 
-const mockTimeSlots: TimeSlot[] = [
-  { id: '1', time: '08:00 AM', available: true },
-  { id: '2', time: '09:00 AM', available: true },
-  { id: '3', time: '10:00 AM', available: false },
-  { id: '4', time: '11:00 AM', available: true },
-  { id: '5', time: '01:00 PM', available: true },
-  { id: '6', time: '02:00 PM', available: true },
-  { id: '7', time: '03:00 PM', available: false },
-  { id: '8', time: '04:00 PM', available: true },
+const MOCK_TIME_SLOTS: TimeSlot[] = [
+  { id: 'slot1', time: '09:00 AM', available: true },
+  { id: 'slot2', time: '10:00 AM', available: true },
+  { id: 'slot3', time: '11:00 AM', available: false },
+  { id: 'slot4', time: '01:00 PM', available: true },
+  { id: 'slot5', time: '02:00 PM', available: true },
+  { id: 'slot6', time: '03:00 PM', available: true },
+  { id: 'slot7', time: '04:00 PM', available: false },
 ]
 
-const mockAppointments: PhysiotherapyAppointment[] = [
+const MOCK_APPOINTMENTS: Appointment[] = [
   {
-    id: '1',
-    patientName: 'John Smith',
-    therapistName: 'Dr. Sarah Johnson',
-    date: '2026-08-14',
-    time: '09:00 AM',
-    service: 'Sports Injury Assessment',
-    reminderSent: true,
-    status: 'confirmed',
-  },
-  {
-    id: '2',
-    patientName: 'Emma Wilson',
-    therapistName: 'Dr. Michael Chen',
+    id: 'apt1',
+    patientName: 'John Doe',
+    physiotherapistId: 'pt1',
+    physiotherapistName: 'Dr. Sarah Johnson',
     date: '2026-08-15',
-    time: '11:00 AM',
-    service: 'Post-Surgery Recovery Session',
-    reminderSent: false,
+    time: '09:00 AM',
     status: 'scheduled',
   },
   {
-    id: '3',
-    patientName: 'Robert Davis',
-    therapistName: 'Dr. Emily Davis',
-    date: '2026-08-14',
+    id: 'apt2',
+    patientName: 'John Doe',
+    physiotherapistId: 'pt2',
+    physiotherapistName: 'Dr. Michael Chen',
+    date: '2026-08-10',
     time: '02:00 PM',
-    service: 'Chronic Pain Therapy',
-    reminderSent: true,
-    status: 'confirmed',
+    status: 'completed',
+    progressNotes: 'Patient showed significant improvement in mobility. ROM exercises completed successfully. Continue with current treatment plan.',
   },
   {
-    id: '4',
-    patientName: 'Lisa Anderson',
-    therapistName: 'Dr. James Wilson',
-    date: '2026-08-16',
+    id: 'apt3',
+    patientName: 'John Doe',
+    physiotherapistId: 'pt3',
+    physiotherapistName: 'Dr. Emily Rodriguez',
+    date: '2026-08-05',
+    time: '11:00 AM',
+    status: 'completed',
+    progressNotes: 'Initial assessment completed. Patient has limited range of motion in left shoulder. Started with gentle stretching exercises.',
+  },
+  {
+    id: 'apt4',
+    patientName: 'John Doe',
+    physiotherapistId: 'pt1',
+    physiotherapistName: 'Dr. Sarah Johnson',
+    date: '2026-08-01',
+    time: '03:00 PM',
+    status: 'completed',
+    progressNotes: 'Pain level reduced from 7/10 to 4/10. Patient able to perform daily activities with less discomfort. Recommended home exercises.',
+  },
+  {
+    id: 'apt5',
+    patientName: 'John Doe',
+    physiotherapistId: 'pt5',
+    physiotherapistName: 'Dr. Lisa Anderson',
+    date: '2026-07-28',
     time: '10:00 AM',
-    service: 'Orthopedic Rehabilitation',
-    reminderSent: false,
-    status: 'scheduled',
-  },
-  {
-    id: '5',
-    patientName: 'Michael Brown',
-    therapistName: 'Dr. Amanda Brown',
-    date: '2026-08-17',
-    time: '01:00 PM',
-    service: 'Neurological Rehabilitation',
-    reminderSent: false,
-    status: 'scheduled',
+    status: 'completed',
+    progressNotes: 'Follow-up session. Patient compliance with home exercise program is excellent. Progress is on track.',
   },
 ]
 
 export default function SchedulePhysiotherapy() {
-  const [selectedDate, setSelectedDate] = useState<string>('2026-08-14')
-  const [selectedTherapist, setSelectedTherapist] = useState<string>('')
+  const [selectedPhysiotherapist, setSelectedPhysiotherapist] = useState<string>('')
+  const [selectedDate, setSelectedDate] = useState<string>('')
   const [selectedTime, setSelectedTime] = useState<string>('')
-  const [bookingSuccess, setBookingSuccess] = useState<boolean>(false)
-  const [appointments] = useState<PhysiotherapyAppointment[]>(mockAppointments)
+  const [appointments, setAppointments] = useState<Appointment[]>(MOCK_APPOINTMENTS)
+  const [showBooking, setShowBooking] = useState<boolean>(true)
+  const [editingNotes, setEditingNotes] = useState<string>('')
+  const [noteAppointmentId, setNoteAppointmentId] = useState<string>('')
 
-  const handleBookAppointment = () => {
-    if (selectedTherapist && selectedTime && selectedDate) {
-      setBookingSuccess(true)
-      setTimeout(() => setBookingSuccess(false), 3000)
+  const handleScheduleAppointment = () => {
+    if (!selectedPhysiotherapist || !selectedDate || !selectedTime) {
+      alert('Please select a physiotherapist, date, and time slot')
+      return
     }
+
+    const physiotherapist = MOCK_PHYSIOTHERAPISTS.find((pt) => pt.id === selectedPhysiotherapist)
+    if (!physiotherapist) return
+
+    const newAppointment: Appointment = {
+      id: `apt${appointments.length + 1}`,
+      patientName: 'John Doe',
+      physiotherapistId: selectedPhysiotherapist,
+      physiotherapistName: physiotherapist.name,
+      date: selectedDate,
+      time: selectedTime,
+      status: 'scheduled',
+    }
+
+    setAppointments([newAppointment, ...appointments])
+    setSelectedPhysiotherapist('')
+    setSelectedDate('')
+    setSelectedTime('')
+    alert('Appointment scheduled successfully!')
   }
 
-  const upcomingAppointments = appointments.filter(
-    (apt) => apt.status === 'scheduled' || apt.status === 'confirmed'
-  )
+  const handleSaveProgressNotes = (appointmentId: string) => {
+    setAppointments(
+      appointments.map((apt) =>
+        apt.id === appointmentId ? { ...apt, progressNotes: editingNotes } : apt
+      )
+    )
+    setNoteAppointmentId('')
+    setEditingNotes('')
+    alert('Progress notes saved successfully!')
+  }
 
-  const appointmentsWithReminders = upcomingAppointments.filter(
-    (apt) => apt.reminderSent
-  )
+  const startEditingNotes = (appointmentId: string, currentNotes?: string) => {
+    setNoteAppointmentId(appointmentId)
+    setEditingNotes(currentNotes || '')
+  }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 p-6">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-6">
       <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">
-            Schedule Physiotherapy Appointment
-          </h1>
-          <p className="text-gray-600">
-            Book your session with our expert physiotherapists. Receive automated reminders 24 hours before your appointment.
-          </p>
+        <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
+          <h1 className="text-3xl font-bold text-indigo-900 mb-2">Physiotherapy Management</h1>
+          <p className="text-gray-600">Schedule appointments and track progress notes</p>
         </div>
 
-        {/* Success Message */}
-        {bookingSuccess && (
-          <div className="mb-6 p-4 bg-green-100 border border-green-400 rounded-lg">
-            <p className="text-green-800 font-semibold">
-              ✓ Appointment booked successfully! You'll receive a reminder 24 hours before your session.
-            </p>
-          </div>
-        )}
+        <div className="flex gap-4 mb-6">
+          <button
+            onClick={() => setShowBooking(true)}
+            className={`px-6 py-3 rounded-lg font-semibold transition-colors ${
+              showBooking
+                ? 'bg-indigo-600 text-white shadow-md'
+                : 'bg-white text-indigo-600 hover:bg-indigo-50'
+            }`}
+          >
+            Schedule Appointment
+          </button>
+          <button
+            onClick={() => setShowBooking(false)}
+            className={`px-6 py-3 rounded-lg font-semibold transition-colors ${
+              !showBooking
+                ? 'bg-indigo-600 text-white shadow-md'
+                : 'bg-white text-indigo-600 hover:bg-indigo-50'
+            }`}
+          >
+            Appointment History
+          </button>
+        </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Booking Form */}
-          <div className="lg:col-span-2 bg-white rounded-xl shadow-lg p-6">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">New Appointment</h2>
+        {showBooking ? (
+          <div className="bg-white rounded-lg shadow-lg p-6">
+            <h2 className="text-2xl font-bold text-gray-800 mb-6">Schedule New Appointment</h2>
 
-            {/* Date Selection */}
-            <div className="mb-6">
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Select Date
-              </label>
-              <input
-                type="date"
-                value={selectedDate}
-                onChange={(e) => setSelectedDate(e.target.value)}
-                min="2026-08-14"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
-
-            {/* Therapist Selection */}
-            <div className="mb-6">
-              <label className="block text-sm font-semibold text-gray-700 mb-3">
-                Select Therapist
-              </label>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {mockTherapists.map((therapist) => (
-                  <button
-                    key={therapist.id}
-                    onClick={() => setSelectedTherapist(therapist.id)}
-                    className={`flex items-center p-4 border-2 rounded-lg transition-all ${
-                      selectedTherapist === therapist.id
-                        ? 'border-blue-500 bg-blue-50'
-                        : 'border-gray-200 hover:border-blue-300'
-                    }`}
-                  >
-                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white font-bold mr-3">
-                      {therapist.avatar}
-                    </div>
-                    <div className="text-left">
-                      <p className="font-semibold text-gray-900">{therapist.name}</p>
-                      <p className="text-sm text-gray-600">{therapist.specialty}</p>
-                    </div>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Time Slot Selection */}
-            <div className="mb-6">
-              <label className="block text-sm font-semibold text-gray-700 mb-3">
-                Available Time Slots
-              </label>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                {mockTimeSlots.map((slot) => (
-                  <button
-                    key={slot.id}
-                    onClick={() => slot.available && setSelectedTime(slot.time)}
-                    disabled={!slot.available}
-                    className={`py-3 px-4 rounded-lg font-medium transition-all ${
-                      !slot.available
-                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                        : selectedTime === slot.time
-                        ? 'bg-blue-500 text-white'
-                        : 'bg-white border-2 border-gray-200 text-gray-700 hover:border-blue-400'
-                    }`}
-                  >
-                    {slot.time}
-                    {!slot.available && (
-                      <span className="block text-xs mt-1">Booked</span>
-                    )}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Book Button */}
-            <button
-              onClick={handleBookAppointment}
-              disabled={!selectedTherapist || !selectedTime || !selectedDate}
-              className={`w-full py-4 rounded-lg font-bold text-lg transition-all ${
-                selectedTherapist && selectedTime && selectedDate
-                  ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white hover:from-blue-600 hover:to-purple-700 shadow-lg'
-                  : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-              }`}
-            >
-              Book Appointment
-            </button>
-          </div>
-
-          {/* Upcoming Appointments & Reminders */}
-          <div className="lg:col-span-1 space-y-6">
-            {/* Reminder Info Card */}
-            <div className="bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl shadow-lg p-6 text-white">
-              <div className="flex items-center mb-3">
-                <div className="w-10 h-10 bg-white bg-opacity-20 rounded-full flex items-center justify-center mr-3">
-                  <span className="text-2xl">🔔</span>
+            <div className="space-y-6">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-3">
+                  Select Physiotherapist
+                </label>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {MOCK_PHYSIOTHERAPISTS.map((pt) => (
+                    <button
+                      key={pt.id}
+                      onClick={() => pt.available && setSelectedPhysiotherapist(pt.id)}
+                      disabled={!pt.available}
+                      className={`p-4 rounded-lg border-2 transition-all ${
+                        selectedPhysiotherapist === pt.id
+                          ? 'border-indigo-600 bg-indigo-50'
+                          : pt.available
+                          ? 'border-gray-200 hover:border-indigo-300 hover:bg-gray-50'
+                          : 'border-gray-200 bg-gray-100 opacity-50 cursor-not-allowed'
+                      }`}
+                    >
+                      <div className="text-left">
+                        <div className="font-semibold text-gray-900">{pt.name}</div>
+                        <div className="text-sm text-gray-600">{pt.specialization}</div>
+                        <div
+                          className={`text-xs mt-2 font-medium ${
+                            pt.available ? 'text-green-600' : 'text-red-600'
+                          }`}
+                        >
+                          {pt.available ? '✓ Available' : '✗ Unavailable'}
+                        </div>
+                      </div>
+                    </button>
+                  ))}
                 </div>
-                <h3 className="text-lg font-bold">24-Hour Reminders</h3>
               </div>
-              <p className="text-sm text-blue-100">
-                Automated reminders are sent 24 hours before your scheduled appointment to ensure you never miss a session.
-              </p>
-              <div className="mt-4 pt-4 border-t border-white border-opacity-20">
-                <p className="text-sm font-semibold">
-                  {appointmentsWithReminders.length} upcoming appointment{appointmentsWithReminders.length !== 1 ? 's' : ''} with reminders
-                </p>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-3">
+                  Select Date
+                </label>
+                <input
+                  type="date"
+                  value={selectedDate}
+                  onChange={(e) => setSelectedDate(e.target.value)}
+                  min={new Date().toISOString().split('T')[0]}
+                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-indigo-600 focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-3">
+                  Select Time Slot
+                </label>
+                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
+                  {MOCK_TIME_SLOTS.map((slot) => (
+                    <button
+                      key={slot.id}
+                      onClick={() => slot.available && setSelectedTime(slot.time)}
+                      disabled={!slot.available}
+                      className={`px-4 py-3 rounded-lg border-2 font-medium transition-all ${
+                        selectedTime === slot.time
+                          ? 'border-indigo-600 bg-indigo-600 text-white'
+                          : slot.available
+                          ? 'border-gray-200 hover:border-indigo-300 hover:bg-indigo-50'
+                          : 'border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed'
+                      }`}
+                    >
+                      {slot.time}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="pt-4">
+                <button
+                  onClick={handleScheduleAppointment}
+                  className="w-full bg-indigo-600 text-white px-6 py-4 rounded-lg font-semibold hover:bg-indigo-700 transition-colors shadow-md"
+                >
+                  Schedule Appointment
+                </button>
               </div>
             </div>
-
-            {/* Upcoming Appointments List */}
-            <div className="bg-white rounded-xl shadow-lg p-6">
-              <h3 className="text-xl font-bold text-gray-900 mb-4">
-                Upcoming Appointments
-              </h3>
-              <div className="space-y-3">
-                {upcomingAppointments.map((apt) => (
+          </div>
+        ) : (
+          <div className="space-y-4">
+            <div className="bg-white rounded-lg shadow-lg p-6">
+              <h2 className="text-2xl font-bold text-gray-800 mb-6">Appointment History</h2>
+              <div className="space-y-4">
+                {appointments.map((apt) => (
                   <div
                     key={apt.id}
-                    className="border-l-4 border-blue-500 bg-gray-50 p-4 rounded-r-lg"
+                    className="border-2 border-gray-200 rounded-lg p-5 hover:border-indigo-300 transition-colors"
                   >
-                    <div className="flex items-start justify-between mb-2">
-                      <p className="font-semibold text-gray-900">{apt.therapistName}</p>
-                      {apt.reminderSent && (
-                        <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">
-                          Reminder Sent
+                    <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-4">
+                      <div>
+                        <h3 className="text-lg font-bold text-gray-900">
+                          {apt.physiotherapistName}
+                        </h3>
+                        <p className="text-gray-600">
+                          {apt.date} at {apt.time}
+                        </p>
+                      </div>
+                      <div>
+                        <span
+                          className={`inline-block px-4 py-2 rounded-full text-sm font-semibold ${
+                            apt.status === 'completed'
+                              ? 'bg-green-100 text-green-800'
+                              : apt.status === 'scheduled'
+                              ? 'bg-blue-100 text-blue-800'
+                              : 'bg-red-100 text-red-800'
+                          }`}
+                        >
+                          {apt.status.charAt(0).toUpperCase() + apt.status.slice(1)}
                         </span>
-                      )}
+                      </div>
                     </div>
-                    <p className="text-sm text-gray-600">{apt.service}</p>
-                    <div className="flex items-center mt-2 text-sm text-gray-500">
-                      <span className="mr-3">📅 {apt.date}</span>
-                      <span>🕐 {apt.time}</span>
-                    </div>
-                    <div className="mt-2">
-                      <span className={`text-xs px-2 py-1 rounded-full ${
-                        apt.status === 'confirmed'
-                          ? 'bg-blue-100 text-blue-700'
-                          : 'bg-yellow-100 text-yellow-700'
-                      }`}>
-                        {apt.status.charAt(0).toUpperCase() + apt.status.slice(1)}
-                      </span>
-                    </div>
+
+                    {apt.status === 'completed' && (
+                      <div className="mt-4 border-t-2 border-gray-100 pt-4">
+                        <div className="flex items-center justify-between mb-2">
+                          <h4 className="font-semibold text-gray-700">Progress Notes</h4>
+                          <button
+                            onClick={() => startEditingNotes(apt.id, apt.progressNotes)}
+                            className="text-sm text-indigo-600 hover:text-indigo-800 font-medium"
+                          >
+                            {apt.progressNotes ? 'Edit Notes' : 'Add Notes'}
+                          </button>
+                        </div>
+
+                        {noteAppointmentId === apt.id ? (
+                          <div className="space-y-3">
+                            <textarea
+                              value={editingNotes}
+                              onChange={(e) => setEditingNotes(e.target.value)}
+                              placeholder="Enter progress notes for this session..."
+                              className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-indigo-600 focus:outline-none min-h-[120px]"
+                            />
+                            <div className="flex gap-2">
+                              <button
+                                onClick={() => handleSaveProgressNotes(apt.id)}
+                                className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium"
+                              >
+                                Save Notes
+                              </button>
+                              <button
+                                onClick={() => {
+                                  setNoteAppointmentId('')
+                                  setEditingNotes('')
+                                }}
+                                className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 font-medium"
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <p className="text-gray-700 bg-gray-50 p-4 rounded-lg">
+                            {apt.progressNotes || 'No progress notes recorded yet.'}
+                          </p>
+                        )}
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
             </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   )
