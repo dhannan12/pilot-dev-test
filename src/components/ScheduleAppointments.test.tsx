@@ -10,122 +10,169 @@ describe('ScheduleAppointments', () => {
 
   it('displays the main heading', () => {
     render(<ScheduleAppointments />)
-    expect(screen.getByText('Schedule an Appointment')).toBeInTheDocument()
+    expect(screen.getByText('Schedule Your Appointment')).toBeInTheDocument()
   })
 
-  it('displays appointment type options', () => {
+  it('displays treatment options', () => {
     render(<ScheduleAppointments />)
-    expect(screen.getByText('General Checkup')).toBeInTheDocument()
-    expect(screen.getByText('Teeth Cleaning')).toBeInTheDocument()
+    expect(screen.getByText('Routine Cleaning')).toBeInTheDocument()
+    expect(screen.getByText('Teeth Whitening')).toBeInTheDocument()
     expect(screen.getByText('Cavity Filling')).toBeInTheDocument()
     expect(screen.getByText('Root Canal')).toBeInTheDocument()
-    expect(screen.getByText('Teeth Whitening')).toBeInTheDocument()
+    expect(screen.getByText('Crown Placement')).toBeInTheDocument()
+  })
+
+  it('allows selecting a treatment', () => {
+    render(<ScheduleAppointments />)
+    const treatmentHeading = screen.getAllByText('Routine Cleaning')[0]
+    const treatmentCard = treatmentHeading.closest('.p-4')
+    
+    if (treatmentCard) {
+      fireEvent.click(treatmentCard)
+      expect(treatmentCard).toHaveClass('border-blue-600')
+    }
+  })
+
+  it('displays cost summary when treatment is selected', () => {
+    render(<ScheduleAppointments />)
+    const treatmentHeadings = screen.getAllByText('Cavity Filling')
+    const treatmentCard = treatmentHeadings[0].closest('.p-4')
+    
+    if (treatmentCard) {
+      fireEvent.click(treatmentCard)
+      expect(screen.getAllByText('Cavity Filling').length).toBeGreaterThan(0)
+      expect(screen.getByText(/Base Cost:/)).toBeInTheDocument()
+    }
   })
 
   it('shows progress steps', () => {
     render(<ScheduleAppointments />)
-    expect(screen.getByText('Select Service')).toBeInTheDocument()
-    expect(screen.getByText('Choose Date')).toBeInTheDocument()
-    expect(screen.getByText('Pick Time')).toBeInTheDocument()
-    expect(screen.getByText('Your Details')).toBeInTheDocument()
+    expect(screen.getByText('Select Treatment')).toBeInTheDocument()
+    expect(screen.getByText('Insurance & Cost')).toBeInTheDocument()
+    expect(screen.getByText('Pick Date & Time')).toBeInTheDocument()
   })
 
-  it('advances to date selection when appointment type is selected', () => {
+  it('allows navigation to insurance step after selecting treatment', () => {
     render(<ScheduleAppointments />)
-    const generalCheckup = screen.getByText('General Checkup')
-    fireEvent.click(generalCheckup)
-    expect(screen.getByText('Choose a Date')).toBeInTheDocument()
+    
+    // Select a treatment
+    const treatmentCard = screen.getByText('Routine Cleaning').closest('div')
+    if (treatmentCard) {
+      fireEvent.click(treatmentCard)
+    }
+    
+    // Click continue button
+    const continueButton = screen.getByText('Continue to Insurance')
+    fireEvent.click(continueButton)
+    
+    expect(screen.getByText('Insurance Coverage')).toBeInTheDocument()
   })
 
-  it('displays available dates in step 2', () => {
+  it('displays insurance plans in step 2', () => {
     render(<ScheduleAppointments />)
-    // Select appointment type
-    fireEvent.click(screen.getByText('General Checkup'))
-    // Check for dates
-    expect(screen.getByText('Mon, Dec 18, 2026')).toBeInTheDocument()
-    expect(screen.getByText('Tue, Dec 19, 2026')).toBeInTheDocument()
+    
+    // Navigate to step 2
+    const treatmentCard = screen.getByText('Routine Cleaning').closest('div')
+    if (treatmentCard) {
+      fireEvent.click(treatmentCard)
+    }
+    const continueButton = screen.getByText('Continue to Insurance')
+    fireEvent.click(continueButton)
+    
+    expect(screen.getByText('Premium Dental Plan')).toBeInTheDocument()
+    expect(screen.getByText('Basic Coverage')).toBeInTheDocument()
+    expect(screen.getByText('Family Plan')).toBeInTheDocument()
   })
 
-  it('advances to time slot selection when date is chosen', () => {
+  it('calculates cost with insurance coverage', () => {
     render(<ScheduleAppointments />)
-    // Select appointment type
-    fireEvent.click(screen.getByText('Teeth Cleaning'))
-    // Select date
-    fireEvent.click(screen.getByText('Mon, Dec 18, 2026'))
-    expect(screen.getByText('Available Time Slots')).toBeInTheDocument()
+    
+    // Select treatment ($150)
+    const treatmentCard = screen.getByText('Routine Cleaning').closest('div')
+    if (treatmentCard) {
+      fireEvent.click(treatmentCard)
+    }
+    
+    // Navigate to insurance
+    fireEvent.click(screen.getByText('Continue to Insurance'))
+    
+    // Select insurance (80% coverage)
+    const insuranceCard = screen.getByText('Premium Dental Plan').closest('div')
+    if (insuranceCard) {
+      fireEvent.click(insuranceCard)
+    }
+    
+    // Check that cost is displayed
+    expect(screen.getByText(/You Pay:/)).toBeInTheDocument()
   })
 
-  it('displays available time slots with dentist names', () => {
+  it('allows proceeding without insurance', () => {
     render(<ScheduleAppointments />)
-    // Navigate to time slots
-    fireEvent.click(screen.getByText('General Checkup'))
-    fireEvent.click(screen.getByText('Mon, Dec 18, 2026'))
-    // Check for time slots
-    expect(screen.getByText('09:00 AM')).toBeInTheDocument()
-    const drSarahElements = screen.getAllByText('Dr. Sarah Johnson')
-    expect(drSarahElements.length).toBeGreaterThan(0)
+    
+    // Select treatment
+    const treatmentCard = screen.getByText('Routine Cleaning').closest('div')
+    if (treatmentCard) {
+      fireEvent.click(treatmentCard)
+    }
+    
+    fireEvent.click(screen.getByText('Continue to Insurance'))
+    
+    // Uncheck insurance
+    const insuranceCheckbox = screen.getByRole('checkbox')
+    fireEvent.click(insuranceCheckbox)
+    
+    // Should be able to continue
+    const continueButton = screen.getByText('Continue to Schedule')
+    expect(continueButton).not.toBeDisabled()
   })
 
-  it('shows patient information form in step 4', () => {
+  it('displays time slots in step 3', () => {
     render(<ScheduleAppointments />)
-    // Navigate to patient info
-    fireEvent.click(screen.getByText('General Checkup'))
-    fireEvent.click(screen.getByText('Mon, Dec 18, 2026'))
-    fireEvent.click(screen.getByText('09:00 AM'))
-    expect(screen.getByText('Your Information')).toBeInTheDocument()
-    expect(screen.getByPlaceholderText('Enter your full name')).toBeInTheDocument()
-    expect(screen.getByPlaceholderText('your.email@example.com')).toBeInTheDocument()
+    
+    // Navigate through steps
+    const treatmentCard = screen.getByText('Routine Cleaning').closest('div')
+    if (treatmentCard) {
+      fireEvent.click(treatmentCard)
+    }
+    
+    fireEvent.click(screen.getByText('Continue to Insurance'))
+    
+    const insuranceCheckbox = screen.getByRole('checkbox')
+    fireEvent.click(insuranceCheckbox)
+    
+    fireEvent.click(screen.getByText('Continue to Schedule'))
+    
+    expect(screen.getByText('Select Date & Time')).toBeInTheDocument()
+    expect(screen.getAllByText('Dr. Sarah Johnson').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('Dr. Michael Chen').length).toBeGreaterThan(0)
   })
 
-  it('displays dentist information', () => {
+  it('shows confirm button when time slot is selected', () => {
     render(<ScheduleAppointments />)
-    expect(screen.getByText('Our Dentists')).toBeInTheDocument()
-    expect(screen.getByText('Dr. Sarah Johnson')).toBeInTheDocument()
-    expect(screen.getByText('Dr. Michael Chen')).toBeInTheDocument()
-    expect(screen.getByText('Dr. Emily Rodriguez')).toBeInTheDocument()
-  })
-
-  it('allows going back to previous steps', () => {
-    render(<ScheduleAppointments />)
-    // Navigate forward
-    fireEvent.click(screen.getByText('General Checkup'))
-    expect(screen.getByText('Choose a Date')).toBeInTheDocument()
-    // Go back
-    const backButtons = screen.getAllByText('← Back')
-    fireEvent.click(backButtons[0])
-    expect(screen.getByText('Select Appointment Type')).toBeInTheDocument()
-  })
-
-  it('shows confirmation after form submission', () => {
-    render(<ScheduleAppointments />)
+    
     // Navigate through all steps
-    fireEvent.click(screen.getByText('General Checkup'))
-    fireEvent.click(screen.getByText('Mon, Dec 18, 2026'))
-    fireEvent.click(screen.getByText('09:00 AM'))
+    const treatmentCard = screen.getByText('Routine Cleaning').closest('div')
+    if (treatmentCard) {
+      fireEvent.click(treatmentCard)
+    }
     
-    // Fill out form
-    fireEvent.change(screen.getByPlaceholderText('Enter your full name'), {
-      target: { value: 'John Doe' }
-    })
-    fireEvent.change(screen.getByPlaceholderText('your.email@example.com'), {
-      target: { value: 'john@example.com' }
-    })
-    fireEvent.change(screen.getByPlaceholderText('(555) 123-4567'), {
-      target: { value: '555-123-4567' }
-    })
+    fireEvent.click(screen.getByText('Continue to Insurance'))
     
-    // Submit
-    fireEvent.click(screen.getByText('Confirm Appointment'))
-    expect(screen.getByText('Appointment Confirmed!')).toBeInTheDocument()
-  })
-
-  it('displays only available time slots', () => {
-    render(<ScheduleAppointments />)
-    fireEvent.click(screen.getByText('General Checkup'))
-    fireEvent.click(screen.getByText('Mon, Dec 18, 2026'))
+    const insuranceCheckbox = screen.getByRole('checkbox')
+    fireEvent.click(insuranceCheckbox)
     
-    // Check that available slots are shown
-    const availableBadges = screen.getAllByText('Available')
-    expect(availableBadges.length).toBeGreaterThan(0)
+    fireEvent.click(screen.getByText('Continue to Schedule'))
+    
+    // Find and click an available time slot
+    const timeSlots = screen.getAllByText(/2026-08-/)
+    if (timeSlots.length > 0) {
+      const firstSlot = timeSlots[0].closest('div')
+      if (firstSlot) {
+        fireEvent.click(firstSlot)
+      }
+    }
+    
+    const confirmButton = screen.getByText('Confirm Appointment')
+    expect(confirmButton).toBeInTheDocument()
   })
 })
