@@ -8,82 +8,90 @@ describe('SubmitTenant', () => {
     expect(document.body).toBeTruthy()
   })
 
-  it('displays the main heading', () => {
+  it('displays the page title and description', () => {
     render(<SubmitTenant />)
     expect(screen.getByText('Tenant Application Portal')).toBeTruthy()
-    expect(screen.getByText('Submit maintenance requests and track your applications online')).toBeTruthy()
+    expect(screen.getByText(/Submit your rental application online/i)).toBeTruthy()
   })
 
-  it('displays the submission form with all required fields', () => {
+  it('displays tab navigation', () => {
     render(<SubmitTenant />)
-    expect(screen.getByLabelText(/Tenant Name/i)).toBeTruthy()
-    expect(screen.getByLabelText(/Property Address/i)).toBeTruthy()
-    expect(screen.getByLabelText(/Issue Description/i)).toBeTruthy()
-    expect(screen.getByLabelText(/Priority Level/i)).toBeTruthy()
+    expect(screen.getByText('New Application')).toBeTruthy()
+    expect(screen.getByText('My Applications')).toBeTruthy()
   })
 
-  it('displays mock maintenance requests in the table', () => {
+  it('shows new application form by default', () => {
     render(<SubmitTenant />)
-    expect(screen.getByText('REQ-001')).toBeTruthy()
-    expect(screen.getByText('John Smith')).toBeTruthy()
-    expect(screen.getByText('Sarah Johnson')).toBeTruthy()
-    expect(screen.getByText('Michael Chen')).toBeTruthy()
-    expect(screen.getByText('Emily Davis')).toBeTruthy()
-    expect(screen.getByText('David Martinez')).toBeTruthy()
+    expect(screen.getByText('Submit New Application')).toBeTruthy()
+    expect(screen.getByLabelText(/Select Property/i)).toBeTruthy()
   })
 
-  it('displays request statistics', () => {
+  it('displays mock properties in dropdown', () => {
     render(<SubmitTenant />)
-    expect(screen.getByText('Request Statistics')).toBeTruthy()
-    const pendingElements = screen.getAllByText('Pending')
-    expect(pendingElements.length).toBeGreaterThan(0)
-    const inProgressElements = screen.getAllByText('In Progress')
-    expect(inProgressElements.length).toBeGreaterThan(0)
-    const completedElements = screen.getAllByText('Completed')
-    expect(completedElements.length).toBeGreaterThan(0)
+    const propertySelect = screen.getByLabelText(/Select Property/i) as HTMLSelectElement
+    expect(propertySelect.options.length).toBeGreaterThan(5)
   })
 
-  it('allows user to fill out the form', () => {
+  it('displays personal information fields', () => {
+    render(<SubmitTenant />)
+    expect(screen.getByLabelText(/Full Name/i)).toBeTruthy()
+    expect(screen.getByLabelText(/Email Address/i)).toBeTruthy()
+    expect(screen.getByLabelText(/Phone Number/i)).toBeTruthy()
+    expect(screen.getByLabelText(/Desired Move-in Date/i)).toBeTruthy()
+  })
+
+  it('displays employment information fields', () => {
+    render(<SubmitTenant />)
+    expect(screen.getByLabelText(/Employment Status/i)).toBeTruthy()
+    expect(screen.getByLabelText(/Monthly Income/i)).toBeTruthy()
+  })
+
+  it('switches to applications tab when clicked', () => {
+    render(<SubmitTenant />)
+    const applicationsTab = screen.getAllByText('My Applications')[0]
+    fireEvent.click(applicationsTab)
+    expect(screen.getAllByText('My Applications').length).toBeGreaterThan(1)
+  })
+
+  it('displays mock applications in the applications tab', () => {
+    render(<SubmitTenant />)
+    const applicationsTab = screen.getAllByText('My Applications')[0]
+    fireEvent.click(applicationsTab)
+    
+    expect(screen.getByText('123 Main St, Apt 4B')).toBeTruthy()
+    expect(screen.getByText('456 Oak Ave, Unit 12')).toBeTruthy()
+    expect(screen.getByText('789 Pine Rd, Suite 3A')).toBeTruthy()
+    expect(screen.getByText('321 Elm Street, Apt 201')).toBeTruthy()
+    expect(screen.getByText('555 Maple Dr, Townhouse 8')).toBeTruthy()
+  })
+
+  it('displays application status badges', () => {
+    render(<SubmitTenant />)
+    const applicationsTab = screen.getAllByText('My Applications')[0]
+    fireEvent.click(applicationsTab)
+    
+    expect(screen.getAllByText('Submitted').length).toBeGreaterThan(0)
+    expect(screen.getByText('Under Review')).toBeTruthy()
+    expect(screen.getByText('Approved')).toBeTruthy()
+    expect(screen.getByText('Draft')).toBeTruthy()
+  })
+
+  it('displays form action buttons', () => {
+    render(<SubmitTenant />)
+    expect(screen.getByText('Clear Form')).toBeTruthy()
+    expect(screen.getByText('Submit Application')).toBeTruthy()
+  })
+
+  it('clears form when Clear Form button is clicked', () => {
     render(<SubmitTenant />)
     
-    const tenantNameInput = screen.getByLabelText(/Tenant Name/i) as HTMLInputElement
-    const propertyAddressInput = screen.getByLabelText(/Property Address/i) as HTMLInputElement
-    const issueDescriptionInput = screen.getByLabelText(/Issue Description/i) as HTMLTextAreaElement
+    const nameInput = screen.getByLabelText(/Full Name/i) as HTMLInputElement
+    fireEvent.change(nameInput, { target: { value: 'Test User' } })
+    expect(nameInput.value).toBe('Test User')
     
-    fireEvent.change(tenantNameInput, { target: { value: 'Test Tenant' } })
-    fireEvent.change(propertyAddressInput, { target: { value: '123 Test St' } })
-    fireEvent.change(issueDescriptionInput, { target: { value: 'Test issue description' } })
+    const clearButton = screen.getByText('Clear Form')
+    fireEvent.click(clearButton)
     
-    expect(tenantNameInput.value).toBe('Test Tenant')
-    expect(propertyAddressInput.value).toBe('123 Test St')
-    expect(issueDescriptionInput.value).toBe('Test issue description')
-  })
-
-  it('submits the form and displays success message', () => {
-    render(<SubmitTenant />)
-    
-    const tenantNameInput = screen.getByLabelText(/Tenant Name/i)
-    const propertyAddressInput = screen.getByLabelText(/Property Address/i)
-    const issueDescriptionInput = screen.getByLabelText(/Issue Description/i)
-    const submitButton = screen.getByRole('button', { name: /Submit Request/i })
-    
-    fireEvent.change(tenantNameInput, { target: { value: 'New Tenant' } })
-    fireEvent.change(propertyAddressInput, { target: { value: '999 New Address' } })
-    fireEvent.change(issueDescriptionInput, { target: { value: 'New maintenance issue' } })
-    fireEvent.click(submitButton)
-    
-    expect(screen.getByText(/Maintenance request submitted successfully!/i)).toBeTruthy()
-  })
-
-  it('displays important information section', () => {
-    render(<SubmitTenant />)
-    expect(screen.getByText('Important Information')).toBeTruthy()
-    expect(screen.getByText(/All fields marked with \* are required/i)).toBeTruthy()
-  })
-
-  it('displays status badges with correct colors', () => {
-    render(<SubmitTenant />)
-    const statusElements = screen.getAllByText('Pending')
-    expect(statusElements.length).toBeGreaterThan(0)
+    expect(nameInput.value).toBe('')
   })
 })
