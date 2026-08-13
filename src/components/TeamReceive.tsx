@@ -1,262 +1,340 @@
 /**
- * TeamReceive — Task reminder interface for team members to view their assigned tasks
+ * TeamReceive — Team member task reminders and completion management
  *
- * Features: task list display, priority indicators, due date reminders, assignment status, task filtering
+ * Features: Task reminders, assignment validation, completion control, notification alerts, task filtering
  *
- * Ticket: SCRUM-737 | Branch: proto/SCRUM-733
+ * Ticket: SCRUM-739 | Branch: proto/SCRUM-733
  */
 
-import React, { useState } from 'react'
+import { useState } from 'react'
 
 interface Task {
   id: string
   title: string
   description: string
   assignedTo: string
-  priority: 'high' | 'medium' | 'low'
   dueDate: string
-  status: 'active' | 'pending' | 'completed'
+  priority: 'Low' | 'Medium' | 'High'
+  status: 'Pending' | 'In Progress' | 'Completed'
   reminderSent: boolean
-  createdAt: string
 }
+
+interface Reminder {
+  id: string
+  taskId: string
+  message: string
+  timestamp: string
+  read: boolean
+}
+
+const MOCK_CURRENT_USER = 'john.doe@company.com'
 
 const MOCK_TASKS: Task[] = [
   {
-    id: 'task-001',
-    title: 'Complete quarterly report',
-    description: 'Prepare and submit Q3 performance metrics and analysis',
-    assignedTo: 'Sarah Johnson',
-    priority: 'high',
+    id: 'task-1',
+    title: 'Update user authentication flow',
+    description: 'Refactor the login component to use new OAuth provider',
+    assignedTo: 'john.doe@company.com',
     dueDate: '2026-08-15',
-    status: 'active',
-    reminderSent: true,
-    createdAt: '2026-08-01'
+    priority: 'High',
+    status: 'In Progress',
+    reminderSent: true
   },
   {
-    id: 'task-002',
-    title: 'Review pull requests',
-    description: 'Review and approve pending code changes in the repository',
-    assignedTo: 'Sarah Johnson',
-    priority: 'medium',
+    id: 'task-2',
+    title: 'Review pull request #342',
+    description: 'Code review for the new dashboard feature',
+    assignedTo: 'john.doe@company.com',
     dueDate: '2026-08-14',
-    status: 'active',
-    reminderSent: true,
-    createdAt: '2026-08-05'
+    priority: 'Medium',
+    status: 'Pending',
+    reminderSent: true
   },
   {
-    id: 'task-003',
-    title: 'Update documentation',
-    description: 'Update API documentation with latest endpoint changes',
-    assignedTo: 'Sarah Johnson',
-    priority: 'low',
-    dueDate: '2026-08-20',
-    status: 'active',
-    reminderSent: false,
-    createdAt: '2026-08-08'
-  },
-  {
-    id: 'task-004',
-    title: 'Client meeting preparation',
-    description: 'Prepare presentation and demo materials for client showcase',
-    assignedTo: 'Sarah Johnson',
-    priority: 'high',
-    dueDate: '2026-08-13',
-    status: 'active',
-    reminderSent: true,
-    createdAt: '2026-08-10'
-  },
-  {
-    id: 'task-005',
-    title: 'Bug fixes for production',
-    description: 'Address critical bugs reported in production environment',
-    assignedTo: 'Sarah Johnson',
-    priority: 'high',
-    dueDate: '2026-08-13',
-    status: 'active',
-    reminderSent: true,
-    createdAt: '2026-08-11'
-  },
-  {
-    id: 'task-006',
-    title: 'Team standup notes',
-    description: 'Document action items from daily standup meetings',
-    assignedTo: 'Sarah Johnson',
-    priority: 'low',
+    id: 'task-3',
+    title: 'Write API documentation',
+    description: 'Document the new REST endpoints for the mobile app',
+    assignedTo: 'jane.smith@company.com',
     dueDate: '2026-08-16',
-    status: 'active',
-    reminderSent: false,
-    createdAt: '2026-08-12'
+    priority: 'Medium',
+    status: 'In Progress',
+    reminderSent: false
+  },
+  {
+    id: 'task-4',
+    title: 'Fix production bug #567',
+    description: 'Critical bug causing payment failures on checkout',
+    assignedTo: 'john.doe@company.com',
+    dueDate: '2026-08-13',
+    priority: 'High',
+    status: 'Pending',
+    reminderSent: true
+  },
+  {
+    id: 'task-5',
+    title: 'Deploy staging environment',
+    description: 'Set up staging server with latest build',
+    assignedTo: 'mike.wilson@company.com',
+    dueDate: '2026-08-17',
+    priority: 'Low',
+    status: 'Pending',
+    reminderSent: false
+  },
+  {
+    id: 'task-6',
+    title: 'Update database schema',
+    description: 'Add new fields for user preferences',
+    assignedTo: 'john.doe@company.com',
+    dueDate: '2026-08-18',
+    priority: 'Low',
+    status: 'Pending',
+    reminderSent: false
+  }
+]
+
+const MOCK_REMINDERS: Reminder[] = [
+  {
+    id: 'rem-1',
+    taskId: 'task-1',
+    message: 'Task "Update user authentication flow" is due soon (2026-08-15)',
+    timestamp: '2026-08-13T09:00:00',
+    read: false
+  },
+  {
+    id: 'rem-2',
+    taskId: 'task-2',
+    message: 'Task "Review pull request #342" is due tomorrow!',
+    timestamp: '2026-08-13T08:30:00',
+    read: false
+  },
+  {
+    id: 'rem-3',
+    taskId: 'task-4',
+    message: 'URGENT: Task "Fix production bug #567" is due today!',
+    timestamp: '2026-08-13T07:00:00',
+    read: true
   }
 ]
 
 export default function TeamReceive() {
-  const [filterPriority, setFilterPriority] = useState<string>('all')
-  const [filterReminder, setFilterReminder] = useState<boolean>(false)
+  const [tasks, setTasks] = useState<Task[]>(MOCK_TASKS)
+  const [reminders, setReminders] = useState<Reminder[]>(MOCK_REMINDERS)
+  const [selectedFilter, setSelectedFilter] = useState<'all' | 'my-tasks' | 'reminders'>('my-tasks')
+  const [errorMessage, setErrorMessage] = useState<string>('')
 
-  const filteredTasks = MOCK_TASKS.filter(task => {
-    const matchesPriority = filterPriority === 'all' || task.priority === filterPriority
-    const matchesReminder = !filterReminder || task.reminderSent
-    return task.status === 'active' && matchesPriority && matchesReminder
-  })
+  const currentUserTasks = tasks.filter(task => task.assignedTo === MOCK_CURRENT_USER)
+  const unreadRemindersCount = reminders.filter(r => !r.read).length
 
-  const getDaysUntilDue = (dueDate: string): number => {
-    const today = new Date('2026-08-13')
-    const due = new Date(dueDate)
-    const diffTime = due.getTime() - today.getTime()
-    return Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+  const handleCompleteTask = (taskId: string) => {
+    const task = tasks.find(t => t.id === taskId)
+    
+    if (!task) {
+      setErrorMessage('Task not found')
+      setTimeout(() => setErrorMessage(''), 3000)
+      return
+    }
+
+    if (task.assignedTo !== MOCK_CURRENT_USER) {
+      setErrorMessage('You cannot mark this task as complete. Only assigned team members can complete tasks.')
+      setTimeout(() => setErrorMessage(''), 3000)
+      return
+    }
+
+    setTasks(tasks.map(t => 
+      t.id === taskId ? { ...t, status: 'Completed' } : t
+    ))
+    setErrorMessage('')
   }
 
-  const getPriorityColor = (priority: string): string => {
+  const handleMarkReminderAsRead = (reminderId: string) => {
+    setReminders(reminders.map(r =>
+      r.id === reminderId ? { ...r, read: true } : r
+    ))
+  }
+
+  const getPriorityColor = (priority: string) => {
     switch (priority) {
-      case 'high':
-        return 'bg-red-100 text-red-800 border-red-300'
-      case 'medium':
-        return 'bg-yellow-100 text-yellow-800 border-yellow-300'
-      case 'low':
-        return 'bg-green-100 text-green-800 border-green-300'
-      default:
-        return 'bg-gray-100 text-gray-800 border-gray-300'
+      case 'High': return 'text-red-600 bg-red-50 border-red-200'
+      case 'Medium': return 'text-yellow-600 bg-yellow-50 border-yellow-200'
+      case 'Low': return 'text-green-600 bg-green-50 border-green-200'
+      default: return 'text-gray-600 bg-gray-50 border-gray-200'
     }
   }
 
-  const getDueDateColor = (daysUntil: number): string => {
-    if (daysUntil < 0) return 'text-red-600 font-semibold'
-    if (daysUntil === 0) return 'text-orange-600 font-semibold'
-    if (daysUntil <= 2) return 'text-yellow-600 font-medium'
-    return 'text-gray-600'
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'Completed': return 'text-green-700 bg-green-100'
+      case 'In Progress': return 'text-blue-700 bg-blue-100'
+      case 'Pending': return 'text-gray-700 bg-gray-100'
+      default: return 'text-gray-700 bg-gray-100'
+    }
   }
+
+  const displayedTasks = selectedFilter === 'my-tasks' 
+    ? currentUserTasks 
+    : selectedFilter === 'all' 
+    ? tasks 
+    : currentUserTasks.filter(t => t.reminderSent)
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">My Task Reminders</h1>
-          <p className="text-gray-600">Stay on top of your assigned tasks and deadlines</p>
-        </div>
-
-        {/* Stats Bar */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-          <div className="bg-white rounded-lg shadow p-4 border-l-4 border-blue-500">
-            <div className="text-2xl font-bold text-gray-900">{filteredTasks.length}</div>
-            <div className="text-sm text-gray-600">Active Tasks</div>
-          </div>
-          <div className="bg-white rounded-lg shadow p-4 border-l-4 border-red-500">
-            <div className="text-2xl font-bold text-gray-900">
-              {filteredTasks.filter(t => t.priority === 'high').length}
-            </div>
-            <div className="text-sm text-gray-600">High Priority</div>
-          </div>
-          <div className="bg-white rounded-lg shadow p-4 border-l-4 border-yellow-500">
-            <div className="text-2xl font-bold text-gray-900">
-              {filteredTasks.filter(t => getDaysUntilDue(t.dueDate) <= 2).length}
-            </div>
-            <div className="text-sm text-gray-600">Due Soon</div>
-          </div>
-          <div className="bg-white rounded-lg shadow p-4 border-l-4 border-green-500">
-            <div className="text-2xl font-bold text-gray-900">
-              {filteredTasks.filter(t => t.reminderSent).length}
-            </div>
-            <div className="text-sm text-gray-600">Reminders Sent</div>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Team Task Manager</h1>
+          <p className="text-gray-600">Manage your tasks and reminders</p>
+          <div className="mt-4 flex items-center gap-2">
+            <span className="text-sm text-gray-500">Logged in as:</span>
+            <span className="text-sm font-medium text-gray-900">{MOCK_CURRENT_USER}</span>
           </div>
         </div>
 
-        {/* Filters */}
-        <div className="bg-white rounded-lg shadow p-4 mb-6">
-          <div className="flex flex-wrap gap-4 items-center">
+        {/* Error Alert */}
+        {errorMessage && (
+          <div className="mb-6 p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg">
             <div className="flex items-center gap-2">
-              <label className="text-sm font-medium text-gray-700">Priority:</label>
-              <select
-                value={filterPriority}
-                onChange={(e) => setFilterPriority(e.target.value)}
-                className="px-3 py-1.5 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="all">All</option>
-                <option value="high">High</option>
-                <option value="medium">Medium</option>
-                <option value="low">Low</option>
-              </select>
-            </div>
-            <div className="flex items-center gap-2">
-              <label className="flex items-center cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={filterReminder}
-                  onChange={(e) => setFilterReminder(e.target.checked)}
-                  className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                />
-                <span className="ml-2 text-sm text-gray-700">Show only reminded tasks</span>
-              </label>
+              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+              </svg>
+              <span className="font-medium">{errorMessage}</span>
             </div>
           </div>
+        )}
+
+        {/* Reminders Section */}
+        {unreadRemindersCount > 0 && (
+          <div className="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-lg font-semibold text-blue-900 flex items-center gap-2">
+                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M10 2a6 6 0 00-6 6v3.586l-.707.707A1 1 0 004 14h12a1 1 0 00.707-1.707L16 11.586V8a6 6 0 00-6-6zM10 18a3 3 0 01-3-3h6a3 3 0 01-3 3z" />
+                </svg>
+                Active Reminders
+                <span className="bg-blue-600 text-white text-xs font-bold px-2 py-1 rounded-full">
+                  {unreadRemindersCount}
+                </span>
+              </h2>
+            </div>
+            <div className="space-y-2">
+              {reminders.filter(r => !r.read).map(reminder => {
+                const task = tasks.find(t => t.id === reminder.taskId)
+                return (
+                  <div key={reminder.id} className="bg-white border border-blue-200 rounded p-3 flex items-start justify-between">
+                    <div className="flex-1">
+                      <p className="text-sm text-gray-800">{reminder.message}</p>
+                      <p className="text-xs text-gray-500 mt-1">{new Date(reminder.timestamp).toLocaleString()}</p>
+                    </div>
+                    <button
+                      onClick={() => handleMarkReminderAsRead(reminder.id)}
+                      className="ml-4 text-xs text-blue-600 hover:text-blue-800 font-medium"
+                    >
+                      Mark Read
+                    </button>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Filter Tabs */}
+        <div className="mb-6 flex gap-2 border-b border-gray-200">
+          <button
+            onClick={() => setSelectedFilter('my-tasks')}
+            className={`px-4 py-2 font-medium text-sm transition-colors ${
+              selectedFilter === 'my-tasks'
+                ? 'border-b-2 border-blue-600 text-blue-600'
+                : 'text-gray-600 hover:text-gray-900'
+            }`}
+          >
+            My Tasks ({currentUserTasks.length})
+          </button>
+          <button
+            onClick={() => setSelectedFilter('reminders')}
+            className={`px-4 py-2 font-medium text-sm transition-colors ${
+              selectedFilter === 'reminders'
+                ? 'border-b-2 border-blue-600 text-blue-600'
+                : 'text-gray-600 hover:text-gray-900'
+            }`}
+          >
+            Tasks with Reminders
+          </button>
+          <button
+            onClick={() => setSelectedFilter('all')}
+            className={`px-4 py-2 font-medium text-sm transition-colors ${
+              selectedFilter === 'all'
+                ? 'border-b-2 border-blue-600 text-blue-600'
+                : 'text-gray-600 hover:text-gray-900'
+            }`}
+          >
+            All Tasks ({tasks.length})
+          </button>
         </div>
 
-        {/* Task List */}
+        {/* Tasks List */}
         <div className="space-y-4">
-          {filteredTasks.length === 0 ? (
-            <div className="bg-white rounded-lg shadow p-8 text-center">
-              <div className="text-gray-400 text-lg">No tasks match your filters</div>
+          {displayedTasks.length === 0 ? (
+            <div className="text-center py-12 bg-white rounded-lg border border-gray-200">
+              <p className="text-gray-500">No tasks to display</p>
             </div>
           ) : (
-            filteredTasks.map((task) => {
-              const daysUntil = getDaysUntilDue(task.dueDate)
-              return (
-                <div
-                  key={task.id}
-                  className="bg-white rounded-lg shadow hover:shadow-lg transition-shadow p-6 border border-gray-200"
-                >
-                  <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
-                    <div className="flex-1">
-                      <div className="flex items-start gap-3 mb-2">
-                        <div className="flex-1">
-                          <h3 className="text-lg font-semibold text-gray-900 mb-1">
-                            {task.title}
-                          </h3>
-                          <p className="text-gray-600 text-sm">{task.description}</p>
-                        </div>
-                      </div>
-                      
-                      <div className="flex flex-wrap items-center gap-3 mt-3">
-                        <span className={`px-3 py-1 rounded-full text-xs font-medium border ${getPriorityColor(task.priority)}`}>
-                          {task.priority.toUpperCase()}
-                        </span>
-                        
-                        {task.reminderSent && (
-                          <span className="flex items-center gap-1 text-xs text-blue-600">
-                            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                              <path d="M10 2a6 6 0 00-6 6v3.586l-.707.707A1 1 0 004 14h12a1 1 0 00.707-1.707L16 11.586V8a6 6 0 00-6-6zM10 18a3 3 0 01-3-3h6a3 3 0 01-3 3z" />
-                            </svg>
-                            Reminder sent
-                          </span>
-                        )}
-                        
-                        <span className="text-xs text-gray-500">
-                          Assigned to: <span className="font-medium">{task.assignedTo}</span>
-                        </span>
-                      </div>
+            displayedTasks.map(task => (
+              <div
+                key={task.id}
+                className={`bg-white rounded-lg border shadow-sm p-5 transition-all hover:shadow-md ${
+                  task.assignedTo === MOCK_CURRENT_USER ? 'border-blue-200' : 'border-gray-200'
+                }`}
+              >
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3 mb-2">
+                      <h3 className="text-lg font-semibold text-gray-900">{task.title}</h3>
+                      <span className={`text-xs px-2 py-1 rounded-full font-medium ${getStatusColor(task.status)}`}>
+                        {task.status}
+                      </span>
+                      <span className={`text-xs px-2 py-1 rounded border font-medium ${getPriorityColor(task.priority)}`}>
+                        {task.priority}
+                      </span>
                     </div>
-                    
-                    <div className="flex flex-col items-end gap-2 min-w-[140px]">
-                      <div className={`text-sm ${getDueDateColor(daysUntil)}`}>
-                        {daysUntil < 0 ? (
-                          <span>Overdue by {Math.abs(daysUntil)} days</span>
-                        ) : daysUntil === 0 ? (
-                          <span>Due today</span>
-                        ) : daysUntil === 1 ? (
-                          <span>Due tomorrow</span>
-                        ) : (
-                          <span>Due in {daysUntil} days</span>
-                        )}
-                      </div>
-                      <div className="text-xs text-gray-500">{task.dueDate}</div>
-                      <button className="mt-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded hover:bg-blue-700 transition-colors">
-                        View Details
-                      </button>
+                    <p className="text-sm text-gray-600 mb-2">{task.description}</p>
+                    <div className="flex items-center gap-4 text-xs text-gray-500">
+                      <span>Assigned to: <span className="font-medium">{task.assignedTo}</span></span>
+                      <span>Due: <span className="font-medium">{task.dueDate}</span></span>
+                      {task.reminderSent && (
+                        <span className="flex items-center gap-1 text-blue-600">
+                          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M10 2a6 6 0 00-6 6v3.586l-.707.707A1 1 0 004 14h12a1 1 0 00.707-1.707L16 11.586V8a6 6 0 00-6-6zM10 18a3 3 0 01-3-3h6a3 3 0 01-3 3z" />
+                          </svg>
+                          Reminder sent
+                        </span>
+                      )}
                     </div>
                   </div>
+                  {task.status !== 'Completed' && (
+                    <button
+                      onClick={() => handleCompleteTask(task.id)}
+                      disabled={task.assignedTo !== MOCK_CURRENT_USER}
+                      className={`ml-4 px-4 py-2 rounded font-medium text-sm transition-colors ${
+                        task.assignedTo === MOCK_CURRENT_USER
+                          ? 'bg-green-600 text-white hover:bg-green-700'
+                          : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                      }`}
+                      title={task.assignedTo !== MOCK_CURRENT_USER ? 'Only assigned team members can complete tasks' : 'Mark as complete'}
+                    >
+                      Mark Complete
+                    </button>
+                  )}
+                  {task.status === 'Completed' && (
+                    <div className="ml-4 flex items-center gap-2 text-green-600">
+                      <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                      </svg>
+                      <span className="text-sm font-medium">Completed</span>
+                    </div>
+                  )}
                 </div>
-              )
-            })
+              </div>
+            ))
           )}
         </div>
       </div>
