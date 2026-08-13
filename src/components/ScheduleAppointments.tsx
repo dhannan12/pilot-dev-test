@@ -1,498 +1,357 @@
 /**
- * ScheduleAppointments — Schedule dental appointments with treatment cost calculation
+ * ScheduleAppointments — Online dental appointment scheduling with emergency prioritization
  *
- * Features: appointment scheduling, treatment plan selection, insurance coverage calculation, cost breakdown, date/time picker
+ * Features: Emergency prioritization, Available time slots, Dentist selection, Appointment type filtering, Real-time slot availability
  *
- * Ticket: SCRUM-751 | Branch: proto/SCRUM-747
+ * Ticket: SCRUM-752 | Branch: proto/SCRUM-747
  */
 
-import { useState } from 'react'
-
-interface Treatment {
-  id: string
-  name: string
-  description: string
-  baseCost: number
-  duration: number // in minutes
-  category: string
-}
-
-interface InsurancePlan {
-  id: string
-  name: string
-  provider: string
-  coveragePercent: number
-  annualMax: number
-  remaining: number
-}
+import React, { useState } from 'react'
 
 interface TimeSlot {
   id: string
   date: string
   time: string
   dentist: string
-  available: boolean
+  isAvailable: boolean
+  isEmergency?: boolean
 }
 
-interface AppointmentData {
-  selectedTreatment: Treatment | null
-  selectedInsurance: InsurancePlan | null
-  selectedTimeSlot: TimeSlot | null
+interface Dentist {
+  id: string
+  name: string
+  specialty: string
 }
 
-const MOCK_TREATMENTS: Treatment[] = [
-  {
-    id: 't1',
-    name: 'Routine Cleaning',
-    description: 'Standard dental cleaning and examination',
-    baseCost: 150,
-    duration: 60,
-    category: 'Preventive'
-  },
-  {
-    id: 't2',
-    name: 'Teeth Whitening',
-    description: 'Professional teeth whitening treatment',
-    baseCost: 500,
-    duration: 90,
-    category: 'Cosmetic'
-  },
-  {
-    id: 't3',
-    name: 'Cavity Filling',
-    description: 'Composite filling for tooth decay',
-    baseCost: 250,
-    duration: 45,
-    category: 'Restorative'
-  },
-  {
-    id: 't4',
-    name: 'Root Canal',
-    description: 'Root canal therapy for infected tooth',
-    baseCost: 1200,
-    duration: 120,
-    category: 'Endodontic'
-  },
-  {
-    id: 't5',
-    name: 'Crown Placement',
-    description: 'Dental crown installation',
-    baseCost: 1500,
-    duration: 90,
-    category: 'Restorative'
-  },
-  {
-    id: 't6',
-    name: 'Dental Implant',
-    description: 'Single tooth implant procedure',
-    baseCost: 3000,
-    duration: 180,
-    category: 'Surgical'
-  },
-  {
-    id: 't7',
-    name: 'Orthodontic Consultation',
-    description: 'Initial consultation for braces or aligners',
-    baseCost: 100,
-    duration: 45,
-    category: 'Orthodontic'
-  }
+interface AppointmentType {
+  id: string
+  name: string
+  duration: string
+  isEmergency: boolean
+}
+
+const MOCK_DENTISTS: Dentist[] = [
+  { id: '1', name: 'Dr. Sarah Johnson', specialty: 'General Dentistry' },
+  { id: '2', name: 'Dr. Michael Chen', specialty: 'Orthodontics' },
+  { id: '3', name: 'Dr. Emily Rodriguez', specialty: 'Endodontics' },
+  { id: '4', name: 'Dr. David Kim', specialty: 'Oral Surgery' },
+  { id: '5', name: 'Dr. Jennifer Lee', specialty: 'Periodontics' },
 ]
 
-const MOCK_INSURANCE_PLANS: InsurancePlan[] = [
-  {
-    id: 'ins1',
-    name: 'Premium Dental Plan',
-    provider: 'DentalCare Plus',
-    coveragePercent: 80,
-    annualMax: 2000,
-    remaining: 2000
-  },
-  {
-    id: 'ins2',
-    name: 'Basic Coverage',
-    provider: 'HealthGuard',
-    coveragePercent: 50,
-    annualMax: 1000,
-    remaining: 750
-  },
-  {
-    id: 'ins3',
-    name: 'Family Plan',
-    provider: 'SmileCare Insurance',
-    coveragePercent: 70,
-    annualMax: 1500,
-    remaining: 1200
-  },
-  {
-    id: 'ins4',
-    name: 'Student Plan',
-    provider: 'Campus Health',
-    coveragePercent: 60,
-    annualMax: 800,
-    remaining: 800
-  },
-  {
-    id: 'ins5',
-    name: 'Senior Care',
-    provider: 'Medicare Dental',
-    coveragePercent: 75,
-    annualMax: 2500,
-    remaining: 1800
-  }
+const MOCK_APPOINTMENT_TYPES: AppointmentType[] = [
+  { id: '1', name: 'Emergency Visit', duration: '30 min', isEmergency: true },
+  { id: '2', name: 'General Checkup', duration: '45 min', isEmergency: false },
+  { id: '3', name: 'Teeth Cleaning', duration: '60 min', isEmergency: false },
+  { id: '4', name: 'Root Canal', duration: '90 min', isEmergency: false },
+  { id: '5', name: 'Tooth Extraction', duration: '45 min', isEmergency: false },
+  { id: '6', name: 'Emergency Pain Relief', duration: '30 min', isEmergency: true },
+  { id: '7', name: 'Cavity Filling', duration: '60 min', isEmergency: false },
 ]
 
 const MOCK_TIME_SLOTS: TimeSlot[] = [
-  { id: 'ts1', date: '2026-08-15', time: '09:00 AM', dentist: 'Dr. Sarah Johnson', available: true },
-  { id: 'ts2', date: '2026-08-15', time: '10:30 AM', dentist: 'Dr. Michael Chen', available: true },
-  { id: 'ts3', date: '2026-08-15', time: '02:00 PM', dentist: 'Dr. Sarah Johnson', available: false },
-  { id: 'ts4', date: '2026-08-16', time: '09:00 AM', dentist: 'Dr. Emily Rodriguez', available: true },
-  { id: 'ts5', date: '2026-08-16', time: '11:00 AM', dentist: 'Dr. Michael Chen', available: true },
-  { id: 'ts6', date: '2026-08-16', time: '03:30 PM', dentist: 'Dr. Sarah Johnson', available: true },
-  { id: 'ts7', date: '2026-08-17', time: '08:00 AM', dentist: 'Dr. Emily Rodriguez', available: true },
-  { id: 'ts8', date: '2026-08-17', time: '01:00 PM', dentist: 'Dr. Michael Chen', available: true },
-  { id: 'ts9', date: '2026-08-18', time: '10:00 AM', dentist: 'Dr. Sarah Johnson', available: true },
-  { id: 'ts10', date: '2026-08-18', time: '04:00 PM', dentist: 'Dr. Emily Rodriguez', available: false }
+  { id: '1', date: '2026-08-14', time: '08:00 AM', dentist: 'Dr. Sarah Johnson', isAvailable: true, isEmergency: true },
+  { id: '2', date: '2026-08-14', time: '09:00 AM', dentist: 'Dr. Sarah Johnson', isAvailable: true },
+  { id: '3', date: '2026-08-14', time: '10:30 AM', dentist: 'Dr. Michael Chen', isAvailable: true },
+  { id: '4', date: '2026-08-14', time: '02:00 PM', dentist: 'Dr. Emily Rodriguez', isAvailable: true, isEmergency: true },
+  { id: '5', date: '2026-08-14', time: '03:30 PM', dentist: 'Dr. David Kim', isAvailable: false },
+  { id: '6', date: '2026-08-15', time: '08:00 AM', dentist: 'Dr. Jennifer Lee', isAvailable: true, isEmergency: true },
+  { id: '7', date: '2026-08-15', time: '09:30 AM', dentist: 'Dr. Sarah Johnson', isAvailable: true },
+  { id: '8', date: '2026-08-15', time: '11:00 AM', dentist: 'Dr. Michael Chen', isAvailable: true },
+  { id: '9', date: '2026-08-15', time: '01:00 PM', dentist: 'Dr. Emily Rodriguez', isAvailable: true },
+  { id: '10', date: '2026-08-15', time: '02:30 PM', dentist: 'Dr. David Kim', isAvailable: true, isEmergency: true },
+  { id: '11', date: '2026-08-16', time: '08:30 AM', dentist: 'Dr. Jennifer Lee', isAvailable: true },
+  { id: '12', date: '2026-08-16', time: '10:00 AM', dentist: 'Dr. Sarah Johnson', isAvailable: true, isEmergency: true },
+  { id: '13', date: '2026-08-16', time: '01:30 PM', dentist: 'Dr. Michael Chen', isAvailable: true },
+  { id: '14', date: '2026-08-16', time: '03:00 PM', dentist: 'Dr. Emily Rodriguez', isAvailable: false },
+  { id: '15', date: '2026-08-16', time: '04:00 PM', dentist: 'Dr. David Kim', isAvailable: true },
 ]
 
 export default function ScheduleAppointments() {
-  const [appointmentData, setAppointmentData] = useState<AppointmentData>({
-    selectedTreatment: null,
-    selectedInsurance: null,
-    selectedTimeSlot: null
+  const [selectedAppointmentType, setSelectedAppointmentType] = useState<string>('')
+  const [selectedDentist, setSelectedDentist] = useState<string>('')
+  const [selectedSlot, setSelectedSlot] = useState<string>('')
+  const [patientName, setPatientName] = useState<string>('')
+  const [patientEmail, setPatientEmail] = useState<string>('')
+  const [patientPhone, setPatientPhone] = useState<string>('')
+  const [notes, setNotes] = useState<string>('')
+  const [isSubmitted, setIsSubmitted] = useState<boolean>(false)
+
+  const selectedType = MOCK_APPOINTMENT_TYPES.find(t => t.id === selectedAppointmentType)
+  const isEmergencyAppointment = selectedType?.isEmergency || false
+
+  const filteredSlots = MOCK_TIME_SLOTS.filter(slot => {
+    if (!slot.isAvailable) return false
+    if (selectedDentist && slot.dentist !== selectedDentist) return false
+    if (isEmergencyAppointment && !slot.isEmergency) return false
+    return true
   })
 
-  const [step, setStep] = useState<number>(1)
-  const [useInsurance, setUseInsurance] = useState<boolean>(true)
-
-  const calculateCosts = () => {
-    if (!appointmentData.selectedTreatment) {
-      return { baseCost: 0, insuranceCoverage: 0, patientPays: 0, savedAmount: 0 }
-    }
-
-    const baseCost = appointmentData.selectedTreatment.baseCost
-    let insuranceCoverage = 0
-    let patientPays = baseCost
-
-    if (useInsurance && appointmentData.selectedInsurance) {
-      const insurance = appointmentData.selectedInsurance
-      const potentialCoverage = baseCost * (insurance.coveragePercent / 100)
-      insuranceCoverage = Math.min(potentialCoverage, insurance.remaining)
-      patientPays = baseCost - insuranceCoverage
-    }
-
-    return {
-      baseCost,
-      insuranceCoverage,
-      patientPays,
-      savedAmount: insuranceCoverage
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (selectedAppointmentType && selectedSlot && patientName && patientEmail && patientPhone) {
+      setIsSubmitted(true)
     }
   }
 
-  const costs = calculateCosts()
-
-  const handleTreatmentSelect = (treatment: Treatment) => {
-    setAppointmentData({ ...appointmentData, selectedTreatment: treatment })
+  const handleReset = () => {
+    setSelectedAppointmentType('')
+    setSelectedDentist('')
+    setSelectedSlot('')
+    setPatientName('')
+    setPatientEmail('')
+    setPatientPhone('')
+    setNotes('')
+    setIsSubmitted(false)
   }
 
-  const handleInsuranceSelect = (insurance: InsurancePlan) => {
-    setAppointmentData({ ...appointmentData, selectedInsurance: insurance })
-  }
-
-  const handleTimeSlotSelect = (slot: TimeSlot) => {
-    if (slot.available) {
-      setAppointmentData({ ...appointmentData, selectedTimeSlot: slot })
-    }
-  }
-
-  const canProceedToStep2 = appointmentData.selectedTreatment !== null
-  const canProceedToStep3 = canProceedToStep2 && (!useInsurance || appointmentData.selectedInsurance !== null)
-  const canConfirm = canProceedToStep3 && appointmentData.selectedTimeSlot !== null
-
-  const handleConfirmAppointment = () => {
-    if (canConfirm) {
-      alert('Appointment confirmed! You will receive a confirmation email shortly.')
-      // Reset form
-      setAppointmentData({
-        selectedTreatment: null,
-        selectedInsurance: null,
-        selectedTimeSlot: null
-      })
-      setStep(1)
-    }
+  if (isSubmitted) {
+    const slot = MOCK_TIME_SLOTS.find(s => s.id === selectedSlot)
+    const appointmentType = MOCK_APPOINTMENT_TYPES.find(t => t.id === selectedAppointmentType)
+    
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-6">
+        <div className="max-w-2xl mx-auto bg-white rounded-xl shadow-lg p-8">
+          <div className="text-center">
+            <div className="mb-4 flex justify-center">
+              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
+                <svg className="w-10 h-10 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+            </div>
+            <h2 className="text-3xl font-bold text-gray-800 mb-2">Appointment Confirmed!</h2>
+            {isEmergencyAppointment && (
+              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                <p className="text-red-700 font-semibold">⚡ Emergency Appointment - Priority Booking</p>
+              </div>
+            )}
+            <div className="mt-6 bg-gray-50 rounded-lg p-6 text-left">
+              <h3 className="text-lg font-semibold text-gray-700 mb-4">Appointment Details:</h3>
+              <div className="space-y-2 text-gray-600">
+                <p><span className="font-medium">Patient:</span> {patientName}</p>
+                <p><span className="font-medium">Email:</span> {patientEmail}</p>
+                <p><span className="font-medium">Phone:</span> {patientPhone}</p>
+                <p><span className="font-medium">Type:</span> {appointmentType?.name} ({appointmentType?.duration})</p>
+                <p><span className="font-medium">Date:</span> {slot?.date}</p>
+                <p><span className="font-medium">Time:</span> {slot?.time}</p>
+                <p><span className="font-medium">Dentist:</span> {slot?.dentist}</p>
+                {notes && <p><span className="font-medium">Notes:</span> {notes}</p>}
+              </div>
+            </div>
+            <button
+              onClick={handleReset}
+              className="mt-6 px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors duration-200 font-medium"
+            >
+              Schedule Another Appointment
+            </button>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-6xl mx-auto">
-        {/* Header */}
-        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-          <h1 className="text-3xl font-bold text-gray-800 mb-2">Schedule Your Appointment</h1>
-          <p className="text-gray-600">Book your dental appointment and calculate treatment costs</p>
-        </div>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-6">
+      <div className="max-w-4xl mx-auto">
+        <div className="bg-white rounded-xl shadow-lg p-8">
+          <h1 className="text-4xl font-bold text-gray-800 mb-2">Schedule Your Appointment</h1>
+          <p className="text-gray-600 mb-6">Book your dental appointment online with ease. Emergency appointments are prioritized.</p>
 
-        {/* Progress Steps */}
-        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-          <div className="flex items-center justify-between">
-            <div className="flex flex-col items-center flex-1">
-              <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold ${step >= 1 ? 'bg-blue-600 text-white' : 'bg-gray-300 text-gray-600'}`}>
-                1
-              </div>
-              <span className="text-sm mt-2 font-medium">Select Treatment</span>
-            </div>
-            <div className={`flex-1 h-1 ${step >= 2 ? 'bg-blue-600' : 'bg-gray-300'}`}></div>
-            <div className="flex flex-col items-center flex-1">
-              <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold ${step >= 2 ? 'bg-blue-600 text-white' : 'bg-gray-300 text-gray-600'}`}>
-                2
-              </div>
-              <span className="text-sm mt-2 font-medium">Insurance & Cost</span>
-            </div>
-            <div className={`flex-1 h-1 ${step >= 3 ? 'bg-blue-600' : 'bg-gray-300'}`}></div>
-            <div className="flex flex-col items-center flex-1">
-              <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold ${step >= 3 ? 'bg-blue-600 text-white' : 'bg-gray-300 text-gray-600'}`}>
-                3
-              </div>
-              <span className="text-sm mt-2 font-medium">Pick Date & Time</span>
-            </div>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Main Content */}
-          <div className="lg:col-span-2">
-            {/* Step 1: Treatment Selection */}
-            {step === 1 && (
-              <div className="bg-white rounded-lg shadow-md p-6">
-                <h2 className="text-2xl font-bold text-gray-800 mb-4">Choose Your Treatment</h2>
-                <div className="space-y-3">
-                  {MOCK_TREATMENTS.map((treatment) => (
-                    <div
-                      key={treatment.id}
-                      onClick={() => handleTreatmentSelect(treatment)}
-                      className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${
-                        appointmentData.selectedTreatment?.id === treatment.id
-                          ? 'border-blue-600 bg-blue-50'
-                          : 'border-gray-200 hover:border-blue-300'
-                      }`}
-                    >
-                      <div className="flex justify-between items-start">
-                        <div className="flex-1">
-                          <h3 className="font-bold text-lg text-gray-800">{treatment.name}</h3>
-                          <p className="text-gray-600 text-sm mt-1">{treatment.description}</p>
-                          <div className="flex gap-4 mt-2">
-                            <span className="text-xs bg-gray-100 px-2 py-1 rounded">{treatment.category}</span>
-                            <span className="text-xs bg-gray-100 px-2 py-1 rounded">{treatment.duration} min</span>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-xl font-bold text-blue-600">${treatment.baseCost}</p>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
+          {isEmergencyAppointment && (
+            <div className="mb-6 p-4 bg-red-50 border-l-4 border-red-500 rounded-r-lg">
+              <div className="flex items-center">
+                <span className="text-2xl mr-3">⚡</span>
+                <div>
+                  <p className="font-bold text-red-800">Emergency Appointment Selected</p>
+                  <p className="text-red-700 text-sm">Priority slots available - We'll see you as soon as possible</p>
                 </div>
-                <div className="mt-6 flex justify-end">
+              </div>
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Appointment Type Selection */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Appointment Type <span className="text-red-500">*</span>
+              </label>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {MOCK_APPOINTMENT_TYPES.map(type => (
                   <button
-                    onClick={() => canProceedToStep2 && setStep(2)}
-                    disabled={!canProceedToStep2}
-                    className={`px-6 py-3 rounded-lg font-semibold ${
-                      canProceedToStep2
-                        ? 'bg-blue-600 text-white hover:bg-blue-700'
-                        : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                    key={type.id}
+                    type="button"
+                    onClick={() => setSelectedAppointmentType(type.id)}
+                    className={`p-4 rounded-lg border-2 transition-all duration-200 text-left ${
+                      selectedAppointmentType === type.id
+                        ? type.isEmergency
+                          ? 'border-red-500 bg-red-50'
+                          : 'border-indigo-500 bg-indigo-50'
+                        : 'border-gray-200 hover:border-gray-300'
                     }`}
                   >
-                    Continue to Insurance
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <p className={`font-semibold ${type.isEmergency ? 'text-red-800' : 'text-gray-800'}`}>
+                          {type.isEmergency && '⚡ '}{type.name}
+                        </p>
+                        <p className="text-sm text-gray-600">{type.duration}</p>
+                      </div>
+                      {selectedAppointmentType === type.id && (
+                        <svg className="w-6 h-6 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                        </svg>
+                      )}
+                    </div>
                   </button>
-                </div>
+                ))}
               </div>
-            )}
+            </div>
 
-            {/* Step 2: Insurance Selection */}
-            {step === 2 && (
-              <div className="bg-white rounded-lg shadow-md p-6">
-                <h2 className="text-2xl font-bold text-gray-800 mb-4">Insurance Coverage</h2>
-                
-                <div className="mb-6">
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={useInsurance}
-                      onChange={(e) => {
-                        setUseInsurance(e.target.checked)
-                        if (!e.target.checked) {
-                          setAppointmentData({ ...appointmentData, selectedInsurance: null })
-                        }
-                      }}
-                      className="w-5 h-5"
-                    />
-                    <span className="font-medium text-gray-700">I have dental insurance</span>
-                  </label>
-                </div>
+            {/* Dentist Selection */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Preferred Dentist (Optional)
+              </label>
+              <select
+                value={selectedDentist}
+                onChange={(e) => setSelectedDentist(e.target.value)}
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+              >
+                <option value="">Any Available Dentist</option>
+                {MOCK_DENTISTS.map(dentist => (
+                  <option key={dentist.id} value={dentist.name}>
+                    {dentist.name} - {dentist.specialty}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-                {useInsurance && (
-                  <div className="space-y-3">
-                    {MOCK_INSURANCE_PLANS.map((insurance) => (
-                      <div
-                        key={insurance.id}
-                        onClick={() => handleInsuranceSelect(insurance)}
-                        className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${
-                          appointmentData.selectedInsurance?.id === insurance.id
-                            ? 'border-blue-600 bg-blue-50'
-                            : 'border-gray-200 hover:border-blue-300'
+            {/* Time Slot Selection */}
+            {selectedAppointmentType && (
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Select Time Slot <span className="text-red-500">*</span>
+                </label>
+                {filteredSlots.length === 0 ? (
+                  <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                    <p className="text-yellow-800">No available slots match your criteria. Please adjust your selection.</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 max-h-96 overflow-y-auto p-1">
+                    {filteredSlots.map(slot => (
+                      <button
+                        key={slot.id}
+                        type="button"
+                        onClick={() => setSelectedSlot(slot.id)}
+                        className={`p-3 rounded-lg border-2 transition-all duration-200 text-left ${
+                          selectedSlot === slot.id
+                            ? 'border-indigo-500 bg-indigo-50'
+                            : 'border-gray-200 hover:border-gray-300'
                         }`}
                       >
-                        <div className="flex justify-between items-start">
-                          <div className="flex-1">
-                            <h3 className="font-bold text-lg text-gray-800">{insurance.name}</h3>
-                            <p className="text-gray-600 text-sm">{insurance.provider}</p>
-                            <div className="flex gap-4 mt-2">
-                              <span className="text-sm text-gray-700">
-                                Coverage: <span className="font-semibold">{insurance.coveragePercent}%</span>
-                              </span>
-                              <span className="text-sm text-gray-700">
-                                Remaining: <span className="font-semibold">${insurance.remaining}</span>
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
+                        {slot.isEmergency && (
+                          <span className="inline-block px-2 py-1 text-xs font-semibold bg-red-500 text-white rounded mb-1">
+                            EMERGENCY SLOT
+                          </span>
+                        )}
+                        <p className="font-semibold text-gray-800">{slot.date}</p>
+                        <p className="text-sm text-gray-600">{slot.time}</p>
+                        <p className="text-xs text-gray-500 mt-1">{slot.dentist}</p>
+                      </button>
                     ))}
                   </div>
                 )}
-
-                <div className="mt-6 flex justify-between">
-                  <button
-                    onClick={() => setStep(1)}
-                    className="px-6 py-3 rounded-lg font-semibold bg-gray-200 text-gray-700 hover:bg-gray-300"
-                  >
-                    Back
-                  </button>
-                  <button
-                    onClick={() => canProceedToStep3 && setStep(3)}
-                    disabled={!canProceedToStep3}
-                    className={`px-6 py-3 rounded-lg font-semibold ${
-                      canProceedToStep3
-                        ? 'bg-blue-600 text-white hover:bg-blue-700'
-                        : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                    }`}
-                  >
-                    Continue to Schedule
-                  </button>
-                </div>
               </div>
             )}
 
-            {/* Step 3: Time Slot Selection */}
-            {step === 3 && (
-              <div className="bg-white rounded-lg shadow-md p-6">
-                <h2 className="text-2xl font-bold text-gray-800 mb-4">Select Date & Time</h2>
-                <div className="space-y-3">
-                  {MOCK_TIME_SLOTS.map((slot) => (
-                    <div
-                      key={slot.id}
-                      onClick={() => handleTimeSlotSelect(slot)}
-                      className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${
-                        !slot.available
-                          ? 'border-gray-200 bg-gray-100 opacity-50 cursor-not-allowed'
-                          : appointmentData.selectedTimeSlot?.id === slot.id
-                          ? 'border-blue-600 bg-blue-50'
-                          : 'border-gray-200 hover:border-blue-300'
-                      }`}
-                    >
-                      <div className="flex justify-between items-center">
-                        <div>
-                          <p className="font-bold text-gray-800">{slot.date}</p>
-                          <p className="text-gray-600 text-sm">{slot.dentist}</p>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-lg font-semibold text-blue-600">{slot.time}</p>
-                          {!slot.available && <span className="text-xs text-red-600">Unavailable</span>}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
+            {/* Patient Information */}
+            <div className="border-t pt-6">
+              <h3 className="text-lg font-semibold text-gray-800 mb-4">Patient Information</h3>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Full Name <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={patientName}
+                    onChange={(e) => setPatientName(e.target.value)}
+                    required
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                    placeholder="John Doe"
+                  />
                 </div>
-                <div className="mt-6 flex justify-between">
-                  <button
-                    onClick={() => setStep(2)}
-                    className="px-6 py-3 rounded-lg font-semibold bg-gray-200 text-gray-700 hover:bg-gray-300"
-                  >
-                    Back
-                  </button>
-                  <button
-                    onClick={handleConfirmAppointment}
-                    disabled={!canConfirm}
-                    className={`px-6 py-3 rounded-lg font-semibold ${
-                      canConfirm
-                        ? 'bg-green-600 text-white hover:bg-green-700'
-                        : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                    }`}
-                  >
-                    Confirm Appointment
-                  </button>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Email <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="email"
+                      value={patientEmail}
+                      onChange={(e) => setPatientEmail(e.target.value)}
+                      required
+                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                      placeholder="john@example.com"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Phone <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="tel"
+                      value={patientPhone}
+                      onChange={(e) => setPatientPhone(e.target.value)}
+                      required
+                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                      placeholder="(555) 123-4567"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Additional Notes (Optional)
+                  </label>
+                  <textarea
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                    rows={3}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                    placeholder="Any special requirements or concerns..."
+                  />
                 </div>
               </div>
-            )}
-          </div>
-
-          {/* Cost Summary Sidebar */}
-          <div className="lg:col-span-1">
-            <div className="bg-white rounded-lg shadow-md p-6 sticky top-6">
-              <h3 className="text-xl font-bold text-gray-800 mb-4">Cost Summary</h3>
-              
-              {appointmentData.selectedTreatment ? (
-                <div className="space-y-4">
-                  <div className="pb-4 border-b border-gray-200">
-                    <p className="text-sm text-gray-600">Treatment</p>
-                    <p className="font-semibold text-gray-800">{appointmentData.selectedTreatment.name}</p>
-                  </div>
-
-                  <div className="space-y-2">
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Base Cost:</span>
-                      <span className="font-semibold">${costs.baseCost.toFixed(2)}</span>
-                    </div>
-                    
-                    {useInsurance && appointmentData.selectedInsurance && (
-                      <>
-                        <div className="flex justify-between text-green-600">
-                          <span>Insurance Coverage ({appointmentData.selectedInsurance.coveragePercent}%):</span>
-                          <span className="font-semibold">-${costs.insuranceCoverage.toFixed(2)}</span>
-                        </div>
-                      </>
-                    )}
-
-                    <div className="pt-4 border-t-2 border-gray-300">
-                      <div className="flex justify-between text-lg">
-                        <span className="font-bold text-gray-800">You Pay:</span>
-                        <span className="font-bold text-blue-600">${costs.patientPays.toFixed(2)}</span>
-                      </div>
-                    </div>
-
-                    {costs.savedAmount > 0 && (
-                      <div className="bg-green-50 p-3 rounded-lg mt-4">
-                        <p className="text-sm text-green-800">
-                          You save <span className="font-bold">${costs.savedAmount.toFixed(2)}</span> with insurance!
-                        </p>
-                      </div>
-                    )}
-                  </div>
-
-                  {appointmentData.selectedTimeSlot && (
-                    <div className="pt-4 border-t border-gray-200">
-                      <p className="text-sm text-gray-600 mb-2">Appointment Details</p>
-                      <div className="bg-blue-50 p-3 rounded-lg space-y-1">
-                        <p className="text-sm font-semibold text-gray-800">{appointmentData.selectedTimeSlot.date}</p>
-                        <p className="text-sm text-gray-700">{appointmentData.selectedTimeSlot.time}</p>
-                        <p className="text-sm text-gray-700">{appointmentData.selectedTimeSlot.dentist}</p>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <p className="text-gray-500 text-center py-8">Select a treatment to see cost details</p>
-              )}
             </div>
+
+            {/* Submit Button */}
+            <div className="flex gap-4">
+              <button
+                type="submit"
+                disabled={!selectedAppointmentType || !selectedSlot || !patientName || !patientEmail || !patientPhone}
+                className="flex-1 px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors duration-200 font-semibold"
+              >
+                Confirm Appointment
+              </button>
+              <button
+                type="button"
+                onClick={handleReset}
+                className="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors duration-200 font-medium"
+              >
+                Reset
+              </button>
+            </div>
+          </form>
+
+          {/* Info Box */}
+          <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+            <h4 className="font-semibold text-blue-900 mb-2">📋 Appointment Guidelines</h4>
+            <ul className="text-sm text-blue-800 space-y-1">
+              <li>• Emergency appointments are prioritized and have dedicated time slots</li>
+              <li>• Please arrive 10 minutes before your scheduled time</li>
+              <li>• Confirmation details will be sent to your email</li>
+              <li>• For cancellations, please notify us 24 hours in advance</li>
+            </ul>
           </div>
         </div>
       </div>
