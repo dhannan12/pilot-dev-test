@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from '@testing-library/react'
+import { render, screen } from '@testing-library/react'
 import { describe, it, expect } from 'vitest'
 import SchedulePhysiotherapy from './SchedulePhysiotherapy'
 
@@ -8,56 +8,48 @@ describe('SchedulePhysiotherapy', () => {
     expect(document.body).toBeTruthy()
   })
 
-  it('displays the main header', () => {
+  it('displays the main heading', () => {
     render(<SchedulePhysiotherapy />)
-    expect(screen.getByText('Physiotherapy Portal')).toBeTruthy()
-    expect(screen.getByText('Schedule appointments and view your treatment history')).toBeTruthy()
+    expect(screen.getByText('Schedule Physiotherapy Appointment')).toBeTruthy()
   })
 
-  it('displays tab navigation', () => {
+  it('displays mock therapists', () => {
     render(<SchedulePhysiotherapy />)
-    expect(screen.getByText('Schedule Appointment')).toBeTruthy()
-    expect(screen.getByText('Treatment History')).toBeTruthy()
+    expect(screen.getAllByText('Dr. Sarah Johnson').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('Dr. Michael Chen').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('Dr. Emily Davis').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('Dr. James Wilson').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('Dr. Amanda Brown').length).toBeGreaterThan(0)
   })
 
-  it('displays therapist list with at least 5 therapists', () => {
+  it('displays time slots', () => {
     render(<SchedulePhysiotherapy />)
-    expect(screen.getByText('Dr. Sarah Johnson')).toBeTruthy()
-    expect(screen.getByText('Dr. Michael Chen')).toBeTruthy()
-    expect(screen.getByText('Dr. Emily Rodriguez')).toBeTruthy()
-    expect(screen.getByText('Dr. James Wilson')).toBeTruthy()
-    expect(screen.getByText('Dr. Lisa Martinez')).toBeTruthy()
+    expect(screen.getByText('08:00 AM')).toBeTruthy()
+    expect(screen.getByText('09:00 AM')).toBeTruthy()
+    expect(screen.getByText('11:00 AM')).toBeTruthy()
   })
 
-  it('shows date selection after selecting a therapist', () => {
+  it('displays 24-hour reminder information', () => {
     render(<SchedulePhysiotherapy />)
-    const therapistCard = screen.getByText('Dr. Sarah Johnson').closest('div')
-    if (therapistCard) {
-      fireEvent.click(therapistCard)
-      expect(screen.getByText('Select Date')).toBeTruthy()
-    }
+    expect(screen.getByText('24-Hour Reminders')).toBeTruthy()
+    expect(screen.getByText(/Automated reminders are sent 24 hours before/)).toBeTruthy()
   })
 
-  it('switches to treatment history tab', () => {
+  it('displays upcoming appointments', () => {
     render(<SchedulePhysiotherapy />)
-    const historyTab = screen.getByText('Treatment History')
-    fireEvent.click(historyTab)
-    expect(screen.getByText('Your Treatment History')).toBeTruthy()
+    expect(screen.getByText('Upcoming Appointments')).toBeTruthy()
+    expect(screen.getByText('Sports Injury Assessment')).toBeTruthy()
+    expect(screen.getByText('Post-Surgery Recovery Session')).toBeTruthy()
   })
 
-  it('displays treatment history records', () => {
+  it('shows reminder sent badges', () => {
     render(<SchedulePhysiotherapy />)
-    const historyTab = screen.getByText('Treatment History')
-    fireEvent.click(historyTab)
-    expect(screen.getAllByText('Lower Back Pain Treatment').length).toBeGreaterThan(0)
-    expect(screen.getAllByText('Sports Injury Recovery').length).toBeGreaterThan(0)
+    const reminderBadges = screen.getAllByText('Reminder Sent')
+    expect(reminderBadges.length).toBeGreaterThan(0)
   })
 
-  it('displays treatment status badges', () => {
+  it('displays book appointment button', () => {
     render(<SchedulePhysiotherapy />)
-    const historyTab = screen.getByText('Treatment History')
-    fireEvent.click(historyTab)
-    expect(screen.getAllByText('COMPLETED').length).toBeGreaterThan(0)
-    expect(screen.getAllByText('SCHEDULED').length).toBeGreaterThan(0)
+    expect(screen.getByText('Book Appointment')).toBeTruthy()
   })
 })
