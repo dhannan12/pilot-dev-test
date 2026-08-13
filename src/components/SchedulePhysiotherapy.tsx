@@ -1,313 +1,438 @@
 /**
- * SchedulePhysiotherapy — Appointment scheduling with training time filters
+ * SchedulePhysiotherapy — Patient appointment scheduling with resource access
  *
- * Features: physiotherapy appointment booking, training time slot filtering, therapist selection, date picker, session type filtering
+ * Features: appointment booking, therapist selection, time slot picker, rehabilitation resources, session history
  *
- * Ticket: SCRUM-725 | Branch: proto/SCRUM-717
+ * Ticket: SCRUM-726 | Branch: proto/SCRUM-717
  */
 
-import React, { useState } from 'react'
+import { useState } from 'react'
 
 interface Therapist {
   id: string
   name: string
-  specialty: string
-  avatar: string
+  specialization: string
+  availableSlots: string[]
+  rating: number
 }
 
-interface TimeSlot {
+interface Resource {
   id: string
-  therapistId: string
+  title: string
+  type: 'video' | 'document' | 'exercise'
+  url: string
+}
+
+interface Appointment {
+  id: string
+  therapistName: string
   date: string
   time: string
-  trainingTime: 'morning' | 'afternoon' | 'evening'
-  sessionType: string
-  available: boolean
-  duration: number
+  status: 'scheduled' | 'completed' | 'cancelled'
 }
 
-const mockTherapists: Therapist[] = [
-  { id: '1', name: 'Dr. Sarah Johnson', specialty: 'Sports Physiotherapy', avatar: 'SJ' },
-  { id: '2', name: 'Dr. Michael Chen', specialty: 'Orthopedic Rehab', avatar: 'MC' },
-  { id: '3', name: 'Dr. Emily Rodriguez', specialty: 'Manual Therapy', avatar: 'ER' },
-  { id: '4', name: 'Dr. James Wilson', specialty: 'Neurological Rehab', avatar: 'JW' },
-  { id: '5', name: 'Dr. Amanda Lee', specialty: 'Post-Surgery Recovery', avatar: 'AL' }
+const MOCK_THERAPISTS: Therapist[] = [
+  {
+    id: 'PT1',
+    name: 'Dr. Sarah Johnson',
+    specialization: 'Sports Injury Rehabilitation',
+    availableSlots: ['09:00 AM', '11:00 AM', '02:00 PM', '04:00 PM'],
+    rating: 4.8
+  },
+  {
+    id: 'PT2',
+    name: 'Dr. Michael Chen',
+    specialization: 'Post-Surgery Recovery',
+    availableSlots: ['10:00 AM', '01:00 PM', '03:00 PM', '05:00 PM'],
+    rating: 4.9
+  },
+  {
+    id: 'PT3',
+    name: 'Dr. Emily Rodriguez',
+    specialization: 'Chronic Pain Management',
+    availableSlots: ['08:00 AM', '12:00 PM', '02:30 PM', '04:30 PM'],
+    rating: 4.7
+  },
+  {
+    id: 'PT4',
+    name: 'Dr. James Wilson',
+    specialization: 'Neurological Rehabilitation',
+    availableSlots: ['09:30 AM', '11:30 AM', '01:30 PM', '03:30 PM'],
+    rating: 4.9
+  },
+  {
+    id: 'PT5',
+    name: 'Dr. Lisa Anderson',
+    specialization: 'Pediatric Physiotherapy',
+    availableSlots: ['10:30 AM', '12:30 PM', '02:00 PM', '04:00 PM'],
+    rating: 4.8
+  }
 ]
 
-const mockTimeSlots: TimeSlot[] = [
-  { id: '1', therapistId: '1', date: '2026-08-15', time: '09:00', trainingTime: 'morning', sessionType: 'Initial Assessment', available: true, duration: 60 },
-  { id: '2', therapistId: '1', date: '2026-08-15', time: '10:30', trainingTime: 'morning', sessionType: 'Follow-up', available: true, duration: 45 },
-  { id: '3', therapistId: '2', date: '2026-08-15', time: '14:00', trainingTime: 'afternoon', sessionType: 'Manual Therapy', available: true, duration: 60 },
-  { id: '4', therapistId: '2', date: '2026-08-16', time: '15:30', trainingTime: 'afternoon', sessionType: 'Exercise Training', available: false, duration: 45 },
-  { id: '5', therapistId: '3', date: '2026-08-16', time: '09:30', trainingTime: 'morning', sessionType: 'Initial Assessment', available: true, duration: 60 },
-  { id: '6', therapistId: '3', date: '2026-08-16', time: '18:00', trainingTime: 'evening', sessionType: 'Follow-up', available: true, duration: 45 },
-  { id: '7', therapistId: '4', date: '2026-08-17', time: '10:00', trainingTime: 'morning', sessionType: 'Neurological Rehab', available: true, duration: 60 },
-  { id: '8', therapistId: '4', date: '2026-08-17', time: '16:00', trainingTime: 'afternoon', sessionType: 'Balance Training', available: true, duration: 45 },
-  { id: '9', therapistId: '5', date: '2026-08-18', time: '08:30', trainingTime: 'morning', sessionType: 'Post-Surgery Recovery', available: true, duration: 60 },
-  { id: '10', therapistId: '5', date: '2026-08-18', time: '17:00', trainingTime: 'evening', sessionType: 'Strength Training', available: true, duration: 45 },
-  { id: '11', therapistId: '1', date: '2026-08-19', time: '11:00', trainingTime: 'morning', sessionType: 'Sports Rehab', available: true, duration: 60 },
-  { id: '12', therapistId: '2', date: '2026-08-19', time: '13:00', trainingTime: 'afternoon', sessionType: 'Manual Therapy', available: true, duration: 45 },
-  { id: '13', therapistId: '3', date: '2026-08-20', time: '19:00', trainingTime: 'evening', sessionType: 'Follow-up', available: false, duration: 45 },
-  { id: '14', therapistId: '4', date: '2026-08-20', time: '14:30', trainingTime: 'afternoon', sessionType: 'Exercise Training', available: true, duration: 60 },
-  { id: '15', therapistId: '5', date: '2026-08-21', time: '09:00', trainingTime: 'morning', sessionType: 'Initial Assessment', available: true, duration: 60 }
+const MOCK_RESOURCES: Resource[] = [
+  {
+    id: 'R1',
+    title: 'Lower Back Strengthening Exercises',
+    type: 'video',
+    url: '#'
+  },
+  {
+    id: 'R2',
+    title: 'Post-Operative Care Guidelines',
+    type: 'document',
+    url: '#'
+  },
+  {
+    id: 'R3',
+    title: 'Shoulder Mobility Routine',
+    type: 'exercise',
+    url: '#'
+  },
+  {
+    id: 'R4',
+    title: 'Balance and Coordination Training',
+    type: 'video',
+    url: '#'
+  },
+  {
+    id: 'R5',
+    title: 'Home Exercise Program Guide',
+    type: 'document',
+    url: '#'
+  },
+  {
+    id: 'R6',
+    title: 'Knee Rehabilitation Protocol',
+    type: 'exercise',
+    url: '#'
+  }
+]
+
+const MOCK_APPOINTMENTS: Appointment[] = [
+  {
+    id: 'A1',
+    therapistName: 'Dr. Sarah Johnson',
+    date: '2026-08-10',
+    time: '09:00 AM',
+    status: 'completed'
+  },
+  {
+    id: 'A2',
+    therapistName: 'Dr. Michael Chen',
+    date: '2026-08-15',
+    time: '01:00 PM',
+    status: 'scheduled'
+  },
+  {
+    id: 'A3',
+    therapistName: 'Dr. Emily Rodriguez',
+    date: '2026-08-05',
+    time: '02:30 PM',
+    status: 'completed'
+  },
+  {
+    id: 'A4',
+    therapistName: 'Dr. James Wilson',
+    date: '2026-08-20',
+    time: '11:30 AM',
+    status: 'scheduled'
+  },
+  {
+    id: 'A5',
+    therapistName: 'Dr. Lisa Anderson',
+    date: '2026-07-28',
+    time: '10:30 AM',
+    status: 'cancelled'
+  }
 ]
 
 export default function SchedulePhysiotherapy() {
+  const [activeTab, setActiveTab] = useState<'schedule' | 'history' | 'resources'>('schedule')
   const [selectedTherapist, setSelectedTherapist] = useState<string>('')
-  const [selectedTrainingTime, setSelectedTrainingTime] = useState<string>('')
-  const [selectedSessionType, setSelectedSessionType] = useState<string>('')
   const [selectedDate, setSelectedDate] = useState<string>('')
-  const [selectedSlot, setSelectedSlot] = useState<TimeSlot | null>(null)
+  const [selectedTime, setSelectedTime] = useState<string>('')
+  const [appointments, setAppointments] = useState<Appointment[]>(MOCK_APPOINTMENTS)
+  const [showConfirmation, setShowConfirmation] = useState(false)
 
-  // Get unique session types
-  const sessionTypes = Array.from(new Set(mockTimeSlots.map(slot => slot.sessionType)))
+  const handleScheduleAppointment = () => {
+    if (!selectedTherapist || !selectedDate || !selectedTime) {
+      alert('Please select therapist, date, and time')
+      return
+    }
 
-  // Filter time slots based on selections
-  const filteredSlots = mockTimeSlots.filter(slot => {
-    if (selectedTherapist && slot.therapistId !== selectedTherapist) return false
-    if (selectedTrainingTime && slot.trainingTime !== selectedTrainingTime) return false
-    if (selectedSessionType && slot.sessionType !== selectedSessionType) return false
-    if (selectedDate && slot.date !== selectedDate) return false
-    return true
-  })
+    const therapist = MOCK_THERAPISTS.find(t => t.id === selectedTherapist)
+    const newAppointment: Appointment = {
+      id: `A${appointments.length + 1}`,
+      therapistName: therapist?.name || '',
+      date: selectedDate,
+      time: selectedTime,
+      status: 'scheduled'
+    }
 
-  const getTherapistById = (id: string) => {
-    return mockTherapists.find(t => t.id === id)
+    setAppointments([...appointments, newAppointment])
+    setShowConfirmation(true)
+    
+    // Reset form
+    setTimeout(() => {
+      setSelectedTherapist('')
+      setSelectedDate('')
+      setSelectedTime('')
+      setShowConfirmation(false)
+    }, 3000)
   }
 
-  const handleBookAppointment = (slot: TimeSlot) => {
-    if (slot.available) {
-      setSelectedSlot(slot)
+  const getResourceIcon = (type: string) => {
+    switch (type) {
+      case 'video':
+        return '🎥'
+      case 'document':
+        return '📄'
+      case 'exercise':
+        return '🏃'
+      default:
+        return '📎'
     }
   }
 
-  const confirmBooking = () => {
-    if (selectedSlot) {
-      alert(`Appointment booked successfully!\nTherapist: ${getTherapistById(selectedSlot.therapistId)?.name}\nDate: ${selectedSlot.date}\nTime: ${selectedSlot.time}\nSession: ${selectedSlot.sessionType}`)
-      setSelectedSlot(null)
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'scheduled':
+        return 'bg-blue-100 text-blue-800'
+      case 'completed':
+        return 'bg-green-100 text-green-800'
+      case 'cancelled':
+        return 'bg-red-100 text-red-800'
+      default:
+        return 'bg-gray-100 text-gray-800'
     }
   }
+
+  const selectedTherapistData = MOCK_THERAPISTS.find(t => t.id === selectedTherapist)
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-7xl mx-auto">
-        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Schedule Physiotherapy Appointment</h1>
-          <p className="text-gray-600">Filter available appointments based on your training times and preferences</p>
-        </div>
-
-        {/* Filters Section */}
-        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Filter Appointments</h2>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {/* Therapist Filter */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Therapist</label>
-              <select
-                value={selectedTherapist}
-                onChange={(e) => setSelectedTherapist(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="">All Therapists</option>
-                {mockTherapists.map(therapist => (
-                  <option key={therapist.id} value={therapist.id}>{therapist.name}</option>
-                ))}
-              </select>
-            </div>
-
-            {/* Training Time Filter */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Training Time</label>
-              <select
-                value={selectedTrainingTime}
-                onChange={(e) => setSelectedTrainingTime(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="">All Times</option>
-                <option value="morning">Morning (8AM - 12PM)</option>
-                <option value="afternoon">Afternoon (12PM - 6PM)</option>
-                <option value="evening">Evening (6PM - 9PM)</option>
-              </select>
-            </div>
-
-            {/* Session Type Filter */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Session Type</label>
-              <select
-                value={selectedSessionType}
-                onChange={(e) => setSelectedSessionType(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="">All Sessions</option>
-                {sessionTypes.map(type => (
-                  <option key={type} value={type}>{type}</option>
-                ))}
-              </select>
-            </div>
-
-            {/* Date Filter */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Date</label>
-              <input
-                type="date"
-                value={selectedDate}
-                onChange={(e) => setSelectedDate(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-          </div>
-
-          {/* Clear Filters Button */}
-          <div className="mt-4">
-            <button
-              onClick={() => {
-                setSelectedTherapist('')
-                setSelectedTrainingTime('')
-                setSelectedSessionType('')
-                setSelectedDate('')
-              }}
-              className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors"
-            >
-              Clear All Filters
-            </button>
-          </div>
-        </div>
-
-        {/* Results Summary */}
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-          <p className="text-blue-800">
-            <span className="font-semibold">{filteredSlots.filter(s => s.available).length}</span> available appointments found
-            {selectedTrainingTime && <span className="ml-2">in the <strong>{selectedTrainingTime}</strong></span>}
+      <div className="max-w-6xl mx-auto">
+        {/* Header */}
+        <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+            Physiotherapy Appointment Scheduler
+          </h1>
+          <p className="text-gray-600">
+            Book appointments with qualified therapists and access rehabilitation resources
           </p>
         </div>
 
-        {/* Available Slots */}
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Available Appointments</h2>
-          
-          {filteredSlots.length === 0 ? (
-            <div className="text-center py-12">
-              <p className="text-gray-500 text-lg">No appointments found matching your criteria</p>
-              <p className="text-gray-400 mt-2">Try adjusting your filters</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {filteredSlots.map(slot => {
-                const therapist = getTherapistById(slot.therapistId)
-                return (
-                  <div
-                    key={slot.id}
-                    className={`border rounded-lg p-4 ${
-                      slot.available
-                        ? 'border-gray-300 hover:border-blue-500 cursor-pointer'
-                        : 'border-gray-200 bg-gray-50 opacity-60'
-                    } transition-all`}
-                    onClick={() => slot.available && handleBookAppointment(slot)}
-                  >
-                    <div className="flex items-center mb-3">
-                      <div className="w-10 h-10 rounded-full bg-blue-600 text-white flex items-center justify-center font-semibold mr-3">
-                        {therapist?.avatar}
-                      </div>
-                      <div className="flex-1">
-                        <h3 className="font-semibold text-gray-900">{therapist?.name}</h3>
-                        <p className="text-xs text-gray-500">{therapist?.specialty}</p>
-                      </div>
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <div className="flex items-center text-sm">
-                        <span className="text-gray-600 w-16">Date:</span>
-                        <span className="font-medium text-gray-900">{new Date(slot.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
-                      </div>
-                      
-                      <div className="flex items-center text-sm">
-                        <span className="text-gray-600 w-16">Time:</span>
-                        <span className="font-medium text-gray-900">{slot.time}</span>
-                        <span className="ml-2 px-2 py-0.5 bg-blue-100 text-blue-700 text-xs rounded-full">
-                          {slot.trainingTime}
-                        </span>
-                      </div>
-                      
-                      <div className="flex items-center text-sm">
-                        <span className="text-gray-600 w-16">Session:</span>
-                        <span className="font-medium text-gray-900 text-xs">{slot.sessionType}</span>
-                      </div>
-                      
-                      <div className="flex items-center text-sm">
-                        <span className="text-gray-600 w-16">Duration:</span>
-                        <span className="font-medium text-gray-900">{slot.duration} min</span>
-                      </div>
-                    </div>
+        {/* Tab Navigation */}
+        <div className="bg-white rounded-lg shadow-sm mb-6">
+          <div className="flex border-b border-gray-200">
+            <button
+              onClick={() => setActiveTab('schedule')}
+              className={`px-6 py-4 font-medium text-sm border-b-2 transition-colors ${
+                activeTab === 'schedule'
+                  ? 'border-blue-600 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              Schedule Appointment
+            </button>
+            <button
+              onClick={() => setActiveTab('history')}
+              className={`px-6 py-4 font-medium text-sm border-b-2 transition-colors ${
+                activeTab === 'history'
+                  ? 'border-blue-600 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              Appointment History
+            </button>
+            <button
+              onClick={() => setActiveTab('resources')}
+              className={`px-6 py-4 font-medium text-sm border-b-2 transition-colors ${
+                activeTab === 'resources'
+                  ? 'border-blue-600 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              Rehabilitation Resources
+            </button>
+          </div>
 
-                    <div className="mt-4">
-                      {slot.available ? (
-                        <button className="w-full py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors font-medium">
-                          Book Appointment
+          {/* Tab Content */}
+          <div className="p-6">
+            {/* Schedule Tab */}
+            {activeTab === 'schedule' && (
+              <div className="space-y-6">
+                {showConfirmation && (
+                  <div className="bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-lg">
+                    ✓ Appointment successfully scheduled!
+                  </div>
+                )}
+
+                {/* Select Therapist */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-3">
+                    Select Therapist
+                  </label>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {MOCK_THERAPISTS.map(therapist => (
+                      <button
+                        key={therapist.id}
+                        onClick={() => setSelectedTherapist(therapist.id)}
+                        className={`p-4 border-2 rounded-lg text-left transition-all ${
+                          selectedTherapist === therapist.id
+                            ? 'border-blue-600 bg-blue-50'
+                            : 'border-gray-200 bg-white hover:border-gray-300'
+                        }`}
+                      >
+                        <div className="font-semibold text-gray-900">{therapist.name}</div>
+                        <div className="text-sm text-gray-600 mt-1">
+                          {therapist.specialization}
+                        </div>
+                        <div className="flex items-center mt-2">
+                          <span className="text-yellow-500">★</span>
+                          <span className="text-sm text-gray-700 ml-1">
+                            {therapist.rating} / 5.0
+                          </span>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Select Date */}
+                <div>
+                  <label htmlFor="appointment-date" className="block text-sm font-medium text-gray-700 mb-2">
+                    Select Date
+                  </label>
+                  <input
+                    id="appointment-date"
+                    type="date"
+                    value={selectedDate}
+                    onChange={(e) => setSelectedDate(e.target.value)}
+                    min={new Date().toISOString().split('T')[0]}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+
+                {/* Select Time */}
+                {selectedTherapistData && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-3">
+                      Available Time Slots
+                    </label>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                      {selectedTherapistData.availableSlots.map(slot => (
+                        <button
+                          key={slot}
+                          onClick={() => setSelectedTime(slot)}
+                          className={`px-4 py-3 border-2 rounded-lg font-medium transition-all ${
+                            selectedTime === slot
+                              ? 'border-blue-600 bg-blue-50 text-blue-700'
+                              : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'
+                          }`}
+                        >
+                          {slot}
                         </button>
-                      ) : (
-                        <button disabled className="w-full py-2 bg-gray-300 text-gray-500 rounded-md cursor-not-allowed font-medium">
-                          Not Available
-                        </button>
-                      )}
+                      ))}
                     </div>
                   </div>
-                )
-              })}
-            </div>
-          )}
-        </div>
+                )}
 
-        {/* Booking Confirmation Modal */}
-        {selectedSlot && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
-              <h3 className="text-2xl font-bold text-gray-900 mb-4">Confirm Appointment</h3>
-              
-              <div className="space-y-3 mb-6">
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Therapist:</span>
-                  <span className="font-semibold text-gray-900">{getTherapistById(selectedSlot.therapistId)?.name}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Specialty:</span>
-                  <span className="font-semibold text-gray-900">{getTherapistById(selectedSlot.therapistId)?.specialty}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Date:</span>
-                  <span className="font-semibold text-gray-900">{new Date(selectedSlot.date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Time:</span>
-                  <span className="font-semibold text-gray-900">{selectedSlot.time} ({selectedSlot.trainingTime})</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Session Type:</span>
-                  <span className="font-semibold text-gray-900">{selectedSlot.sessionType}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Duration:</span>
-                  <span className="font-semibold text-gray-900">{selectedSlot.duration} minutes</span>
+                {/* Schedule Button */}
+                <div className="pt-4">
+                  <button
+                    onClick={handleScheduleAppointment}
+                    disabled={!selectedTherapist || !selectedDate || !selectedTime}
+                    className="w-full bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+                  >
+                    Schedule Appointment
+                  </button>
                 </div>
               </div>
+            )}
 
-              <div className="flex space-x-3">
-                <button
-                  onClick={() => setSelectedSlot(null)}
-                  className="flex-1 py-2 px-4 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors font-medium"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={confirmBooking}
-                  className="flex-1 py-2 px-4 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors font-medium"
-                >
-                  Confirm Booking
-                </button>
+            {/* History Tab */}
+            {activeTab === 'history' && (
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                  Your Appointments
+                </h3>
+                {appointments.length === 0 ? (
+                  <p className="text-gray-500 text-center py-8">
+                    No appointments scheduled yet
+                  </p>
+                ) : (
+                  appointments
+                    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+                    .map(appointment => (
+                      <div
+                        key={appointment.id}
+                        className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
+                      >
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <div className="font-semibold text-gray-900">
+                              {appointment.therapistName}
+                            </div>
+                            <div className="text-sm text-gray-600 mt-1">
+                              {new Date(appointment.date).toLocaleDateString('en-US', {
+                                weekday: 'long',
+                                year: 'numeric',
+                                month: 'long',
+                                day: 'numeric'
+                              })}
+                            </div>
+                            <div className="text-sm text-gray-600">
+                              {appointment.time}
+                            </div>
+                          </div>
+                          <span
+                            className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(
+                              appointment.status
+                            )}`}
+                          >
+                            {appointment.status.charAt(0).toUpperCase() +
+                              appointment.status.slice(1)}
+                          </span>
+                        </div>
+                      </div>
+                    ))
+                )}
               </div>
-            </div>
+            )}
+
+            {/* Resources Tab */}
+            {activeTab === 'resources' && (
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                  Rehabilitation Resources
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {MOCK_RESOURCES.map(resource => (
+                    <a
+                      key={resource.id}
+                      href={resource.url}
+                      className="block bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md hover:border-blue-300 transition-all"
+                    >
+                      <div className="flex items-start">
+                        <div className="text-3xl mr-3">{getResourceIcon(resource.type)}</div>
+                        <div className="flex-1">
+                          <div className="font-semibold text-gray-900">
+                            {resource.title}
+                          </div>
+                          <div className="text-sm text-gray-500 mt-1 capitalize">
+                            {resource.type}
+                          </div>
+                        </div>
+                        <div className="text-blue-600 text-xl">→</div>
+                      </div>
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
-        )}
+        </div>
       </div>
     </div>
   )
