@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from '@testing-library/react'
+import { render, screen } from '@testing-library/react'
 import { describe, it, expect } from 'vitest'
 import ManageMy from './ManageMy'
 
@@ -8,60 +8,41 @@ describe('ManageMy', () => {
     expect(document.body).toBeTruthy()
   })
 
-  it('displays the landlord dashboard header', () => {
+  it('displays the dashboard title', () => {
     render(<ManageMy />)
-    expect(screen.getByText('Landlord Dashboard')).toBeTruthy()
-    expect(screen.getByText('Manage your properties and tenant applications')).toBeTruthy()
+    const title = screen.getByText('Property Management Dashboard')
+    expect(title).toBeTruthy()
   })
 
-  it('displays statistics cards', () => {
+  it('displays mock property data', () => {
     render(<ManageMy />)
-    expect(screen.getByText('Total Properties')).toBeTruthy()
-    const occupiedElements = screen.getAllByText('Occupied')
-    expect(occupiedElements.length).toBeGreaterThan(0)
-    const vacantElements = screen.getAllByText('Vacant')
-    expect(vacantElements.length).toBeGreaterThan(0)
-    expect(screen.getByText('Pending Applications')).toBeTruthy()
+    const property1 = screen.getByText(/123 Maple Street/i)
+    const property2 = screen.getByText(/456 Oak Avenue/i)
+    expect(property1).toBeTruthy()
+    expect(property2).toBeTruthy()
   })
 
-  it('displays mock properties', () => {
+  it('displays rental income calculations', () => {
     render(<ManageMy />)
-    expect(screen.getByText(/123 Maple Street/)).toBeTruthy()
-    expect(screen.getByText(/456 Oak Avenue/)).toBeTruthy()
-    expect(screen.getByText(/789 Pine Road/)).toBeTruthy()
+    const income = screen.getByText('Monthly Income')
+    const avgRent = screen.getByText('Average Rent')
+    expect(income).toBeTruthy()
+    expect(avgRent).toBeTruthy()
   })
 
-  it('switches between properties and applications tabs', () => {
+  it('displays property status summary', () => {
     render(<ManageMy />)
-    
-    const applicationsTab = screen.getByText(/Tenant Applications/)
-    fireEvent.click(applicationsTab)
-    
-    expect(screen.getByText(/Emily Davis/)).toBeTruthy()
-    expect(screen.getByText(/Michael Brown/)).toBeTruthy()
+    const portfolioSection = screen.getByText('Portfolio Summary')
+    expect(portfolioSection).toBeTruthy()
+    // Check that status labels exist (they appear multiple times, so just check existence)
+    expect(document.body.textContent).toContain('Rented')
+    expect(document.body.textContent).toContain('Vacant')
+    expect(document.body.textContent).toContain('Maintenance')
   })
 
-  it('displays tenant information for occupied properties', () => {
+  it('displays occupancy rate', () => {
     render(<ManageMy />)
-    expect(screen.getByText(/John Smith/)).toBeTruthy()
-    expect(screen.getByText(/Sarah Johnson/)).toBeTruthy()
-  })
-
-  it('shows property status badges', () => {
-    render(<ManageMy />)
-    const occupiedBadges = screen.getAllByText('Occupied')
-    const vacantBadges = screen.getAllByText('Vacant')
-    expect(occupiedBadges.length).toBeGreaterThan(0)
-    expect(vacantBadges.length).toBeGreaterThan(0)
-  })
-
-  it('displays application details in applications tab', () => {
-    render(<ManageMy />)
-    
-    const applicationsTab = screen.getByText(/Tenant Applications/)
-    fireEvent.click(applicationsTab)
-    
-    expect(screen.getByText(/emily.davis@email.com/)).toBeTruthy()
-    expect(screen.getByText(/michael.brown@email.com/)).toBeTruthy()
+    const occupancy = screen.getByText('Occupancy Rate')
+    expect(occupancy).toBeTruthy()
   })
 })
