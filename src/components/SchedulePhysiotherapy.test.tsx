@@ -8,147 +8,88 @@ describe('SchedulePhysiotherapy', () => {
     expect(document.body).toBeTruthy()
   })
 
-  it('displays the main heading and intro text', () => {
+  it('displays the main heading', () => {
     render(<SchedulePhysiotherapy />)
-    expect(screen.getByText('Schedule Physiotherapy Appointment')).toBeDefined()
-    expect(screen.getByText('Book your appointment in under 5 minutes')).toBeDefined()
+    expect(screen.getByText('Schedule Physiotherapy Appointment')).toBeTruthy()
   })
 
-  it('displays therapist list with at least 5 therapists', () => {
+  it('displays mock therapists', () => {
     render(<SchedulePhysiotherapy />)
-    expect(screen.getByText('Dr. Sarah Mitchell')).toBeDefined()
-    expect(screen.getByText('Dr. James Chen')).toBeDefined()
-    expect(screen.getByText('Dr. Emily Rodriguez')).toBeDefined()
-    expect(screen.getByText('Dr. Michael Johnson')).toBeDefined()
-    expect(screen.getByText('Dr. Aisha Patel')).toBeDefined()
+    expect(screen.getByText('Dr. Sarah Johnson')).toBeTruthy()
+    expect(screen.getByText('Dr. Michael Chen')).toBeTruthy()
+    expect(screen.getByText('Dr. Emily Rodriguez')).toBeTruthy()
+    expect(screen.getByText('Dr. James Williams')).toBeTruthy()
+    expect(screen.getByText('Dr. Lisa Anderson')).toBeTruthy()
   })
 
-  it('displays service types with at least 5 services', () => {
+  it('displays mock session types', () => {
     render(<SchedulePhysiotherapy />)
-    expect(screen.getByText('Manual Therapy')).toBeDefined()
-    expect(screen.getByText('Exercise Therapy')).toBeDefined()
-    expect(screen.getByText('Sports Rehabilitation')).toBeDefined()
-    expect(screen.getByText('Post-Surgery Recovery')).toBeDefined()
-    expect(screen.getByText('Pain Management')).toBeDefined()
+    expect(screen.getByText('Initial Assessment')).toBeTruthy()
+    expect(screen.getByText('Standard Session')).toBeTruthy()
+    expect(screen.getByText('Follow-up Session')).toBeTruthy()
+    expect(screen.getByText('Extended Therapy')).toBeTruthy()
+    expect(screen.getByText('Group Session')).toBeTruthy()
   })
 
   it('allows selecting a therapist', () => {
     render(<SchedulePhysiotherapy />)
-    const therapistCard = screen.getByText('Dr. Sarah Mitchell').closest('div')
-    fireEvent.click(therapistCard!)
-    expect(therapistCard?.className).toContain('border-blue-600')
+    const therapistCard = screen.getByText('Dr. Sarah Johnson').closest('div')
+    if (therapistCard) {
+      fireEvent.click(therapistCard)
+      expect(therapistCard.className).toContain('border-blue-500')
+    }
   })
 
-  it('allows selecting a service', () => {
+  it('allows selecting a session type', () => {
     render(<SchedulePhysiotherapy />)
-    const serviceCard = screen.getByText('Manual Therapy').closest('div')
-    fireEvent.click(serviceCard!)
-    expect(serviceCard?.className).toContain('border-blue-600')
+    const sessionText = screen.getByText('Standard Session')
+    const sessionCard = sessionText.closest('div[class*="border"]')
+    if (sessionCard) {
+      fireEvent.click(sessionCard)
+      expect(sessionCard.className).toContain('border-blue-500')
+    }
   })
 
-  it('next button is disabled until therapist and service are selected', () => {
+  it('shows date selection after therapist is selected', () => {
     render(<SchedulePhysiotherapy />)
-    const nextButton = screen.getByText('Next') as HTMLButtonElement
-    expect(nextButton.disabled).toBe(true)
+    const therapistCard = screen.getByText('Dr. Sarah Johnson').closest('div')
+    if (therapistCard) {
+      fireEvent.click(therapistCard)
+      expect(screen.getByText('Select Date')).toBeTruthy()
+    }
+  })
 
+  it('disables confirm button when form is incomplete', () => {
+    render(<SchedulePhysiotherapy />)
+    const confirmButton = screen.getByRole('button', { name: /Please complete all selections/i })
+    expect(confirmButton).toBeTruthy()
+    expect(confirmButton.hasAttribute('disabled')).toBeTruthy()
+  })
+
+  it('displays confirmation notification after booking', () => {
+    render(<SchedulePhysiotherapy />)
+    
     // Select therapist
-    const therapistCard = screen.getByText('Dr. Sarah Mitchell').closest('div')
-    fireEvent.click(therapistCard!)
-
-    // Still disabled without service
-    expect(nextButton.disabled).toBe(true)
-
-    // Select service
-    const serviceCard = screen.getByText('Manual Therapy').closest('div')
-    fireEvent.click(serviceCard!)
-
-    // Now enabled
-    expect(nextButton.disabled).toBe(false)
-  })
-
-  it('progresses to step 2 when next is clicked', () => {
-    render(<SchedulePhysiotherapy />)
+    const therapistCard = screen.getByText('Dr. Sarah Johnson').closest('div')
+    if (therapistCard) fireEvent.click(therapistCard)
     
-    // Select therapist and service
-    fireEvent.click(screen.getByText('Dr. Sarah Mitchell').closest('div')!)
-    fireEvent.click(screen.getByText('Manual Therapy').closest('div')!)
+    // Select session type
+    const sessionCard = screen.getByText('Standard Session').closest('div')
+    if (sessionCard) fireEvent.click(sessionCard)
     
-    // Click next
-    fireEvent.click(screen.getByText('Next'))
+    // Select date (wait for it to appear)
+    const dateCards = screen.getAllByText(/Aug|Sep/i)
+    if (dateCards.length > 0) fireEvent.click(dateCards[0].closest('div')!)
     
-    // Should show date selection
-    expect(screen.getByText('Select Date')).toBeDefined()
-  })
-
-  it('displays time slots when date is selected', () => {
-    render(<SchedulePhysiotherapy />)
+    // Select time
+    const timeButton = screen.getByRole('button', { name: /09:00 AM/i })
+    if (timeButton) fireEvent.click(timeButton)
     
-    // Navigate to step 2
-    fireEvent.click(screen.getByText('Dr. Sarah Mitchell').closest('div')!)
-    fireEvent.click(screen.getByText('Manual Therapy').closest('div')!)
-    fireEvent.click(screen.getByText('Next'))
+    // Click confirm
+    const confirmButton = screen.getByRole('button', { name: /Confirm Appointment/i })
+    if (confirmButton) fireEvent.click(confirmButton)
     
-    // Select a date
-    const dateInput = document.querySelector('input[type="date"]') as HTMLInputElement
-    fireEvent.change(dateInput, { target: { value: '2026-08-20' } })
-    
-    // Time slots should appear
-    expect(screen.getByText('Select Time Slot')).toBeDefined()
-    expect(screen.getByText('09:00 AM')).toBeDefined()
-  })
-
-  it('progresses through all steps to confirmation', () => {
-    render(<SchedulePhysiotherapy />)
-    
-    // Step 1: Select therapist and service
-    fireEvent.click(screen.getByText('Dr. Sarah Mitchell').closest('div')!)
-    fireEvent.click(screen.getByText('Manual Therapy').closest('div')!)
-    fireEvent.click(screen.getByText('Next'))
-    
-    // Step 2: Select date and time
-    const dateInput = document.querySelector('input[type="date"]') as HTMLInputElement
-    fireEvent.change(dateInput, { target: { value: '2026-08-20' } })
-    fireEvent.click(screen.getByText('09:00 AM'))
-    fireEvent.click(screen.getByText('Next'))
-    
-    // Step 3: Fill patient details
-    const nameInput = screen.getByPlaceholderText('Enter your full name')
-    const emailInput = screen.getByPlaceholderText('your.email@example.com')
-    const phoneInput = screen.getByPlaceholderText('+1 (555) 123-4567')
-    
-    fireEvent.change(nameInput, { target: { value: 'John Doe' } })
-    fireEvent.change(emailInput, { target: { value: 'john@example.com' } })
-    fireEvent.change(phoneInput, { target: { value: '555-123-4567' } })
-    fireEvent.click(screen.getByText('Next'))
-    
-    // Step 4: Review and confirm
-    expect(screen.getByText('Review Your Appointment')).toBeDefined()
-    expect(screen.getByText('Confirm Booking')).toBeDefined()
-  })
-
-  it('shows confirmation screen after booking', () => {
-    render(<SchedulePhysiotherapy />)
-    
-    // Complete all steps
-    fireEvent.click(screen.getByText('Dr. Sarah Mitchell').closest('div')!)
-    fireEvent.click(screen.getByText('Manual Therapy').closest('div')!)
-    fireEvent.click(screen.getByText('Next'))
-    
-    const dateInput = document.querySelector('input[type="date"]') as HTMLInputElement
-    fireEvent.change(dateInput, { target: { value: '2026-08-20' } })
-    fireEvent.click(screen.getByText('09:00 AM'))
-    fireEvent.click(screen.getByText('Next'))
-    
-    fireEvent.change(screen.getByPlaceholderText('Enter your full name'), { target: { value: 'John Doe' } })
-    fireEvent.change(screen.getByPlaceholderText('your.email@example.com'), { target: { value: 'john@example.com' } })
-    fireEvent.change(screen.getByPlaceholderText('+1 (555) 123-4567'), { target: { value: '555-123-4567' } })
-    fireEvent.click(screen.getByText('Next'))
-    
-    // Confirm booking
-    fireEvent.click(screen.getByText('Confirm Booking'))
-    
-    // Should show confirmation
-    expect(screen.getByText('Appointment Confirmed!')).toBeDefined()
-    expect(screen.getByText('Your physiotherapy session has been successfully scheduled.')).toBeDefined()
+    // Check for confirmation message
+    expect(screen.getByText('Appointment Confirmed!')).toBeTruthy()
   })
 })

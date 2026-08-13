@@ -1,9 +1,9 @@
 /**
- * SchedulePhysiotherapy — Quick appointment booking interface for physiotherapy patients
+ * SchedulePhysiotherapy — Patient appointment scheduling with confirmation notification
  *
- * Features: therapist selection, service type picker, calendar date/time slots, patient details form, instant booking confirmation
+ * Features: therapist selection, date/time picker, session type selection, booking confirmation, notification display
  *
- * Ticket: SCRUM-719 | Branch: proto/SCRUM-717
+ * Ticket: SCRUM-720 | Branch: proto/SCRUM-717
  */
 
 import { useState } from 'react'
@@ -11,16 +11,15 @@ import { useState } from 'react'
 interface Therapist {
   id: string
   name: string
-  specialty: string
-  availability: string
-  rating: number
+  specialization: string
+  availability: string[]
 }
 
-interface ServiceType {
+interface SessionType {
   id: string
   name: string
-  duration: number
-  price: number
+  duration: string
+  description: string
 }
 
 interface TimeSlot {
@@ -28,116 +27,189 @@ interface TimeSlot {
   available: boolean
 }
 
-const THERAPISTS: Therapist[] = [
-  { id: '1', name: 'Dr. Sarah Mitchell', specialty: 'Sports Injury', availability: 'Mon-Fri', rating: 4.9 },
-  { id: '2', name: 'Dr. James Chen', specialty: 'Orthopedic', availability: 'Tue-Sat', rating: 4.8 },
-  { id: '3', name: 'Dr. Emily Rodriguez', specialty: 'Neurological', availability: 'Mon-Thu', rating: 4.7 },
-  { id: '4', name: 'Dr. Michael Johnson', specialty: 'Geriatric', availability: 'Wed-Sun', rating: 4.9 },
-  { id: '5', name: 'Dr. Aisha Patel', specialty: 'Pediatric', availability: 'Mon-Fri', rating: 4.8 }
+const MOCK_THERAPISTS: Therapist[] = [
+  {
+    id: 'T001',
+    name: 'Dr. Sarah Johnson',
+    specialization: 'Sports Physiotherapy',
+    availability: ['2026-08-14', '2026-08-15', '2026-08-16', '2026-08-17', '2026-08-18']
+  },
+  {
+    id: 'T002',
+    name: 'Dr. Michael Chen',
+    specialization: 'Orthopedic Rehabilitation',
+    availability: ['2026-08-14', '2026-08-15', '2026-08-16', '2026-08-19', '2026-08-20']
+  },
+  {
+    id: 'T003',
+    name: 'Dr. Emily Rodriguez',
+    specialization: 'Neurological Physiotherapy',
+    availability: ['2026-08-14', '2026-08-17', '2026-08-18', '2026-08-19', '2026-08-21']
+  },
+  {
+    id: 'T004',
+    name: 'Dr. James Williams',
+    specialization: 'Geriatric Physiotherapy',
+    availability: ['2026-08-15', '2026-08-16', '2026-08-17', '2026-08-18', '2026-08-20']
+  },
+  {
+    id: 'T005',
+    name: 'Dr. Lisa Anderson',
+    specialization: 'Pediatric Physiotherapy',
+    availability: ['2026-08-14', '2026-08-15', '2026-08-18', '2026-08-19', '2026-08-21']
+  }
 ]
 
-const SERVICES: ServiceType[] = [
-  { id: '1', name: 'Manual Therapy', duration: 45, price: 85 },
-  { id: '2', name: 'Exercise Therapy', duration: 60, price: 95 },
-  { id: '3', name: 'Sports Rehabilitation', duration: 60, price: 110 },
-  { id: '4', name: 'Post-Surgery Recovery', duration: 90, price: 150 },
-  { id: '5', name: 'Pain Management', duration: 45, price: 90 }
+const MOCK_SESSION_TYPES: SessionType[] = [
+  {
+    id: 'S001',
+    name: 'Initial Assessment',
+    duration: '60 minutes',
+    description: 'Comprehensive evaluation and treatment plan development'
+  },
+  {
+    id: 'S002',
+    name: 'Standard Session',
+    duration: '45 minutes',
+    description: 'Regular physiotherapy treatment session'
+  },
+  {
+    id: 'S003',
+    name: 'Follow-up Session',
+    duration: '30 minutes',
+    description: 'Progress review and ongoing treatment'
+  },
+  {
+    id: 'S004',
+    name: 'Extended Therapy',
+    duration: '90 minutes',
+    description: 'Intensive treatment for complex conditions'
+  },
+  {
+    id: 'S005',
+    name: 'Group Session',
+    duration: '60 minutes',
+    description: 'Small group therapeutic exercises'
+  }
 ]
 
-const TIME_SLOTS: TimeSlot[] = [
+const MOCK_TIME_SLOTS: TimeSlot[] = [
   { time: '09:00 AM', available: true },
   { time: '10:00 AM', available: true },
   { time: '11:00 AM', available: false },
-  { time: '01:00 PM', available: true },
+  { time: '12:00 PM', available: true },
+  { time: '01:00 PM', available: false },
   { time: '02:00 PM', available: true },
   { time: '03:00 PM', available: true },
-  { time: '04:00 PM', available: false },
-  { time: '05:00 PM', available: true }
+  { time: '04:00 PM', available: true }
 ]
 
 export default function SchedulePhysiotherapy() {
-  const [step, setStep] = useState(1)
-  const [selectedTherapist, setSelectedTherapist] = useState<string | null>(null)
-  const [selectedService, setSelectedService] = useState<string | null>(null)
+  const [selectedTherapist, setSelectedTherapist] = useState<string>('')
+  const [selectedSessionType, setSelectedSessionType] = useState<string>('')
   const [selectedDate, setSelectedDate] = useState<string>('')
-  const [selectedTime, setSelectedTime] = useState<string | null>(null)
-  const [patientName, setPatientName] = useState('')
-  const [patientEmail, setPatientEmail] = useState('')
-  const [patientPhone, setPatientPhone] = useState('')
-  const [notes, setNotes] = useState('')
-  const [isBooked, setIsBooked] = useState(false)
-
-  const handleNext = () => {
-    if (step < 4) setStep(step + 1)
-  }
-
-  const handleBack = () => {
-    if (step > 1) setStep(step - 1)
-  }
+  const [selectedTime, setSelectedTime] = useState<string>('')
+  const [showConfirmation, setShowConfirmation] = useState<boolean>(false)
+  const [bookingDetails, setBookingDetails] = useState<{
+    therapist: string
+    sessionType: string
+    date: string
+    time: string
+  } | null>(null)
 
   const handleBooking = () => {
-    setIsBooked(true)
-  }
-
-  const canProceedFromStep = (currentStep: number): boolean => {
-    switch (currentStep) {
-      case 1:
-        return selectedTherapist !== null && selectedService !== null
-      case 2:
-        return selectedDate !== '' && selectedTime !== null
-      case 3:
-        return patientName !== '' && patientEmail !== '' && patientPhone !== ''
-      default:
-        return false
+    if (selectedTherapist && selectedSessionType && selectedDate && selectedTime) {
+      const therapist = MOCK_THERAPISTS.find(t => t.id === selectedTherapist)
+      const sessionType = MOCK_SESSION_TYPES.find(s => s.id === selectedSessionType)
+      
+      setBookingDetails({
+        therapist: therapist?.name || '',
+        sessionType: sessionType?.name || '',
+        date: selectedDate,
+        time: selectedTime
+      })
+      
+      setShowConfirmation(true)
     }
   }
 
-  if (isBooked) {
-    const therapist = THERAPISTS.find(t => t.id === selectedTherapist)
-    const service = SERVICES.find(s => s.id === selectedService)
+  const resetForm = () => {
+    setSelectedTherapist('')
+    setSelectedSessionType('')
+    setSelectedDate('')
+    setSelectedTime('')
+    setShowConfirmation(false)
+    setBookingDetails(null)
+  }
 
+  const isFormValid = selectedTherapist && selectedSessionType && selectedDate && selectedTime
+
+  if (showConfirmation && bookingDetails) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-6">
-        <div className="max-w-2xl mx-auto bg-white rounded-2xl shadow-xl p-8">
-          <div className="text-center">
-            <div className="w-20 h-20 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-4">
-              <svg className="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-green-50 p-6">
+        <div className="max-w-2xl mx-auto">
+          <div className="bg-white rounded-xl shadow-lg p-8">
+            <div className="text-center mb-6">
+              <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+              <h2 className="text-3xl font-bold text-gray-800 mb-2">Appointment Confirmed!</h2>
+              <p className="text-gray-600">Your physiotherapy appointment has been successfully scheduled</p>
             </div>
-            <h2 className="text-3xl font-bold text-gray-800 mb-2">Appointment Confirmed!</h2>
-            <p className="text-gray-600 mb-8">Your physiotherapy session has been successfully scheduled.</p>
 
-            <div className="bg-blue-50 rounded-lg p-6 text-left space-y-3">
-              <div className="flex justify-between border-b border-blue-200 pb-2">
-                <span className="font-semibold text-gray-700">Patient:</span>
-                <span className="text-gray-800">{patientName}</span>
-              </div>
-              <div className="flex justify-between border-b border-blue-200 pb-2">
-                <span className="font-semibold text-gray-700">Therapist:</span>
-                <span className="text-gray-800">{therapist?.name}</span>
-              </div>
-              <div className="flex justify-between border-b border-blue-200 pb-2">
-                <span className="font-semibold text-gray-700">Service:</span>
-                <span className="text-gray-800">{service?.name}</span>
-              </div>
-              <div className="flex justify-between border-b border-blue-200 pb-2">
-                <span className="font-semibold text-gray-700">Date & Time:</span>
-                <span className="text-gray-800">{selectedDate} at {selectedTime}</span>
-              </div>
-              <div className="flex justify-between border-b border-blue-200 pb-2">
-                <span className="font-semibold text-gray-700">Duration:</span>
-                <span className="text-gray-800">{service?.duration} minutes</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="font-semibold text-gray-700">Price:</span>
-                <span className="text-gray-800 font-bold">${service?.price}</span>
+            <div className="bg-blue-50 rounded-lg p-6 mb-6">
+              <h3 className="text-lg font-semibold text-gray-800 mb-4">Booking Details</h3>
+              <div className="space-y-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-600">Therapist:</span>
+                  <span className="font-semibold text-gray-800">{bookingDetails.therapist}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-600">Session Type:</span>
+                  <span className="font-semibold text-gray-800">{bookingDetails.sessionType}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-600">Date:</span>
+                  <span className="font-semibold text-gray-800">{new Date(bookingDetails.date).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-600">Time:</span>
+                  <span className="font-semibold text-gray-800">{bookingDetails.time}</span>
+                </div>
               </div>
             </div>
 
-            <p className="text-sm text-gray-600 mt-6">
-              A confirmation email has been sent to <span className="font-semibold">{patientEmail}</span>
-            </p>
+            <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6">
+              <div className="flex">
+                <div className="flex-shrink-0">
+                  <svg className="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                <div className="ml-3">
+                  <p className="text-sm text-yellow-700">
+                    <strong>Reminder:</strong> A confirmation email has been sent to your registered email address. Please arrive 10 minutes early for your appointment.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex space-x-4">
+              <button
+                onClick={resetForm}
+                className="flex-1 bg-blue-600 text-white font-semibold py-3 px-6 rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                Schedule Another Appointment
+              </button>
+              <button
+                onClick={resetForm}
+                className="flex-1 bg-gray-200 text-gray-700 font-semibold py-3 px-6 rounded-lg hover:bg-gray-300 transition-colors"
+              >
+                Close
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -145,272 +217,133 @@ export default function SchedulePhysiotherapy() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-6">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-green-50 p-6">
       <div className="max-w-4xl mx-auto">
-        <div className="bg-white rounded-2xl shadow-xl p-8">
+        <div className="bg-white rounded-xl shadow-lg p-8">
           <h1 className="text-3xl font-bold text-gray-800 mb-2">Schedule Physiotherapy Appointment</h1>
-          <p className="text-gray-600 mb-6">Book your appointment in under 5 minutes</p>
+          <p className="text-gray-600 mb-8">Select your preferred therapist, session type, date, and time</p>
 
-          {/* Progress Bar */}
-          <div className="flex items-center justify-between mb-8">
-            {[1, 2, 3, 4].map((s) => (
-              <div key={s} className="flex items-center flex-1">
-                <div
-                  className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold ${
-                    s < step
-                      ? 'bg-green-500 text-white'
-                      : s === step
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-gray-200 text-gray-600'
-                  }`}
-                >
-                  {s < step ? '✓' : s}
-                </div>
-                {s < 4 && (
+          <div className="space-y-6">
+            {/* Therapist Selection */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-3">
+                Select Therapist
+              </label>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {MOCK_THERAPISTS.map((therapist) => (
                   <div
-                    className={`flex-1 h-1 mx-2 ${
-                      s < step ? 'bg-green-500' : 'bg-gray-200'
+                    key={therapist.id}
+                    onClick={() => setSelectedTherapist(therapist.id)}
+                    className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${
+                      selectedTherapist === therapist.id
+                        ? 'border-blue-500 bg-blue-50'
+                        : 'border-gray-200 hover:border-blue-300'
                     }`}
-                  />
-                )}
+                  >
+                    <h3 className="font-semibold text-gray-800">{therapist.name}</h3>
+                    <p className="text-sm text-gray-600">{therapist.specialization}</p>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
+            </div>
 
-          {/* Step 1: Select Therapist & Service */}
-          {step === 1 && (
-            <div className="space-y-6">
+            {/* Session Type Selection */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-3">
+                Select Session Type
+              </label>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {MOCK_SESSION_TYPES.map((session) => (
+                  <div
+                    key={session.id}
+                    onClick={() => setSelectedSessionType(session.id)}
+                    className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${
+                      selectedSessionType === session.id
+                        ? 'border-blue-500 bg-blue-50'
+                        : 'border-gray-200 hover:border-blue-300'
+                    }`}
+                  >
+                    <div className="flex justify-between items-start mb-1">
+                      <h3 className="font-semibold text-gray-800">{session.name}</h3>
+                      <span className="text-xs bg-gray-200 text-gray-700 px-2 py-1 rounded">{session.duration}</span>
+                    </div>
+                    <p className="text-sm text-gray-600">{session.description}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Date Selection */}
+            {selectedTherapist && (
               <div>
-                <h2 className="text-xl font-semibold text-gray-800 mb-4">Select Your Therapist</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {THERAPISTS.map((therapist) => (
+                <label className="block text-sm font-semibold text-gray-700 mb-3">
+                  Select Date
+                </label>
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                  {MOCK_THERAPISTS.find(t => t.id === selectedTherapist)?.availability.map((date) => (
                     <div
-                      key={therapist.id}
-                      onClick={() => setSelectedTherapist(therapist.id)}
-                      className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${
-                        selectedTherapist === therapist.id
-                          ? 'border-blue-600 bg-blue-50'
+                      key={date}
+                      onClick={() => setSelectedDate(date)}
+                      className={`p-3 border-2 rounded-lg cursor-pointer text-center transition-all ${
+                        selectedDate === date
+                          ? 'border-blue-500 bg-blue-50'
                           : 'border-gray-200 hover:border-blue-300'
                       }`}
                     >
-                      <h3 className="font-semibold text-gray-800">{therapist.name}</h3>
-                      <p className="text-sm text-gray-600">{therapist.specialty}</p>
-                      <div className="flex justify-between items-center mt-2">
-                        <span className="text-xs text-gray-500">{therapist.availability}</span>
-                        <span className="text-sm font-semibold text-yellow-600">★ {therapist.rating}</span>
+                      <div className="text-sm font-semibold text-gray-800">
+                        {new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                      </div>
+                      <div className="text-xs text-gray-600">
+                        {new Date(date).toLocaleDateString('en-US', { weekday: 'short' })}
                       </div>
                     </div>
                   ))}
                 </div>
               </div>
+            )}
 
+            {/* Time Slot Selection */}
+            {selectedDate && (
               <div>
-                <h2 className="text-xl font-semibold text-gray-800 mb-4">Select Service Type</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {SERVICES.map((service) => (
-                    <div
-                      key={service.id}
-                      onClick={() => setSelectedService(service.id)}
-                      className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${
-                        selectedService === service.id
-                          ? 'border-blue-600 bg-blue-50'
-                          : 'border-gray-200 hover:border-blue-300'
+                <label className="block text-sm font-semibold text-gray-700 mb-3">
+                  Select Time
+                </label>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  {MOCK_TIME_SLOTS.map((slot) => (
+                    <button
+                      key={slot.time}
+                      onClick={() => slot.available && setSelectedTime(slot.time)}
+                      disabled={!slot.available}
+                      className={`p-3 border-2 rounded-lg font-semibold transition-all ${
+                        selectedTime === slot.time
+                          ? 'border-blue-500 bg-blue-500 text-white'
+                          : slot.available
+                          ? 'border-gray-200 text-gray-800 hover:border-blue-300'
+                          : 'border-gray-100 bg-gray-100 text-gray-400 cursor-not-allowed'
                       }`}
                     >
-                      <h3 className="font-semibold text-gray-800">{service.name}</h3>
-                      <div className="flex justify-between items-center mt-2">
-                        <span className="text-sm text-gray-600">{service.duration} min</span>
-                        <span className="text-lg font-bold text-blue-600">${service.price}</span>
-                      </div>
-                    </div>
+                      {slot.time}
+                      {!slot.available && <div className="text-xs">Unavailable</div>}
+                    </button>
                   ))}
                 </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {/* Step 2: Select Date & Time */}
-          {step === 2 && (
-            <div className="space-y-6">
-              <div>
-                <h2 className="text-xl font-semibold text-gray-800 mb-4">Select Date</h2>
-                <input
-                  type="date"
-                  value={selectedDate}
-                  onChange={(e) => setSelectedDate(e.target.value)}
-                  min={new Date().toISOString().split('T')[0]}
-                  className="w-full p-3 border-2 border-gray-300 rounded-lg focus:border-blue-600 focus:outline-none"
-                />
-              </div>
-
-              {selectedDate && (
-                <div>
-                  <h2 className="text-xl font-semibold text-gray-800 mb-4">Select Time Slot</h2>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                    {TIME_SLOTS.map((slot) => (
-                      <button
-                        key={slot.time}
-                        onClick={() => slot.available && setSelectedTime(slot.time)}
-                        disabled={!slot.available}
-                        className={`p-3 rounded-lg font-semibold transition-all ${
-                          selectedTime === slot.time
-                            ? 'bg-blue-600 text-white'
-                            : slot.available
-                            ? 'bg-white border-2 border-gray-300 text-gray-800 hover:border-blue-400'
-                            : 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                        }`}
-                      >
-                        {slot.time}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Step 3: Patient Details */}
-          {step === 3 && (
-            <div className="space-y-6">
-              <h2 className="text-xl font-semibold text-gray-800 mb-4">Your Details</h2>
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Full Name *
-                </label>
-                <input
-                  type="text"
-                  value={patientName}
-                  onChange={(e) => setPatientName(e.target.value)}
-                  placeholder="Enter your full name"
-                  className="w-full p-3 border-2 border-gray-300 rounded-lg focus:border-blue-600 focus:outline-none"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Email Address *
-                </label>
-                <input
-                  type="email"
-                  value={patientEmail}
-                  onChange={(e) => setPatientEmail(e.target.value)}
-                  placeholder="your.email@example.com"
-                  className="w-full p-3 border-2 border-gray-300 rounded-lg focus:border-blue-600 focus:outline-none"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Phone Number *
-                </label>
-                <input
-                  type="tel"
-                  value={patientPhone}
-                  onChange={(e) => setPatientPhone(e.target.value)}
-                  placeholder="+1 (555) 123-4567"
-                  className="w-full p-3 border-2 border-gray-300 rounded-lg focus:border-blue-600 focus:outline-none"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Additional Notes (Optional)
-                </label>
-                <textarea
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  placeholder="Any specific concerns or requirements..."
-                  rows={4}
-                  className="w-full p-3 border-2 border-gray-300 rounded-lg focus:border-blue-600 focus:outline-none"
-                />
-              </div>
-            </div>
-          )}
-
-          {/* Step 4: Review & Confirm */}
-          {step === 4 && (
-            <div className="space-y-6">
-              <h2 className="text-xl font-semibold text-gray-800 mb-4">Review Your Appointment</h2>
-              <div className="bg-gray-50 rounded-lg p-6 space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-sm text-gray-600">Therapist</p>
-                    <p className="font-semibold text-gray-800">
-                      {THERAPISTS.find(t => t.id === selectedTherapist)?.name}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-600">Service</p>
-                    <p className="font-semibold text-gray-800">
-                      {SERVICES.find(s => s.id === selectedService)?.name}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-600">Date</p>
-                    <p className="font-semibold text-gray-800">{selectedDate}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-600">Time</p>
-                    <p className="font-semibold text-gray-800">{selectedTime}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-600">Patient</p>
-                    <p className="font-semibold text-gray-800">{patientName}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-600">Total Price</p>
-                    <p className="font-semibold text-blue-600 text-xl">
-                      ${SERVICES.find(s => s.id === selectedService)?.price}
-                    </p>
-                  </div>
-                </div>
-                {notes && (
-                  <div>
-                    <p className="text-sm text-gray-600">Notes</p>
-                    <p className="text-gray-800">{notes}</p>
-                  </div>
-                )}
-              </div>
-
-              <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4">
-                <p className="text-sm text-yellow-800">
-                  <span className="font-semibold">Cancellation Policy:</span> Free cancellation up to 24 hours before your appointment.
-                </p>
-              </div>
-            </div>
-          )}
-
-          {/* Navigation Buttons */}
-          <div className="flex justify-between mt-8">
-            <button
-              onClick={handleBack}
-              disabled={step === 1}
-              className={`px-6 py-3 rounded-lg font-semibold transition-all ${
-                step === 1
-                  ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                  : 'bg-gray-300 text-gray-700 hover:bg-gray-400'
-              }`}
-            >
-              Back
-            </button>
-
-            {step < 4 ? (
-              <button
-                onClick={handleNext}
-                disabled={!canProceedFromStep(step)}
-                className={`px-6 py-3 rounded-lg font-semibold transition-all ${
-                  canProceedFromStep(step)
-                    ? 'bg-blue-600 text-white hover:bg-blue-700'
-                    : 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                }`}
-              >
-                Next
-              </button>
-            ) : (
+            {/* Book Appointment Button */}
+            <div className="pt-6">
               <button
                 onClick={handleBooking}
-                className="px-8 py-3 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition-all"
+                disabled={!isFormValid}
+                className={`w-full py-4 px-6 rounded-lg font-semibold text-lg transition-all ${
+                  isFormValid
+                    ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-lg hover:shadow-xl'
+                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                }`}
               >
-                Confirm Booking
+                {isFormValid ? 'Confirm Appointment' : 'Please complete all selections'}
               </button>
-            )}
+            </div>
           </div>
         </div>
       </div>
