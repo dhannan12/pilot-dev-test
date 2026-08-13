@@ -1,448 +1,321 @@
 /**
- * SubmitTenant — Online tenant application form with email and phone validation
+ * SubmitTenant — Online tenant application submission form with maintenance request tracking
  *
- * Features: form validation, email/phone requirements, real-time error display, submission preview, form reset
+ * Features: Application form, maintenance request submission, property address validation, issue description input, submission history
  *
- * Ticket: SCRUM-705 | Branch: proto/SCRUM-703
+ * Ticket: SCRUM-707 | Branch: proto/SCRUM-703
  */
 
 import { useState } from 'react'
 
-interface TenantApplication {
+interface MaintenanceRequest {
   id: string
-  fullName: string
-  email: string
-  phoneNumber: string
-  currentAddress: string
-  employmentStatus: string
-  annualIncome: string
-  moveInDate: string
-  submittedAt: string
+  tenantName: string
+  propertyAddress: string
+  issueDescription: string
+  status: 'Pending' | 'In Progress' | 'Completed'
+  dateSubmitted: string
+  priority: 'Low' | 'Medium' | 'High' | 'Urgent'
 }
 
-// Mock submitted applications for display
-const mockApplications: TenantApplication[] = [
+const MOCK_REQUESTS: MaintenanceRequest[] = [
   {
-    id: '1',
-    fullName: 'John Smith',
-    email: 'john.smith@email.com',
-    phoneNumber: '555-0123',
-    currentAddress: '123 Main St, Apt 4B, New York, NY 10001',
-    employmentStatus: 'Full-time',
-    annualIncome: '$75,000',
-    moveInDate: '2026-09-01',
-    submittedAt: '2026-08-01T10:30:00Z'
+    id: 'REQ-001',
+    tenantName: 'John Smith',
+    propertyAddress: '123 Oak Street, Apt 4B, Springfield, MA 01101',
+    issueDescription: 'Kitchen sink is leaking under the cabinet. Water damage visible on cabinet floor.',
+    status: 'In Progress',
+    dateSubmitted: '2026-08-10',
+    priority: 'High'
   },
   {
-    id: '2',
-    fullName: 'Sarah Johnson',
-    email: 'sarah.j@example.com',
-    phoneNumber: '555-0456',
-    currentAddress: '456 Oak Ave, Unit 2, Brooklyn, NY 11201',
-    employmentStatus: 'Self-employed',
-    annualIncome: '$82,000',
-    moveInDate: '2026-09-15',
-    submittedAt: '2026-08-03T14:20:00Z'
+    id: 'REQ-002',
+    tenantName: 'Sarah Johnson',
+    propertyAddress: '456 Maple Avenue, Unit 2, Boston, MA 02101',
+    issueDescription: 'Central heating system not working. Temperature drops below 60°F at night.',
+    status: 'Completed',
+    dateSubmitted: '2026-08-08',
+    priority: 'Urgent'
   },
   {
-    id: '3',
-    fullName: 'Michael Chen',
-    email: 'mchen@workmail.com',
-    phoneNumber: '555-0789',
-    currentAddress: '789 Pine Rd, Apt 1A, Queens, NY 11354',
-    employmentStatus: 'Full-time',
-    annualIncome: '$68,500',
-    moveInDate: '2026-10-01',
-    submittedAt: '2026-08-05T09:45:00Z'
+    id: 'REQ-003',
+    tenantName: 'Michael Chen',
+    propertyAddress: '789 Pine Road, Suite 12, Cambridge, MA 02138',
+    issueDescription: 'Bedroom window does not lock properly. Security concern.',
+    status: 'Pending',
+    dateSubmitted: '2026-08-12',
+    priority: 'Medium'
   },
   {
-    id: '4',
-    fullName: 'Emily Rodriguez',
-    email: 'emily.rodriguez@email.net',
-    phoneNumber: '555-0321',
-    currentAddress: '321 Elm St, Unit 5C, Manhattan, NY 10002',
-    employmentStatus: 'Part-time',
-    annualIncome: '$45,000',
-    moveInDate: '2026-09-20',
-    submittedAt: '2026-08-07T16:10:00Z'
+    id: 'REQ-004',
+    tenantName: 'Emily Davis',
+    propertyAddress: '321 Elm Boulevard, Apt 7A, Worcester, MA 01608',
+    issueDescription: 'Bathroom ceiling has water stains and potential mold growth.',
+    status: 'In Progress',
+    dateSubmitted: '2026-08-11',
+    priority: 'High'
   },
   {
-    id: '5',
-    fullName: 'David Williams',
-    email: 'dwilliams@company.com',
-    phoneNumber: '555-0654',
-    currentAddress: '654 Maple Dr, Apt 3D, Bronx, NY 10451',
-    employmentStatus: 'Full-time',
-    annualIncome: '$95,000',
-    moveInDate: '2026-08-25',
-    submittedAt: '2026-08-10T11:00:00Z'
+    id: 'REQ-005',
+    tenantName: 'David Martinez',
+    propertyAddress: '654 Birch Lane, Unit 3C, Lowell, MA 01850',
+    issueDescription: 'Front door lock is stiff and difficult to turn. Key gets stuck occasionally.',
+    status: 'Pending',
+    dateSubmitted: '2026-08-13',
+    priority: 'Low'
   }
 ]
 
 export default function SubmitTenant() {
-  const [formData, setFormData] = useState({
-    fullName: '',
-    email: '',
-    phoneNumber: '',
-    currentAddress: '',
-    employmentStatus: 'Full-time',
-    annualIncome: '',
-    moveInDate: ''
-  })
-
-  const [errors, setErrors] = useState<Record<string, string>>({})
-  const [submitted, setSubmitted] = useState(false)
-  const [showApplications, setShowApplications] = useState(false)
-
-  // Email validation
-  const validateEmail = (email: string): boolean => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    return emailRegex.test(email)
-  }
-
-  // Phone validation (basic format)
-  const validatePhone = (phone: string): boolean => {
-    const phoneRegex = /^\d{3}-?\d{4}$/
-    return phoneRegex.test(phone.replace(/\s/g, ''))
-  }
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target
-    setFormData(prev => ({ ...prev, [name]: value }))
-    
-    // Clear error when user starts typing
-    if (errors[name]) {
-      setErrors(prev => {
-        const newErrors = { ...prev }
-        delete newErrors[name]
-        return newErrors
-      })
-    }
-  }
+  const [tenantName, setTenantName] = useState('')
+  const [propertyAddress, setPropertyAddress] = useState('')
+  const [issueDescription, setIssueDescription] = useState('')
+  const [priority, setPriority] = useState<'Low' | 'Medium' | 'High' | 'Urgent'>('Medium')
+  const [requests, setRequests] = useState<MaintenanceRequest[]>(MOCK_REQUESTS)
+  const [showSuccess, setShowSuccess] = useState(false)
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    const newErrors: Record<string, string> = {}
-
-    // Validate required fields
-    if (!formData.fullName.trim()) {
-      newErrors.fullName = 'Full name is required'
-    }
-
-    if (!formData.email.trim()) {
-      newErrors.email = 'Email is required'
-    } else if (!validateEmail(formData.email)) {
-      newErrors.email = 'Please enter a valid email address'
-    }
-
-    if (!formData.phoneNumber.trim()) {
-      newErrors.phoneNumber = 'Phone number is required'
-    } else if (!validatePhone(formData.phoneNumber)) {
-      newErrors.phoneNumber = 'Please enter a valid phone number (e.g., 555-0123)'
-    }
-
-    if (!formData.currentAddress.trim()) {
-      newErrors.currentAddress = 'Current address is required'
-    }
-
-    if (!formData.annualIncome.trim()) {
-      newErrors.annualIncome = 'Annual income is required'
-    }
-
-    if (!formData.moveInDate) {
-      newErrors.moveInDate = 'Desired move-in date is required'
-    }
-
-    if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors)
+    
+    if (!tenantName.trim() || !propertyAddress.trim() || !issueDescription.trim()) {
       return
     }
 
-    // Success
-    setSubmitted(true)
-    setErrors({})
+    const newRequest: MaintenanceRequest = {
+      id: `REQ-${String(requests.length + 1).padStart(3, '0')}`,
+      tenantName: tenantName.trim(),
+      propertyAddress: propertyAddress.trim(),
+      issueDescription: issueDescription.trim(),
+      status: 'Pending',
+      dateSubmitted: new Date().toISOString().split('T')[0],
+      priority
+    }
+
+    setRequests([newRequest, ...requests])
+    setTenantName('')
+    setPropertyAddress('')
+    setIssueDescription('')
+    setPriority('Medium')
+    setShowSuccess(true)
+    
+    setTimeout(() => setShowSuccess(false), 3000)
   }
 
-  const handleReset = () => {
-    setFormData({
-      fullName: '',
-      email: '',
-      phoneNumber: '',
-      currentAddress: '',
-      employmentStatus: 'Full-time',
-      annualIncome: '',
-      moveInDate: ''
-    })
-    setErrors({})
-    setSubmitted(false)
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'Pending':
+        return 'bg-yellow-100 text-yellow-800'
+      case 'In Progress':
+        return 'bg-blue-100 text-blue-800'
+      case 'Completed':
+        return 'bg-green-100 text-green-800'
+      default:
+        return 'bg-gray-100 text-gray-800'
+    }
   }
 
-  const formatDate = (isoDate: string): string => {
-    return new Date(isoDate).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    })
+  const getPriorityColor = (priority: string) => {
+    switch (priority) {
+      case 'Urgent':
+        return 'bg-red-100 text-red-800'
+      case 'High':
+        return 'bg-orange-100 text-orange-800'
+      case 'Medium':
+        return 'bg-yellow-100 text-yellow-800'
+      case 'Low':
+        return 'bg-green-100 text-green-800'
+      default:
+        return 'bg-gray-100 text-gray-800'
+    }
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4">
-      <div className="max-w-3xl mx-auto">
-        <div className="bg-white rounded-lg shadow-md p-8">
-          <div className="mb-6">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Tenant Application</h1>
-            <p className="text-gray-600">Submit your application online. All fields are required.</p>
+    <div className="min-h-screen bg-gray-50 p-6">
+      <div className="max-w-6xl mx-auto">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Tenant Application Portal</h1>
+          <p className="text-gray-600">Submit maintenance requests and track your applications online</p>
+        </div>
+
+        {showSuccess && (
+          <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
+            <p className="text-green-800 font-medium">✓ Maintenance request submitted successfully!</p>
           </div>
+        )}
 
-          {submitted ? (
-            <div className="bg-green-50 border border-green-200 rounded-lg p-6">
-              <div className="flex items-start">
-                <div className="flex-shrink-0">
-                  <svg className="h-6 w-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                </div>
-                <div className="ml-3 flex-1">
-                  <h3 className="text-lg font-semibold text-green-900 mb-2">Application Submitted Successfully!</h3>
-                  <div className="text-sm text-green-800 space-y-1 mb-4">
-                    <p><strong>Name:</strong> {formData.fullName}</p>
-                    <p><strong>Email:</strong> {formData.email}</p>
-                    <p><strong>Phone:</strong> {formData.phoneNumber}</p>
-                    <p><strong>Address:</strong> {formData.currentAddress}</p>
-                    <p><strong>Employment:</strong> {formData.employmentStatus}</p>
-                    <p><strong>Income:</strong> {formData.annualIncome}</p>
-                    <p><strong>Move-in Date:</strong> {formData.moveInDate}</p>
-                  </div>
-                  <button
-                    onClick={handleReset}
-                    className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors"
-                  >
-                    Submit Another Application
-                  </button>
-                </div>
-              </div>
-            </div>
-          ) : (
-            <form onSubmit={handleSubmit} className="space-y-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+          {/* Submission Form */}
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">Submit Maintenance Request</h2>
+            <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label htmlFor="fullName" className="block text-sm font-medium text-gray-700 mb-1">
-                  Full Name <span className="text-red-500">*</span>
+                <label htmlFor="tenantName" className="block text-sm font-medium text-gray-700 mb-1">
+                  Tenant Name *
                 </label>
                 <input
                   type="text"
-                  id="fullName"
-                  name="fullName"
-                  value={formData.fullName}
-                  onChange={handleChange}
-                  className={`w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 ${
-                    errors.fullName
-                      ? 'border-red-500 focus:ring-red-500'
-                      : 'border-gray-300 focus:ring-blue-500'
-                  }`}
+                  id="tenantName"
+                  value={tenantName}
+                  onChange={(e) => setTenantName(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="Enter your full name"
+                  required
                 />
-                {errors.fullName && (
-                  <p className="mt-1 text-sm text-red-600">{errors.fullName}</p>
-                )}
               </div>
 
               <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-                  Email Address <span className="text-red-500">*</span>
+                <label htmlFor="propertyAddress" className="block text-sm font-medium text-gray-700 mb-1">
+                  Property Address *
                 </label>
                 <input
                   type="text"
-                  id="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  className={`w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 ${
-                    errors.email
-                      ? 'border-red-500 focus:ring-red-500'
-                      : 'border-gray-300 focus:ring-blue-500'
-                  }`}
-                  placeholder="your.email@example.com"
+                  id="propertyAddress"
+                  value={propertyAddress}
+                  onChange={(e) => setPropertyAddress(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Full property address including unit number"
+                  required
                 />
-                {errors.email && (
-                  <p className="mt-1 text-sm text-red-600">{errors.email}</p>
-                )}
               </div>
 
               <div>
-                <label htmlFor="phoneNumber" className="block text-sm font-medium text-gray-700 mb-1">
-                  Phone Number <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="tel"
-                  id="phoneNumber"
-                  name="phoneNumber"
-                  value={formData.phoneNumber}
-                  onChange={handleChange}
-                  className={`w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 ${
-                    errors.phoneNumber
-                      ? 'border-red-500 focus:ring-red-500'
-                      : 'border-gray-300 focus:ring-blue-500'
-                  }`}
-                  placeholder="555-0123"
-                />
-                {errors.phoneNumber && (
-                  <p className="mt-1 text-sm text-red-600">{errors.phoneNumber}</p>
-                )}
-              </div>
-
-              <div>
-                <label htmlFor="currentAddress" className="block text-sm font-medium text-gray-700 mb-1">
-                  Current Address <span className="text-red-500">*</span>
-                </label>
-                <textarea
-                  id="currentAddress"
-                  name="currentAddress"
-                  value={formData.currentAddress}
-                  onChange={handleChange}
-                  rows={3}
-                  className={`w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 ${
-                    errors.currentAddress
-                      ? 'border-red-500 focus:ring-red-500'
-                      : 'border-gray-300 focus:ring-blue-500'
-                  }`}
-                  placeholder="Enter your full current address"
-                />
-                {errors.currentAddress && (
-                  <p className="mt-1 text-sm text-red-600">{errors.currentAddress}</p>
-                )}
-              </div>
-
-              <div>
-                <label htmlFor="employmentStatus" className="block text-sm font-medium text-gray-700 mb-1">
-                  Employment Status <span className="text-red-500">*</span>
+                <label htmlFor="priority" className="block text-sm font-medium text-gray-700 mb-1">
+                  Priority Level
                 </label>
                 <select
-                  id="employmentStatus"
-                  name="employmentStatus"
-                  value={formData.employmentStatus}
-                  onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  id="priority"
+                  value={priority}
+                  onChange={(e) => setPriority(e.target.value as 'Low' | 'Medium' | 'High' | 'Urgent')}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
-                  <option value="Full-time">Full-time</option>
-                  <option value="Part-time">Part-time</option>
-                  <option value="Self-employed">Self-employed</option>
-                  <option value="Unemployed">Unemployed</option>
-                  <option value="Student">Student</option>
-                  <option value="Retired">Retired</option>
+                  <option value="Low">Low</option>
+                  <option value="Medium">Medium</option>
+                  <option value="High">High</option>
+                  <option value="Urgent">Urgent</option>
                 </select>
               </div>
 
               <div>
-                <label htmlFor="annualIncome" className="block text-sm font-medium text-gray-700 mb-1">
-                  Annual Income <span className="text-red-500">*</span>
+                <label htmlFor="issueDescription" className="block text-sm font-medium text-gray-700 mb-1">
+                  Issue Description *
                 </label>
-                <input
-                  type="text"
-                  id="annualIncome"
-                  name="annualIncome"
-                  value={formData.annualIncome}
-                  onChange={handleChange}
-                  className={`w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 ${
-                    errors.annualIncome
-                      ? 'border-red-500 focus:ring-red-500'
-                      : 'border-gray-300 focus:ring-blue-500'
-                  }`}
-                  placeholder="$50,000"
+                <textarea
+                  id="issueDescription"
+                  value={issueDescription}
+                  onChange={(e) => setIssueDescription(e.target.value)}
+                  rows={5}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Describe the maintenance issue in detail..."
+                  required
                 />
-                {errors.annualIncome && (
-                  <p className="mt-1 text-sm text-red-600">{errors.annualIncome}</p>
-                )}
               </div>
 
-              <div>
-                <label htmlFor="moveInDate" className="block text-sm font-medium text-gray-700 mb-1">
-                  Desired Move-in Date <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="date"
-                  id="moveInDate"
-                  name="moveInDate"
-                  value={formData.moveInDate}
-                  onChange={handleChange}
-                  className={`w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 ${
-                    errors.moveInDate
-                      ? 'border-red-500 focus:ring-red-500'
-                      : 'border-gray-300 focus:ring-blue-500'
-                  }`}
-                />
-                {errors.moveInDate && (
-                  <p className="mt-1 text-sm text-red-600">{errors.moveInDate}</p>
-                )}
-              </div>
-
-              <div className="flex gap-4 pt-4">
-                <button
-                  type="submit"
-                  className="flex-1 bg-blue-600 text-white px-6 py-3 rounded-md font-medium hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                >
-                  Submit Application
-                </button>
-                <button
-                  type="button"
-                  onClick={handleReset}
-                  className="px-6 py-3 border border-gray-300 rounded-md text-gray-700 font-medium hover:bg-gray-50 transition-colors"
-                >
-                  Clear Form
-                </button>
-              </div>
+              <button
+                type="submit"
+                className="w-full bg-blue-600 text-white py-2 px-4 rounded-md font-medium hover:bg-blue-700 transition-colors"
+              >
+                Submit Request
+              </button>
             </form>
-          )}
-        </div>
-
-        {/* Mock applications display */}
-        <div className="mt-8 bg-white rounded-lg shadow-md p-8">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-2xl font-bold text-gray-900">Recent Applications</h2>
-            <button
-              onClick={() => setShowApplications(!showApplications)}
-              className="text-blue-600 hover:text-blue-800 font-medium text-sm"
-            >
-              {showApplications ? 'Hide' : 'Show'} ({mockApplications.length})
-            </button>
           </div>
 
-          {showApplications && (
-            <div className="space-y-4">
-              {mockApplications.map((app) => (
-                <div
-                  key={app.id}
-                  className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors"
-                >
-                  <div className="flex items-start justify-between mb-2">
-                    <h3 className="font-semibold text-lg text-gray-900">{app.fullName}</h3>
-                    <span className="text-sm text-gray-500">
-                      {formatDate(app.submittedAt)}
-                    </span>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-gray-700">
-                    <div>
-                      <span className="font-medium">Email:</span> {app.email}
-                    </div>
-                    <div>
-                      <span className="font-medium">Phone:</span> {app.phoneNumber}
-                    </div>
-                    <div className="md:col-span-2">
-                      <span className="font-medium">Address:</span> {app.currentAddress}
-                    </div>
-                    <div>
-                      <span className="font-medium">Employment:</span> {app.employmentStatus}
-                    </div>
-                    <div>
-                      <span className="font-medium">Income:</span> {app.annualIncome}
-                    </div>
-                    <div className="md:col-span-2">
-                      <span className="font-medium">Move-in Date:</span> {app.moveInDate}
-                    </div>
-                  </div>
+          {/* Quick Stats */}
+          <div className="space-y-6">
+            <div className="bg-white rounded-lg shadow-md p-6">
+              <h2 className="text-xl font-semibold text-gray-900 mb-4">Request Statistics</h2>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-yellow-50 p-4 rounded-lg">
+                  <p className="text-2xl font-bold text-yellow-800">
+                    {requests.filter(r => r.status === 'Pending').length}
+                  </p>
+                  <p className="text-sm text-yellow-700">Pending</p>
                 </div>
-              ))}
+                <div className="bg-blue-50 p-4 rounded-lg">
+                  <p className="text-2xl font-bold text-blue-800">
+                    {requests.filter(r => r.status === 'In Progress').length}
+                  </p>
+                  <p className="text-sm text-blue-700">In Progress</p>
+                </div>
+                <div className="bg-green-50 p-4 rounded-lg">
+                  <p className="text-2xl font-bold text-green-800">
+                    {requests.filter(r => r.status === 'Completed').length}
+                  </p>
+                  <p className="text-sm text-green-700">Completed</p>
+                </div>
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <p className="text-2xl font-bold text-gray-800">{requests.length}</p>
+                  <p className="text-sm text-gray-700">Total Requests</p>
+                </div>
+              </div>
             </div>
-          )}
+
+            <div className="bg-white rounded-lg shadow-md p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-3">Important Information</h3>
+              <ul className="space-y-2 text-sm text-gray-600">
+                <li className="flex items-start">
+                  <span className="text-blue-600 mr-2">•</span>
+                  <span>All fields marked with * are required</span>
+                </li>
+                <li className="flex items-start">
+                  <span className="text-blue-600 mr-2">•</span>
+                  <span>Include your complete property address and unit number</span>
+                </li>
+                <li className="flex items-start">
+                  <span className="text-blue-600 mr-2">•</span>
+                  <span>Urgent requests are prioritized for same-day response</span>
+                </li>
+                <li className="flex items-start">
+                  <span className="text-blue-600 mr-2">•</span>
+                  <span>You will receive email updates on your request status</span>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        {/* Request History */}
+        <div className="bg-white rounded-lg shadow-md p-6">
+          <h2 className="text-xl font-semibold text-gray-900 mb-4">Recent Maintenance Requests</h2>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-gray-200">
+                  <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Request ID</th>
+                  <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Tenant</th>
+                  <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Property Address</th>
+                  <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Issue</th>
+                  <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Priority</th>
+                  <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Status</th>
+                  <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Date</th>
+                </tr>
+              </thead>
+              <tbody>
+                {requests.map((request) => (
+                  <tr key={request.id} className="border-b border-gray-100 hover:bg-gray-50">
+                    <td className="py-3 px-4 text-sm font-medium text-gray-900">{request.id}</td>
+                    <td className="py-3 px-4 text-sm text-gray-700">{request.tenantName}</td>
+                    <td className="py-3 px-4 text-sm text-gray-700 max-w-xs truncate" title={request.propertyAddress}>
+                      {request.propertyAddress}
+                    </td>
+                    <td className="py-3 px-4 text-sm text-gray-700 max-w-md truncate" title={request.issueDescription}>
+                      {request.issueDescription}
+                    </td>
+                    <td className="py-3 px-4">
+                      <span className={`inline-block px-2 py-1 text-xs font-medium rounded-full ${getPriorityColor(request.priority)}`}>
+                        {request.priority}
+                      </span>
+                    </td>
+                    <td className="py-3 px-4">
+                      <span className={`inline-block px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(request.status)}`}>
+                        {request.status}
+                      </span>
+                    </td>
+                    <td className="py-3 px-4 text-sm text-gray-700">{request.dateSubmitted}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </div>

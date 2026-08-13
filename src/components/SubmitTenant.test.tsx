@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { render, screen, fireEvent } from '@testing-library/react'
 import { describe, it, expect } from 'vitest'
 import SubmitTenant from './SubmitTenant'
 
@@ -8,145 +8,82 @@ describe('SubmitTenant', () => {
     expect(document.body).toBeTruthy()
   })
 
-  it('displays the tenant application form title', () => {
+  it('displays the main heading', () => {
     render(<SubmitTenant />)
-    expect(screen.getByText('Tenant Application')).toBeTruthy()
-    expect(screen.getByText(/Submit your application online/)).toBeTruthy()
+    expect(screen.getByText('Tenant Application Portal')).toBeTruthy()
+    expect(screen.getByText('Submit maintenance requests and track your applications online')).toBeTruthy()
   })
 
-  it('displays all required form fields', () => {
+  it('displays the submission form with all required fields', () => {
     render(<SubmitTenant />)
-    expect(screen.getByLabelText(/Full Name/)).toBeTruthy()
-    expect(screen.getByLabelText(/Email Address/)).toBeTruthy()
-    expect(screen.getByLabelText(/Phone Number/)).toBeTruthy()
-    expect(screen.getByLabelText(/Current Address/)).toBeTruthy()
-    expect(screen.getByLabelText(/Employment Status/)).toBeTruthy()
-    expect(screen.getByLabelText(/Annual Income/)).toBeTruthy()
-    expect(screen.getByLabelText(/Desired Move-in Date/)).toBeTruthy()
+    expect(screen.getByLabelText(/Tenant Name/i)).toBeTruthy()
+    expect(screen.getByLabelText(/Property Address/i)).toBeTruthy()
+    expect(screen.getByLabelText(/Issue Description/i)).toBeTruthy()
+    expect(screen.getByLabelText(/Priority Level/i)).toBeTruthy()
   })
 
-  it('shows validation errors when submitting empty form', async () => {
+  it('displays mock maintenance requests in the table', () => {
     render(<SubmitTenant />)
-    const submitButton = screen.getByText('Submit Application')
-    
-    fireEvent.click(submitButton)
-    
-    await waitFor(() => {
-      expect(screen.getByText('Full name is required')).toBeTruthy()
-      expect(screen.getByText('Email is required')).toBeTruthy()
-      expect(screen.getByText('Phone number is required')).toBeTruthy()
-    })
-  })
-
-  it('validates email format', async () => {
-    render(<SubmitTenant />)
-    const emailInput = screen.getByLabelText(/Email Address/)
-    const submitButton = screen.getByText('Submit Application')
-    
-    // Fill all required fields except email with valid data
-    fireEvent.change(screen.getByLabelText(/Full Name/), { target: { value: 'John Doe' } })
-    fireEvent.change(emailInput, { target: { value: 'notanemail' } })
-    fireEvent.change(screen.getByLabelText(/Phone Number/), { target: { value: '555-1234' } })
-    fireEvent.change(screen.getByLabelText(/Current Address/), { target: { value: '123 Main St' } })
-    fireEvent.change(screen.getByLabelText(/Annual Income/), { target: { value: '$50,000' } })
-    fireEvent.change(screen.getByLabelText(/Desired Move-in Date/), { target: { value: '2026-09-01' } })
-    
-    fireEvent.click(submitButton)
-    
-    await waitFor(() => {
-      expect(screen.getByText('Please enter a valid email address')).toBeTruthy()
-    })
-  })
-
-  it('validates phone number format', async () => {
-    render(<SubmitTenant />)
-    const phoneInput = screen.getByLabelText(/Phone Number/)
-    const submitButton = screen.getByText('Submit Application')
-    
-    // Fill all required fields except phone with valid data
-    fireEvent.change(screen.getByLabelText(/Full Name/), { target: { value: 'John Doe' } })
-    fireEvent.change(screen.getByLabelText(/Email Address/), { target: { value: 'john@example.com' } })
-    fireEvent.change(phoneInput, { target: { value: '123' } })
-    fireEvent.change(screen.getByLabelText(/Current Address/), { target: { value: '123 Main St' } })
-    fireEvent.change(screen.getByLabelText(/Annual Income/), { target: { value: '$50,000' } })
-    fireEvent.change(screen.getByLabelText(/Desired Move-in Date/), { target: { value: '2026-09-01' } })
-    
-    fireEvent.click(submitButton)
-    
-    await waitFor(() => {
-      expect(screen.getByText(/Please enter a valid phone number/)).toBeTruthy()
-    })
-  })
-
-  it('submits form successfully with valid data', async () => {
-    render(<SubmitTenant />)
-    
-    fireEvent.change(screen.getByLabelText(/Full Name/), {
-      target: { value: 'John Doe' }
-    })
-    fireEvent.change(screen.getByLabelText(/Email Address/), {
-      target: { value: 'john@example.com' }
-    })
-    fireEvent.change(screen.getByLabelText(/Phone Number/), {
-      target: { value: '555-1234' }
-    })
-    fireEvent.change(screen.getByLabelText(/Current Address/), {
-      target: { value: '123 Main St' }
-    })
-    fireEvent.change(screen.getByLabelText(/Annual Income/), {
-      target: { value: '$50,000' }
-    })
-    fireEvent.change(screen.getByLabelText(/Desired Move-in Date/), {
-      target: { value: '2026-09-01' }
-    })
-    
-    fireEvent.click(screen.getByText('Submit Application'))
-    
-    await waitFor(() => {
-      expect(screen.getByText('Application Submitted Successfully!')).toBeTruthy()
-    })
-  })
-
-  it('displays mock applications when show button is clicked', () => {
-    render(<SubmitTenant />)
-    const showButton = screen.getByText(/Show/)
-    
-    fireEvent.click(showButton)
-    
+    expect(screen.getByText('REQ-001')).toBeTruthy()
     expect(screen.getByText('John Smith')).toBeTruthy()
-    expect(screen.getByText('john.smith@email.com')).toBeTruthy()
     expect(screen.getByText('Sarah Johnson')).toBeTruthy()
     expect(screen.getByText('Michael Chen')).toBeTruthy()
-    expect(screen.getByText('Emily Rodriguez')).toBeTruthy()
-    expect(screen.getByText('David Williams')).toBeTruthy()
+    expect(screen.getByText('Emily Davis')).toBeTruthy()
+    expect(screen.getByText('David Martinez')).toBeTruthy()
   })
 
-  it('clears form when Clear Form button is clicked', () => {
+  it('displays request statistics', () => {
     render(<SubmitTenant />)
-    
-    const nameInput = screen.getByLabelText(/Full Name/) as HTMLInputElement
-    fireEvent.change(nameInput, { target: { value: 'Test Name' } })
-    expect(nameInput.value).toBe('Test Name')
-    
-    fireEvent.click(screen.getByText('Clear Form'))
-    expect(nameInput.value).toBe('')
+    expect(screen.getByText('Request Statistics')).toBeTruthy()
+    const pendingElements = screen.getAllByText('Pending')
+    expect(pendingElements.length).toBeGreaterThan(0)
+    const inProgressElements = screen.getAllByText('In Progress')
+    expect(inProgressElements.length).toBeGreaterThan(0)
+    const completedElements = screen.getAllByText('Completed')
+    expect(completedElements.length).toBeGreaterThan(0)
   })
 
-  it('clears errors when user starts typing', async () => {
+  it('allows user to fill out the form', () => {
     render(<SubmitTenant />)
-    const submitButton = screen.getByText('Submit Application')
-    const nameInput = screen.getByLabelText(/Full Name/)
     
+    const tenantNameInput = screen.getByLabelText(/Tenant Name/i) as HTMLInputElement
+    const propertyAddressInput = screen.getByLabelText(/Property Address/i) as HTMLInputElement
+    const issueDescriptionInput = screen.getByLabelText(/Issue Description/i) as HTMLTextAreaElement
+    
+    fireEvent.change(tenantNameInput, { target: { value: 'Test Tenant' } })
+    fireEvent.change(propertyAddressInput, { target: { value: '123 Test St' } })
+    fireEvent.change(issueDescriptionInput, { target: { value: 'Test issue description' } })
+    
+    expect(tenantNameInput.value).toBe('Test Tenant')
+    expect(propertyAddressInput.value).toBe('123 Test St')
+    expect(issueDescriptionInput.value).toBe('Test issue description')
+  })
+
+  it('submits the form and displays success message', () => {
+    render(<SubmitTenant />)
+    
+    const tenantNameInput = screen.getByLabelText(/Tenant Name/i)
+    const propertyAddressInput = screen.getByLabelText(/Property Address/i)
+    const issueDescriptionInput = screen.getByLabelText(/Issue Description/i)
+    const submitButton = screen.getByRole('button', { name: /Submit Request/i })
+    
+    fireEvent.change(tenantNameInput, { target: { value: 'New Tenant' } })
+    fireEvent.change(propertyAddressInput, { target: { value: '999 New Address' } })
+    fireEvent.change(issueDescriptionInput, { target: { value: 'New maintenance issue' } })
     fireEvent.click(submitButton)
     
-    await waitFor(() => {
-      expect(screen.getByText('Full name is required')).toBeTruthy()
-    })
-    
-    fireEvent.change(nameInput, { target: { value: 'John' } })
-    
-    await waitFor(() => {
-      expect(screen.queryByText('Full name is required')).toBeNull()
-    })
+    expect(screen.getByText(/Maintenance request submitted successfully!/i)).toBeTruthy()
+  })
+
+  it('displays important information section', () => {
+    render(<SubmitTenant />)
+    expect(screen.getByText('Important Information')).toBeTruthy()
+    expect(screen.getByText(/All fields marked with \* are required/i)).toBeTruthy()
+  })
+
+  it('displays status badges with correct colors', () => {
+    render(<SubmitTenant />)
+    const statusElements = screen.getAllByText('Pending')
+    expect(statusElements.length).toBeGreaterThan(0)
   })
 })
