@@ -1,103 +1,165 @@
-import { render, screen, fireEvent } from '@testing-library/react'
-import { describe, it, expect } from 'vitest'
+import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { describe, it, expect, beforeEach } from 'vitest'
 import UserSubmitsThe from './UserSubmitsThe'
 
 describe('UserSubmitsThe', () => {
+  beforeEach(() => {
+    // Clear any previous renders
+    document.body.innerHTML = ''
+  })
+
   it('renders without crashing', () => {
     render(<UserSubmitsThe />)
     expect(document.body).toBeTruthy()
   })
 
-  it('displays the contact form with all fields', () => {
-    render(<UserSubmitsThe />)
-    expect(screen.getByLabelText(/name/i)).toBeInTheDocument()
-    expect(screen.getByLabelText(/email/i)).toBeInTheDocument()
-    expect(screen.getByLabelText(/message/i)).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /submit form/i })).toBeInTheDocument()
-  })
-
-  it('displays invalid email format examples', () => {
-    render(<UserSubmitsThe />)
-    expect(screen.getByText('user@')).toBeInTheDocument()
-    expect(screen.getByText('@domain.com')).toBeInTheDocument()
-    expect(screen.getByText('user.domain.com')).toBeInTheDocument()
-  })
-
-  it('shows validation error for invalid email format', () => {
+  it('displays the contact form with all required fields', () => {
     render(<UserSubmitsThe />)
     
-    const nameInput = screen.getByLabelText(/name/i)
-    const emailInput = screen.getByLabelText(/email/i)
-    const messageInput = screen.getByLabelText(/message/i)
-    const submitButton = screen.getByRole('button', { name: /submit form/i })
+    expect(screen.getByText('Contact Us')).toBeInTheDocument()
+    expect(screen.getByLabelText(/Full Name/i)).toBeInTheDocument()
+    expect(screen.getByLabelText(/Email Address/i)).toBeInTheDocument()
+    expect(screen.getByLabelText(/Subject/i)).toBeInTheDocument()
+    expect(screen.getByLabelText(/Message/i)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /Submit Message/i })).toBeInTheDocument()
+  })
 
-    fireEvent.change(nameInput, { target: { value: 'John Doe' } })
+  it('displays mock submission history', () => {
+    render(<UserSubmitsThe />)
+    
+    expect(screen.getByText('Recent Submissions')).toBeInTheDocument()
+    expect(screen.getByText('Alice Johnson')).toBeInTheDocument()
+    expect(screen.getByText('Bob Smith')).toBeInTheDocument()
+    expect(screen.getByText('Carol Davis')).toBeInTheDocument()
+    expect(screen.getByText('David Wilson')).toBeInTheDocument()
+    expect(screen.getByText('Emma Thompson')).toBeInTheDocument()
+  })
+
+  it('shows validation errors when submitting empty form', async () => {
+    render(<UserSubmitsThe />)
+    
+    const submitButton = screen.getByRole('button', { name: /Submit Message/i })
+    fireEvent.click(submitButton)
+    
+    await waitFor(() => {
+      expect(screen.getByText('Name is required')).toBeInTheDocument()
+      expect(screen.getByText('Email is required')).toBeInTheDocument()
+      expect(screen.getByText('Subject is required')).toBeInTheDocument()
+      expect(screen.getByText('Message is required')).toBeInTheDocument()
+    })
+  })
+
+  it('validates email format', async () => {
+    render(<UserSubmitsThe />)
+    
+    // Fill in other required fields
+    fireEvent.change(screen.getByLabelText(/Full Name/i), { target: { value: 'Test User' } })
+    fireEvent.change(screen.getByLabelText(/Subject/i), { target: { value: 'Test Subject' } })
+    fireEvent.change(screen.getByLabelText(/Message/i), { target: { value: 'This is a test message' } })
+    
+    // Fill in invalid email
+    const emailInput = screen.getByLabelText(/Email Address/i)
     fireEvent.change(emailInput, { target: { value: 'invalid-email' } })
-    fireEvent.change(messageInput, { target: { value: 'Test message' } })
+    
+    const submitButton = screen.getByRole('button', { name: /Submit Message/i })
     fireEvent.click(submitButton)
-
-    const errorMessages = screen.getAllByText(/invalid email format/i)
-    expect(errorMessages.length).toBeGreaterThan(0)
+    
+    await waitFor(() => {
+      expect(screen.getByText('Invalid email format')).toBeInTheDocument()
+    })
   })
 
-  it('shows validation error for email without @ symbol', () => {
+  it('validates message minimum length', async () => {
     render(<UserSubmitsThe />)
     
-    const nameInput = screen.getByLabelText(/name/i)
-    const emailInput = screen.getByLabelText(/email/i)
-    const messageInput = screen.getByLabelText(/message/i)
-    const submitButton = screen.getByRole('button', { name: /submit form/i })
-
-    fireEvent.change(nameInput, { target: { value: 'John Doe' } })
-    fireEvent.change(emailInput, { target: { value: 'user.domain.com' } })
-    fireEvent.change(messageInput, { target: { value: 'Test message' } })
+    // Fill in other required fields
+    fireEvent.change(screen.getByLabelText(/Full Name/i), { target: { value: 'Test User' } })
+    fireEvent.change(screen.getByLabelText(/Email Address/i), { target: { value: 'test@example.com' } })
+    fireEvent.change(screen.getByLabelText(/Subject/i), { target: { value: 'Test Subject' } })
+    
+    // Fill in short message
+    const messageInput = screen.getByLabelText(/Message/i)
+    fireEvent.change(messageInput, { target: { value: 'Short' } })
+    
+    const submitButton = screen.getByRole('button', { name: /Submit Message/i })
     fireEvent.click(submitButton)
-
-    const errorMessages = screen.getAllByText(/invalid email format/i)
-    expect(errorMessages.length).toBeGreaterThan(0)
+    
+    await waitFor(() => {
+      expect(screen.getByText('Message must be at least 10 characters')).toBeInTheDocument()
+    })
   })
 
-  it('allows user to click invalid email examples', () => {
+  it('submits form successfully with valid data', async () => {
     render(<UserSubmitsThe />)
     
-    const invalidEmailButton = screen.getByText('user@')
-    fireEvent.click(invalidEmailButton)
-
-    const emailInput = screen.getByLabelText(/email/i) as HTMLInputElement
-    expect(emailInput.value).toBe('user@')
+    // Fill out the form
+    const nameInput = screen.getByLabelText(/Full Name/i)
+    const emailInput = screen.getByLabelText(/Email Address/i)
+    const subjectInput = screen.getByLabelText(/Subject/i)
+    const messageInput = screen.getByLabelText(/Message/i)
+    
+    fireEvent.change(nameInput, { target: { value: 'Test User' } })
+    fireEvent.change(emailInput, { target: { value: 'test@example.com' } })
+    fireEvent.change(subjectInput, { target: { value: 'Test Subject' } })
+    fireEvent.change(messageInput, { target: { value: 'This is a test message with enough characters' } })
+    
+    const submitButton = screen.getByRole('button', { name: /Submit Message/i })
+    fireEvent.click(submitButton)
+    
+    // Check for submitting state
+    await waitFor(() => {
+      expect(screen.getByText(/Submitting/i)).toBeInTheDocument()
+    })
+    
+    // Wait for success message
+    await waitFor(() => {
+      expect(screen.getByText(/Success!/i)).toBeInTheDocument()
+      expect(screen.getByText(/Your message has been submitted successfully/i)).toBeInTheDocument()
+    }, { timeout: 2000 })
+    
+    // Check that form is reset
+    expect(nameInput).toHaveValue('')
+    expect(emailInput).toHaveValue('')
+    expect(subjectInput).toHaveValue('')
+    expect(messageInput).toHaveValue('')
   })
 
-  it('displays submission history after form submission', () => {
+  it('clears individual field errors when user starts typing', async () => {
     render(<UserSubmitsThe />)
     
-    const nameInput = screen.getByLabelText(/name/i)
-    const emailInput = screen.getByLabelText(/email/i)
-    const messageInput = screen.getByLabelText(/message/i)
-    const submitButton = screen.getByRole('button', { name: /submit form/i })
-
-    fireEvent.change(nameInput, { target: { value: 'John Doe' } })
-    fireEvent.change(emailInput, { target: { value: 'invalid@' } })
-    fireEvent.change(messageInput, { target: { value: 'Test message' } })
+    const submitButton = screen.getByRole('button', { name: /Submit Message/i })
     fireEvent.click(submitButton)
-
-    expect(screen.getByText('Submission History')).toBeInTheDocument()
+    
+    // Wait for validation errors
+    await waitFor(() => {
+      expect(screen.getByText('Name is required')).toBeInTheDocument()
+    })
+    
+    // Start typing in name field
+    const nameInput = screen.getByLabelText(/Full Name/i)
+    fireEvent.change(nameInput, { target: { value: 'Test' } })
+    
+    // Error should be cleared
+    await waitFor(() => {
+      expect(screen.queryByText('Name is required')).not.toBeInTheDocument()
+    })
   })
 
-  it('clears field error when user starts typing', () => {
+  it('disables submit button while submitting', async () => {
     render(<UserSubmitsThe />)
     
-    const emailInput = screen.getByLabelText(/email/i)
-    const submitButton = screen.getByRole('button', { name: /submit form/i })
-
-    // Submit with empty email to trigger error
+    // Fill out the form
+    fireEvent.change(screen.getByLabelText(/Full Name/i), { target: { value: 'Test User' } })
+    fireEvent.change(screen.getByLabelText(/Email Address/i), { target: { value: 'test@example.com' } })
+    fireEvent.change(screen.getByLabelText(/Subject/i), { target: { value: 'Test Subject' } })
+    fireEvent.change(screen.getByLabelText(/Message/i), { target: { value: 'This is a test message with enough characters' } })
+    
+    const submitButton = screen.getByRole('button', { name: /Submit Message/i })
     fireEvent.click(submitButton)
-    const errorsBefore = screen.getAllByText(/email is required/i)
-    expect(errorsBefore.length).toBeGreaterThan(0)
-
-    // Start typing - form field error should clear (but history may still have it)
-    fireEvent.change(emailInput, { target: { value: 'test@' } })
-    // The error in the form field should be gone or reduced
-    const errorsAfter = screen.queryAllByText(/email is required/i)
-    expect(errorsAfter.length).toBeLessThan(errorsBefore.length)
+    
+    // Button should be disabled during submission
+    await waitFor(() => {
+      expect(submitButton).toBeDisabled()
+    })
   })
 })
