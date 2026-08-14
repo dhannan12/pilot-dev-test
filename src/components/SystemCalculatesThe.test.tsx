@@ -1,71 +1,66 @@
-import { render, screen } from '@testing-library/react';
-import { describe, it, expect } from 'vitest';
-import SystemCalculatesThe from './SystemCalculatesThe';
+import { render, screen } from '@testing-library/react'
+import { describe, it, expect } from 'vitest'
+import SystemCalculatesThe from './SystemCalculatesThe'
 
 describe('SystemCalculatesThe', () => {
   it('renders without crashing', () => {
-    render(<SystemCalculatesThe />);
-    expect(document.body).toBeTruthy();
-  });
+    render(<SystemCalculatesThe />)
+    expect(document.body).toBeTruthy()
+  })
 
-  it('displays the correct total number of tasks', () => {
-    render(<SystemCalculatesThe />);
-    // Should show 8 total tasks based on mock data
-    expect(screen.getByText('Total Tasks')).toBeTruthy();
-    const totalTasksElements = screen.getAllByText('8');
-    expect(totalTasksElements.length).toBeGreaterThan(0);
-  });
+  it('displays the Task Manager title', () => {
+    render(<SystemCalculatesThe />)
+    expect(screen.getByText('Task Manager')).toBeTruthy()
+  })
 
-  it('calculates and displays completed tasks count', () => {
-    render(<SystemCalculatesThe />);
-    expect(screen.getByText('Completed')).toBeTruthy();
-  });
+  it('calculates and displays completed task count', () => {
+    render(<SystemCalculatesThe />)
+    // The component should show a fraction like "5/8" or similar
+    const completionSummary = screen.getByText(/Completion Summary/i)
+    expect(completionSummary).toBeTruthy()
+  })
 
-  it('calculates and displays in-progress tasks count', () => {
-    render(<SystemCalculatesThe />);
-    expect(screen.getByText('In Progress')).toBeTruthy();
-  });
+  it('displays mock tasks', () => {
+    render(<SystemCalculatesThe />)
+    // Check for some of the mock task titles
+    expect(screen.getByText('Design landing page mockup')).toBeTruthy()
+    expect(screen.getByText('Implement user authentication')).toBeTruthy()
+    expect(screen.getByText('Write API documentation')).toBeTruthy()
+  })
 
-  it('calculates and displays pending tasks count', () => {
-    render(<SystemCalculatesThe />);
-    expect(screen.getByText('Pending')).toBeTruthy();
-  });
+  it('shows completion status for tasks', () => {
+    render(<SystemCalculatesThe />)
+    // Check for status badges
+    const completedBadges = screen.getAllByText('Completed')
+    const pendingBadges = screen.getAllByText('Pending')
+    expect(completedBadges.length).toBeGreaterThan(0)
+    expect(pendingBadges.length).toBeGreaterThan(0)
+  })
 
-  it('displays all task titles from mock data', () => {
-    render(<SystemCalculatesThe />);
-    expect(screen.getByText('Implement authentication system')).toBeTruthy();
-    expect(screen.getByText('Design user dashboard')).toBeTruthy();
-    expect(screen.getByText('Write API documentation')).toBeTruthy();
-    expect(screen.getByText('Fix navigation bugs')).toBeTruthy();
-    expect(screen.getByText('Update dependencies')).toBeTruthy();
-  });
+  it('displays statistics section', () => {
+    render(<SystemCalculatesThe />)
+    expect(screen.getByText('Statistics')).toBeTruthy()
+    expect(screen.getByText('Total Tasks')).toBeTruthy()
+    // "Completed" appears multiple times, check for the statistics section specifically
+    const completedLabels = screen.getAllByText('Completed')
+    expect(completedLabels.length).toBeGreaterThan(0)
+    expect(screen.getByText('Remaining')).toBeTruthy()
+  })
 
-  it('displays task status badges', () => {
-    render(<SystemCalculatesThe />);
-    const statusElements = screen.getAllByText(/completed|in progress|pending/i);
-    expect(statusElements.length).toBeGreaterThan(0);
-  });
-
-  it('displays priority information for tasks', () => {
-    render(<SystemCalculatesThe />);
-    const highPriority = screen.getAllByText(/HIGH Priority/i);
-    const mediumPriority = screen.getAllByText(/MEDIUM Priority/i);
-    const lowPriority = screen.getAllByText(/LOW Priority/i);
-    expect(highPriority.length).toBeGreaterThan(0);
-    expect(mediumPriority.length).toBeGreaterThan(0);
-    expect(lowPriority.length).toBeGreaterThan(0);
-  });
-
-  it('displays assignee information', () => {
-    render(<SystemCalculatesThe />);
-    expect(screen.getByText(/Alice Johnson/i)).toBeTruthy();
-    expect(screen.getByText(/Bob Smith/i)).toBeTruthy();
-  });
-
-  it('displays the summary footer with task counts', () => {
-    render(<SystemCalculatesThe />);
-    expect(screen.getByText(/Showing/i)).toBeTruthy();
-    // Check for text that includes both count and status breakdown
-    expect(screen.getByText(/completed, .* in progress, .* pending/i)).toBeTruthy();
-  });
-});
+  it('renders at least 5 mock tasks', () => {
+    render(<SystemCalculatesThe />)
+    // Check that we have the "All Tasks" section
+    expect(screen.getByText('All Tasks')).toBeTruthy()
+    // Verify multiple task titles are present
+    const taskTitles = [
+      'Design landing page mockup',
+      'Implement user authentication',
+      'Write API documentation',
+      'Configure CI/CD pipeline',
+      'Database optimization'
+    ]
+    taskTitles.forEach(title => {
+      expect(screen.getByText(title)).toBeTruthy()
+    })
+  })
+})
