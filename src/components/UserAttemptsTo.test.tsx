@@ -8,74 +8,83 @@ describe('UserAttemptsTo', () => {
     expect(document.body).toBeTruthy()
   })
 
-  it('displays the task manager heading', () => {
+  it('displays the task creation form', () => {
     render(<UserAttemptsTo />)
-    expect(screen.getByText('Task Manager')).toBeTruthy()
+    expect(screen.getByText('Task Manager - Priority Validation')).toBeInTheDocument()
+    expect(screen.getByLabelText('Task Title')).toBeInTheDocument()
+    expect(screen.getByLabelText('Priority')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /create task/i })).toBeInTheDocument()
   })
 
   it('displays mock tasks', () => {
     render(<UserAttemptsTo />)
-    expect(screen.getByText('Review quarterly budget report')).toBeTruthy()
-    expect(screen.getByText('Update team documentation')).toBeTruthy()
-    expect(screen.getByText('Schedule client meeting')).toBeTruthy()
-    expect(screen.getByText('Fix production bug #547')).toBeTruthy()
-    expect(screen.getByText('Onboard new team members')).toBeTruthy()
+    expect(screen.getByText('Review project documentation')).toBeInTheDocument()
+    expect(screen.getByText('Update dependencies')).toBeInTheDocument()
+    expect(screen.getByText('Fix navigation bug')).toBeInTheDocument()
+    expect(screen.getByText('Write unit tests')).toBeInTheDocument()
+    expect(screen.getByText('Clean up code comments')).toBeInTheDocument()
   })
 
-  it('shows error when attempting to create task without title', () => {
+  it('shows error message for invalid priority', () => {
     render(<UserAttemptsTo />)
     
-    const submitButton = screen.getByText('Create Task')
+    const titleInput = screen.getByLabelText('Task Title')
+    const priorityInput = screen.getByLabelText('Priority')
+    const submitButton = screen.getByRole('button', { name: /create task/i })
+
+    fireEvent.change(titleInput, { target: { value: 'Test Task' } })
+    fireEvent.change(priorityInput, { target: { value: 'critical' } })
     fireEvent.click(submitButton)
-    
-    expect(screen.getByText(/Title is required/i)).toBeTruthy()
+
+    expect(screen.getByText(/Invalid priority level: "critical"/i)).toBeInTheDocument()
   })
 
-  it('allows creating a task with a valid title', () => {
+  it('shows error message when priority is missing', () => {
     render(<UserAttemptsTo />)
     
-    const titleInput = screen.getByPlaceholderText('Enter task title')
-    const descriptionInput = screen.getByPlaceholderText('Enter task description (optional)')
-    const submitButton = screen.getByText('Create Task')
-    
-    fireEvent.change(titleInput, { target: { value: 'New test task' } })
-    fireEvent.change(descriptionInput, { target: { value: 'Test description' } })
+    const titleInput = screen.getByLabelText('Task Title')
+    const submitButton = screen.getByRole('button', { name: /create task/i })
+
+    fireEvent.change(titleInput, { target: { value: 'Test Task' } })
     fireEvent.click(submitButton)
-    
-    expect(screen.getByText('New test task')).toBeTruthy()
+
+    expect(screen.getByText('Priority is required')).toBeInTheDocument()
   })
 
-  it('clears error when user starts typing after failed submission', () => {
+  it('shows error message when task title is missing', () => {
     render(<UserAttemptsTo />)
     
-    const submitButton = screen.getByText('Create Task')
+    const priorityInput = screen.getByLabelText('Priority')
+    const submitButton = screen.getByRole('button', { name: /create task/i })
+
+    fireEvent.change(priorityInput, { target: { value: 'high' } })
     fireEvent.click(submitButton)
-    
-    expect(screen.getByText(/Title is required/i)).toBeTruthy()
-    
-    const titleInput = screen.getByPlaceholderText('Enter task title')
-    fireEvent.change(titleInput, { target: { value: 'Some title' } })
-    
-    expect(screen.queryByText(/Title is required/i)).toBeFalsy()
+
+    expect(screen.getByText('Task title is required')).toBeInTheDocument()
   })
 
-  it('displays task count correctly', () => {
+  it('creates task successfully with valid priority', () => {
     render(<UserAttemptsTo />)
-    expect(screen.getByText('Tasks (5)')).toBeTruthy()
-  })
+    
+    const titleInput = screen.getByLabelText('Task Title')
+    const priorityInput = screen.getByLabelText('Priority')
+    const submitButton = screen.getByRole('button', { name: /create task/i })
 
-  it('clears form after successful submission', () => {
-    render(<UserAttemptsTo />)
-    
-    const titleInput = screen.getByPlaceholderText('Enter task title') as HTMLInputElement
-    const descriptionInput = screen.getByPlaceholderText('Enter task description (optional)') as HTMLTextAreaElement
-    const submitButton = screen.getByText('Create Task')
-    
-    fireEvent.change(titleInput, { target: { value: 'Test task' } })
-    fireEvent.change(descriptionInput, { target: { value: 'Test description' } })
+    fireEvent.change(titleInput, { target: { value: 'New Test Task' } })
+    fireEvent.change(priorityInput, { target: { value: 'high' } })
     fireEvent.click(submitButton)
-    
-    expect(titleInput.value).toBe('')
-    expect(descriptionInput.value).toBe('')
+
+    expect(screen.getByText(/Task "New Test Task" created successfully/i)).toBeInTheDocument()
+    expect(screen.getByText('New Test Task')).toBeInTheDocument()
+  })
+
+  it('displays valid priority options', () => {
+    render(<UserAttemptsTo />)
+    expect(screen.getByText(/Valid priorities: low, medium, high, urgent/i)).toBeInTheDocument()
+  })
+
+  it('shows task count', () => {
+    render(<UserAttemptsTo />)
+    expect(screen.getByText(/Tasks \(5\)/i)).toBeInTheDocument()
   })
 })
