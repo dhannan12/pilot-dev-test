@@ -1,9 +1,9 @@
 /**
- * SystemCalculatesThe — Calculates and displays the completed count of tasks
+ * SystemCalculatesThe — Calculates and displays the pending count of tasks
  *
- * Features: task list display, completion status tracking, automatic count calculation, visual status indicators, progress summary
+ * Features: task list display, pending count calculation, status filtering, real-time count updates, visual status indicators
  *
- * Ticket: SCRUM-845 | Branch: proto/SCRUM-841
+ * Ticket: SCRUM-849 | Branch: proto/SCRUM-841
  */
 
 import React from 'react'
@@ -11,150 +11,169 @@ import React from 'react'
 interface Task {
   id: number
   title: string
-  description: string
-  completed: boolean
+  status: 'pending' | 'completed' | 'in-progress'
+  priority: 'low' | 'medium' | 'high'
   dueDate: string
 }
 
 const MOCK_TASKS: Task[] = [
   {
     id: 1,
-    title: 'Design landing page mockup',
-    description: 'Create wireframes and high-fidelity mockups for the new landing page',
-    completed: true,
-    dueDate: '2026-08-10'
-  },
-  {
-    id: 2,
-    title: 'Implement user authentication',
-    description: 'Set up JWT-based authentication with refresh token support',
-    completed: true,
-    dueDate: '2026-08-12'
-  },
-  {
-    id: 3,
-    title: 'Write API documentation',
-    description: 'Document all REST endpoints with examples and response schemas',
-    completed: false,
+    title: 'Review and approve project proposal',
+    status: 'pending',
+    priority: 'high',
     dueDate: '2026-08-15'
   },
   {
-    id: 4,
-    title: 'Configure CI/CD pipeline',
-    description: 'Set up automated testing and deployment workflows',
-    completed: true,
-    dueDate: '2026-08-11'
-  },
-  {
-    id: 5,
-    title: 'Database optimization',
-    description: 'Add indexes and optimize slow queries identified in monitoring',
-    completed: false,
+    id: 2,
+    title: 'Update client documentation',
+    status: 'pending',
+    priority: 'medium',
     dueDate: '2026-08-16'
   },
   {
+    id: 3,
+    title: 'Fix critical bug in production',
+    status: 'completed',
+    priority: 'high',
+    dueDate: '2026-08-12'
+  },
+  {
+    id: 4,
+    title: 'Conduct team code review',
+    status: 'in-progress',
+    priority: 'medium',
+    dueDate: '2026-08-14'
+  },
+  {
+    id: 5,
+    title: 'Prepare quarterly presentation',
+    status: 'pending',
+    priority: 'high',
+    dueDate: '2026-08-17'
+  },
+  {
     id: 6,
-    title: 'User feedback survey',
-    description: 'Create and distribute survey to gather user satisfaction metrics',
-    completed: true,
-    dueDate: '2026-08-13'
+    title: 'Update dependencies and packages',
+    status: 'pending',
+    priority: 'low',
+    dueDate: '2026-08-20'
   },
   {
     id: 7,
-    title: 'Security audit',
-    description: 'Conduct comprehensive security review of authentication and authorization',
-    completed: false,
+    title: 'Write unit tests for new features',
+    status: 'pending',
+    priority: 'medium',
     dueDate: '2026-08-18'
   },
   {
     id: 8,
-    title: 'Performance testing',
-    description: 'Run load tests and identify bottlenecks under high traffic',
-    completed: true,
-    dueDate: '2026-08-09'
+    title: 'Deploy staging environment',
+    status: 'completed',
+    priority: 'medium',
+    dueDate: '2026-08-13'
   }
 ]
 
 export default function SystemCalculatesThe() {
-  const completedCount = MOCK_TASKS.filter(task => task.completed).length
+  // Calculate pending count
+  const pendingCount = MOCK_TASKS.filter(task => task.status === 'pending').length
+  const completedCount = MOCK_TASKS.filter(task => task.status === 'completed').length
+  const inProgressCount = MOCK_TASKS.filter(task => task.status === 'in-progress').length
   const totalCount = MOCK_TASKS.length
-  const completionPercentage = Math.round((completedCount / totalCount) * 100)
+
+  // Get pending tasks
+  const pendingTasks = MOCK_TASKS.filter(task => task.status === 'pending')
+
+  const getStatusColor = (status: Task['status']) => {
+    switch (status) {
+      case 'pending':
+        return 'bg-yellow-100 text-yellow-800 border-yellow-300'
+      case 'completed':
+        return 'bg-green-100 text-green-800 border-green-300'
+      case 'in-progress':
+        return 'bg-blue-100 text-blue-800 border-blue-300'
+    }
+  }
+
+  const getPriorityColor = (priority: Task['priority']) => {
+    switch (priority) {
+      case 'high':
+        return 'text-red-600 font-semibold'
+      case 'medium':
+        return 'text-orange-600 font-medium'
+      case 'low':
+        return 'text-gray-600'
+    }
+  }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
-      <div className="max-w-4xl mx-auto">
-        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-          <h1 className="text-3xl font-bold text-gray-800 mb-2">Task Manager</h1>
-          <p className="text-gray-600 mb-6">Track your tasks and monitor completion progress</p>
+    <div className="min-h-screen bg-gray-50 p-6">
+      <div className="max-w-6xl mx-auto">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Task Manager</h1>
+          <p className="text-gray-600">System calculates pending task counts automatically</p>
+        </div>
+
+        {/* Statistics Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+          <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-gray-400">
+            <div className="text-sm text-gray-600 mb-1">Total Tasks</div>
+            <div className="text-3xl font-bold text-gray-900">{totalCount}</div>
+          </div>
           
-          <div className="bg-blue-50 border-l-4 border-blue-500 p-4 mb-6">
-            <div className="flex items-center justify-between mb-2">
-              <h2 className="text-xl font-semibold text-gray-800">Completion Summary</h2>
-              <span className="text-3xl font-bold text-blue-600">{completedCount}/{totalCount}</span>
-            </div>
-            <div className="w-full bg-gray-200 rounded-full h-3 mb-2">
-              <div 
-                className="bg-blue-600 h-3 rounded-full transition-all duration-300"
-                style={{ width: `${completionPercentage}%` }}
-              ></div>
-            </div>
-            <p className="text-sm text-gray-700">
-              <span className="font-semibold">{completionPercentage}%</span> of tasks completed
-            </p>
+          <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-yellow-400">
+            <div className="text-sm text-gray-600 mb-1">Pending Tasks</div>
+            <div className="text-3xl font-bold text-yellow-600">{pendingCount}</div>
+          </div>
+          
+          <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-blue-400">
+            <div className="text-sm text-gray-600 mb-1">In Progress</div>
+            <div className="text-3xl font-bold text-blue-600">{inProgressCount}</div>
+          </div>
+          
+          <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-green-400">
+            <div className="text-sm text-gray-600 mb-1">Completed</div>
+            <div className="text-3xl font-bold text-green-600">{completedCount}</div>
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow-md overflow-hidden">
-          <div className="px-6 py-4 bg-gray-100 border-b border-gray-200">
-            <h2 className="text-xl font-semibold text-gray-800">All Tasks</h2>
+        {/* Pending Tasks Section */}
+        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-semibold text-gray-900">
+              Pending Tasks
+              <span className="ml-2 px-3 py-1 text-sm bg-yellow-100 text-yellow-800 rounded-full">
+                {pendingCount}
+              </span>
+            </h2>
           </div>
-          
-          <div className="divide-y divide-gray-200">
-            {MOCK_TASKS.map(task => (
-              <div 
+
+          <div className="space-y-3">
+            {pendingTasks.map(task => (
+              <div
                 key={task.id}
-                className={`p-6 transition-colors hover:bg-gray-50 ${
-                  task.completed ? 'bg-green-50' : ''
-                }`}
+                className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
               >
-                <div className="flex items-start gap-4">
-                  <div className="flex-shrink-0 mt-1">
-                    {task.completed ? (
-                      <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
-                        <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                        </svg>
-                      </div>
-                    ) : (
-                      <div className="w-6 h-6 border-2 border-gray-300 rounded-full"></div>
-                    )}
-                  </div>
-                  
-                  <div className="flex-grow">
-                    <div className="flex items-start justify-between">
-                      <h3 className={`text-lg font-medium ${
-                        task.completed ? 'text-gray-500 line-through' : 'text-gray-800'
-                      }`}>
-                        {task.title}
-                      </h3>
-                      <span className={`ml-4 flex-shrink-0 px-3 py-1 text-xs font-medium rounded-full ${
-                        task.completed 
-                          ? 'bg-green-100 text-green-800' 
-                          : 'bg-yellow-100 text-yellow-800'
-                      }`}>
-                        {task.completed ? 'Completed' : 'Pending'}
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3 mb-2">
+                      <h3 className="text-lg font-medium text-gray-900">{task.title}</h3>
+                      <span className={`px-2 py-1 text-xs rounded border ${getStatusColor(task.status)}`}>
+                        {task.status}
                       </span>
                     </div>
-                    <p className={`mt-1 text-sm ${
-                      task.completed ? 'text-gray-400' : 'text-gray-600'
-                    }`}>
-                      {task.description}
-                    </p>
-                    <div className="mt-2 flex items-center gap-2">
-                      <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                      </svg>
-                      <span className="text-sm text-gray-500">Due: {task.dueDate}</span>
+                    <div className="flex items-center gap-4 text-sm">
+                      <span className={getPriorityColor(task.priority)}>
+                        Priority: {task.priority.toUpperCase()}
+                      </span>
+                      <span className="text-gray-600">
+                        Due: {new Date(task.dueDate).toLocaleDateString('en-US', {
+                          year: 'numeric',
+                          month: 'short',
+                          day: 'numeric'
+                        })}
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -163,21 +182,40 @@ export default function SystemCalculatesThe() {
           </div>
         </div>
 
-        <div className="mt-6 bg-white rounded-lg shadow-md p-6">
-          <h3 className="text-lg font-semibold text-gray-800 mb-4">Statistics</h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="bg-blue-50 rounded-lg p-4">
-              <p className="text-sm text-gray-600 mb-1">Total Tasks</p>
-              <p className="text-2xl font-bold text-blue-600">{totalCount}</p>
-            </div>
-            <div className="bg-green-50 rounded-lg p-4">
-              <p className="text-sm text-gray-600 mb-1">Completed</p>
-              <p className="text-2xl font-bold text-green-600">{completedCount}</p>
-            </div>
-            <div className="bg-yellow-50 rounded-lg p-4">
-              <p className="text-sm text-gray-600 mb-1">Remaining</p>
-              <p className="text-2xl font-bold text-yellow-600">{totalCount - completedCount}</p>
-            </div>
+        {/* All Tasks Section */}
+        <div className="bg-white rounded-lg shadow-md p-6">
+          <h2 className="text-xl font-semibold text-gray-900 mb-4">All Tasks</h2>
+          
+          <div className="space-y-3">
+            {MOCK_TASKS.map(task => (
+              <div
+                key={task.id}
+                className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
+              >
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3 mb-2">
+                      <h3 className="text-lg font-medium text-gray-900">{task.title}</h3>
+                      <span className={`px-2 py-1 text-xs rounded border ${getStatusColor(task.status)}`}>
+                        {task.status}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-4 text-sm">
+                      <span className={getPriorityColor(task.priority)}>
+                        Priority: {task.priority.toUpperCase()}
+                      </span>
+                      <span className="text-gray-600">
+                        Due: {new Date(task.dueDate).toLocaleDateString('en-US', {
+                          year: 'numeric',
+                          month: 'short',
+                          day: 'numeric'
+                        })}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </div>
