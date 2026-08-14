@@ -1,9 +1,9 @@
 /**
- * UserAttemptsTo — Expense form with validation preventing submission without a title
+ * UserAttemptsTo — Expense form with validation preventing negative amounts
  *
- * Features: title validation, amount input, category selection, error messaging, expense list display
+ * Features: negative amount validation, title validation, amount input, category selection, error messaging
  *
- * Ticket: SCRUM-854 | Branch: proto/SCRUM-853
+ * Ticket: SCRUM-855 | Branch: proto/SCRUM-853
  */
 
 import { useState } from 'react'
@@ -42,8 +42,26 @@ export default function UserAttemptsTo() {
       return
     }
 
-    if (!amount || parseFloat(amount) <= 0) {
-      setError('Please provide a valid amount.')
+    // Validate: amount must be provided and positive
+    if (!amount || amount.trim() === '') {
+      setError('Amount is required. Please provide an amount.')
+      return
+    }
+
+    const amountValue = parseFloat(amount)
+    
+    if (isNaN(amountValue)) {
+      setError('Please provide a valid numeric amount.')
+      return
+    }
+
+    if (amountValue < 0) {
+      setError('Amount cannot be negative. Please enter a positive value.')
+      return
+    }
+
+    if (amountValue === 0) {
+      setError('Amount must be greater than zero.')
       return
     }
 
@@ -51,7 +69,7 @@ export default function UserAttemptsTo() {
     const newExpense: Expense = {
       id: Date.now().toString(),
       title: title.trim(),
-      amount: parseFloat(amount),
+      amount: amountValue,
       category,
       date: new Date().toISOString().split('T')[0],
     }
@@ -101,7 +119,10 @@ export default function UserAttemptsTo() {
                 step="0.01"
                 data-testid="user-attempts-to-amount"
                 value={amount}
-                onChange={(e) => setAmount(e.target.value)}
+                onChange={(e) => {
+                  setAmount(e.target.value)
+                  if (error) setError('')
+                }}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                 placeholder="0.00"
               />

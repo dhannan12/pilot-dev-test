@@ -49,6 +49,44 @@ describe('UserAttemptsTo', () => {
     expect(screen.getByText(/Title is required/i)).toBeTruthy()
   })
 
+  it('shows validation error when attempting to add expense with negative amount', () => {
+    render(<UserAttemptsTo />)
+    
+    const titleInput = screen.getByTestId('user-attempts-to-title') as HTMLInputElement
+    const amountInput = screen.getByTestId('user-attempts-to-amount') as HTMLInputElement
+    const submitButton = screen.getByTestId('user-attempts-to-submit')
+
+    // Fill title and negative amount
+    fireEvent.change(titleInput, { target: { value: 'Test Expense' } })
+    fireEvent.change(amountInput, { target: { value: '-50.00' } })
+    
+    // Try to submit
+    fireEvent.click(submitButton)
+
+    // Should show error message about negative amount
+    expect(screen.getByTestId('user-attempts-to-error')).toBeTruthy()
+    expect(screen.getByText(/Amount cannot be negative/i)).toBeTruthy()
+  })
+
+  it('shows validation error when amount is zero', () => {
+    render(<UserAttemptsTo />)
+    
+    const titleInput = screen.getByTestId('user-attempts-to-title') as HTMLInputElement
+    const amountInput = screen.getByTestId('user-attempts-to-amount') as HTMLInputElement
+    const submitButton = screen.getByTestId('user-attempts-to-submit')
+
+    // Fill title and zero amount
+    fireEvent.change(titleInput, { target: { value: 'Test Expense' } })
+    fireEvent.change(amountInput, { target: { value: '0' } })
+    
+    // Try to submit
+    fireEvent.click(submitButton)
+
+    // Should show error message
+    expect(screen.getByTestId('user-attempts-to-error')).toBeTruthy()
+    expect(screen.getByText(/Amount must be greater than zero/i)).toBeTruthy()
+  })
+
   it('allows submission when title is provided', () => {
     render(<UserAttemptsTo />)
     
@@ -67,10 +105,11 @@ describe('UserAttemptsTo', () => {
     expect(screen.getByText('Test Expense')).toBeTruthy()
   })
 
-  it('clears error message when user starts typing in title field', () => {
+  it('clears error message when user starts typing in title or amount field', () => {
     render(<UserAttemptsTo />)
     
     const titleInput = screen.getByTestId('user-attempts-to-title') as HTMLInputElement
+    const amountInput = screen.getByTestId('user-attempts-to-amount') as HTMLInputElement
     const submitButton = screen.getByTestId('user-attempts-to-submit')
 
     // Try to submit without title to trigger error
@@ -79,6 +118,17 @@ describe('UserAttemptsTo', () => {
 
     // Start typing in title
     fireEvent.change(titleInput, { target: { value: 'New' } })
+
+    // Error should be cleared
+    expect(screen.queryByTestId('user-attempts-to-error')).toBeFalsy()
+
+    // Trigger error again with negative amount
+    fireEvent.change(amountInput, { target: { value: '-10' } })
+    fireEvent.click(submitButton)
+    expect(screen.getByTestId('user-attempts-to-error')).toBeTruthy()
+
+    // Start typing in amount
+    fireEvent.change(amountInput, { target: { value: '10' } })
 
     // Error should be cleared
     expect(screen.queryByTestId('user-attempts-to-error')).toBeFalsy()
