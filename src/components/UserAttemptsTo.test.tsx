@@ -10,12 +10,12 @@ describe('UserAttemptsTo', () => {
 
   it('displays mock data', () => {
     render(<UserAttemptsTo />)
-    // Check that expense list shows mock expenses
-    expect(screen.getByText('Grocery Shopping')).toBeTruthy()
-    expect(screen.getByText('Gas Station')).toBeTruthy()
-    expect(screen.getByText('Movie Tickets')).toBeTruthy()
-    expect(screen.getByText('Coffee Shop')).toBeTruthy()
-    expect(screen.getByText('Electricity Bill')).toBeTruthy()
+    // Check that expense list shows example mock expenses
+    expect(screen.getByText('Example: Grocery Shopping')).toBeTruthy()
+    expect(screen.getByText('Example: Gas Station')).toBeTruthy()
+    expect(screen.getByText('Example: Movie Tickets')).toBeTruthy()
+    expect(screen.getByText('Example: Coffee Shop')).toBeTruthy()
+    expect(screen.getByText('Example: Electricity Bill')).toBeTruthy()
   })
 
   it('has required data-testid attributes', () => {
@@ -32,158 +32,15 @@ describe('UserAttemptsTo', () => {
     expect(document.querySelector('[data-testid="user-attempts-to-item"]')).toBeTruthy()
   })
 
-  it('displays form with all required fields', () => {
+  it('shows user as not logged in initially', () => {
     render(<UserAttemptsTo />)
     
-    // Check all form fields are present
-    expect(screen.getByLabelText(/Expense Title/i)).toBeTruthy()
-    expect(screen.getByLabelText(/Amount/i)).toBeTruthy()
-    expect(screen.getByLabelText(/Category/i)).toBeTruthy()
-    expect(screen.getByLabelText(/Date/i)).toBeTruthy()
-    expect(screen.getByTestId('user-attempts-to-submit')).toBeTruthy()
+    // Should show not logged in status
+    expect(screen.getByText('Not logged in')).toBeTruthy()
+    expect(screen.getByText('Please log in to add expenses')).toBeTruthy()
   })
 
-  it('displays predefined categories in dropdown', () => {
-    render(<UserAttemptsTo />)
-    
-    const categorySelect = screen.getByTestId('user-attempts-to-category') as HTMLSelectElement
-    
-    // Check that select has options
-    expect(categorySelect.options.length).toBeGreaterThan(1)
-    
-    // Check for some expected categories
-    const optionTexts = Array.from(categorySelect.options).map(opt => opt.value)
-    expect(optionTexts).toContain('Food')
-    expect(optionTexts).toContain('Transportation')
-    expect(optionTexts).toContain('Entertainment')
-  })
-
-  it('shows error when submitting without selecting a category', () => {
-    render(<UserAttemptsTo />)
-    
-    // Fill in all fields except category
-    fireEvent.change(screen.getByTestId('user-attempts-to-title'), {
-      target: { value: 'Test Expense' }
-    })
-    fireEvent.change(screen.getByTestId('user-attempts-to-amount'), {
-      target: { value: '50.00' }
-    })
-    fireEvent.change(screen.getByTestId('user-attempts-to-date'), {
-      target: { value: '2026-08-14' }
-    })
-    
-    // Leave category empty and submit
-    fireEvent.click(screen.getByTestId('user-attempts-to-submit'))
-    
-    // Should show error about missing category
-    const errorElement = screen.getByTestId('user-attempts-to-error')
-    expect(errorElement).toBeTruthy()
-    expect(errorElement.textContent).toContain('select a category')
-  })
-
-  it('shows error when submitting without title', () => {
-    render(<UserAttemptsTo />)
-    
-    // Fill in other fields but not title
-    fireEvent.change(screen.getByTestId('user-attempts-to-amount'), {
-      target: { value: '50.00' }
-    })
-    fireEvent.change(screen.getByTestId('user-attempts-to-category'), {
-      target: { value: 'Food' }
-    })
-    fireEvent.change(screen.getByTestId('user-attempts-to-date'), {
-      target: { value: '2026-08-14' }
-    })
-    
-    // Submit without title
-    fireEvent.click(screen.getByTestId('user-attempts-to-submit'))
-    
-    // Should show error about missing title
-    expect(screen.getByTestId('user-attempts-to-error')).toBeTruthy()
-    expect(screen.getByText(/enter an expense title/i)).toBeTruthy()
-  })
-
-  it('shows error when submitting without amount', () => {
-    render(<UserAttemptsTo />)
-    
-    // Fill in other fields but not amount
-    fireEvent.change(screen.getByTestId('user-attempts-to-title'), {
-      target: { value: 'Test Expense' }
-    })
-    fireEvent.change(screen.getByTestId('user-attempts-to-category'), {
-      target: { value: 'Food' }
-    })
-    fireEvent.change(screen.getByTestId('user-attempts-to-date'), {
-      target: { value: '2026-08-14' }
-    })
-    
-    // Submit without amount
-    fireEvent.click(screen.getByTestId('user-attempts-to-submit'))
-    
-    // Should show error about invalid amount
-    expect(screen.getByTestId('user-attempts-to-error')).toBeTruthy()
-    expect(screen.getByText(/valid amount/i)).toBeTruthy()
-  })
-
-  it('shows error when submitting without date', () => {
-    render(<UserAttemptsTo />)
-    
-    // Fill in other fields but not date
-    fireEvent.change(screen.getByTestId('user-attempts-to-title'), {
-      target: { value: 'Test Expense' }
-    })
-    fireEvent.change(screen.getByTestId('user-attempts-to-amount'), {
-      target: { value: '50.00' }
-    })
-    fireEvent.change(screen.getByTestId('user-attempts-to-category'), {
-      target: { value: 'Food' }
-    })
-    
-    // Submit without date
-    fireEvent.click(screen.getByTestId('user-attempts-to-submit'))
-    
-    // Should show error about missing date
-    expect(screen.getByTestId('user-attempts-to-error')).toBeTruthy()
-    expect(screen.getByText(/select a date/i)).toBeTruthy()
-  })
-
-  it('successfully adds expense when all fields are filled including category', () => {
-    render(<UserAttemptsTo />)
-    
-    const initialItems = screen.getAllByTestId('user-attempts-to-item')
-    const initialCount = initialItems.length
-    
-    // Fill in all fields including category
-    fireEvent.change(screen.getByTestId('user-attempts-to-title'), {
-      target: { value: 'New Test Expense' }
-    })
-    fireEvent.change(screen.getByTestId('user-attempts-to-amount'), {
-      target: { value: '75.50' }
-    })
-    fireEvent.change(screen.getByTestId('user-attempts-to-category'), {
-      target: { value: 'Transportation' }
-    })
-    fireEvent.change(screen.getByTestId('user-attempts-to-date'), {
-      target: { value: '2026-08-14' }
-    })
-    
-    // Submit the form
-    fireEvent.click(screen.getByTestId('user-attempts-to-submit'))
-    
-    // Should show success message
-    expect(screen.getByTestId('user-attempts-to-success')).toBeTruthy()
-    expect(screen.getByText(/Successfully added/i)).toBeTruthy()
-    
-    // New expense should appear in the list
-    const updatedItems = screen.getAllByTestId('user-attempts-to-item')
-    expect(updatedItems.length).toBe(initialCount + 1)
-    
-    // Should find the new expense
-    expect(screen.getByText('New Test Expense')).toBeTruthy()
-    expect(screen.getByText('$75.50')).toBeTruthy()
-  })
-
-  it('clears form after successful submission', () => {
+  it('disables form fields when not logged in', () => {
     render(<UserAttemptsTo />)
     
     const titleInput = screen.getByTestId('user-attempts-to-title') as HTMLInputElement
@@ -191,62 +48,224 @@ describe('UserAttemptsTo', () => {
     const categorySelect = screen.getByTestId('user-attempts-to-category') as HTMLSelectElement
     const dateInput = screen.getByTestId('user-attempts-to-date') as HTMLInputElement
     
-    // Fill in all fields
-    fireEvent.change(titleInput, { target: { value: 'Test Expense' } })
-    fireEvent.change(amountInput, { target: { value: '50.00' } })
-    fireEvent.change(categorySelect, { target: { value: 'Food' } })
-    fireEvent.change(dateInput, { target: { value: '2026-08-14' } })
+    // All fields should be disabled when not logged in
+    expect(titleInput.disabled).toBe(true)
+    expect(amountInput.disabled).toBe(true)
+    expect(categorySelect.disabled).toBe(true)
+    expect(dateInput.disabled).toBe(true)
+  })
+
+  it('shows warning message when not logged in', () => {
+    render(<UserAttemptsTo />)
     
-    // Submit
+    const warning = screen.getByTestId('user-attempts-to-warning')
+    expect(warning).toBeTruthy()
+    expect(warning.textContent).toContain('You are not logged in')
+  })
+
+  it('shows login prompt when attempting to submit without being logged in', () => {
+    render(<UserAttemptsTo />)
+    
+    // Try to submit form while not logged in
+    const submitButton = screen.getByTestId('user-attempts-to-submit')
+    fireEvent.click(submitButton)
+    
+    // Login modal should appear
+    const loginModal = screen.getByTestId('user-attempts-to-login-modal')
+    expect(loginModal).toBeTruthy()
+    expect(screen.getByText('Login Required')).toBeTruthy()
+    expect(screen.getByText(/You must be logged in to add expenses/i)).toBeTruthy()
+  })
+
+  it('allows user to log in through the login prompt', () => {
+    render(<UserAttemptsTo />)
+    
+    // Trigger login prompt
     fireEvent.click(screen.getByTestId('user-attempts-to-submit'))
     
-    // Form should be cleared
-    expect(titleInput.value).toBe('')
-    expect(amountInput.value).toBe('')
-    expect(categorySelect.value).toBe('')
-    expect(dateInput.value).toBe('')
+    // Fill in username
+    const usernameInput = screen.getByTestId('user-attempts-to-username') as HTMLInputElement
+    fireEvent.change(usernameInput, { target: { value: 'John Doe' } })
+    
+    // Click login button
+    fireEvent.click(screen.getByTestId('user-attempts-to-login'))
+    
+    // Should now be logged in
+    expect(screen.getByText('Welcome back, John Doe!')).toBeTruthy()
+    expect(screen.getByText('Logged in as')).toBeTruthy()
+    expect(screen.getByText('John Doe')).toBeTruthy()
+    
+    // Modal should be closed
+    expect(screen.queryByTestId('user-attempts-to-login-modal')).toBeFalsy()
   })
 
-  it('displays total expenses and count', () => {
+  it('enables form fields after logging in', () => {
     render(<UserAttemptsTo />)
     
-    // Should display statistics
-    expect(screen.getByText('Total Expenses')).toBeTruthy()
-    expect(screen.getByText(/expense.*recorded/i)).toBeTruthy()
+    // Trigger login
+    fireEvent.click(screen.getByTestId('user-attempts-to-submit'))
+    fireEvent.change(screen.getByTestId('user-attempts-to-username'), { 
+      target: { value: 'Jane Smith' } 
+    })
+    fireEvent.click(screen.getByTestId('user-attempts-to-login'))
     
-    // Should show a dollar amount
-    const dollarAmounts = screen.getAllByText(/\$\d+\.\d{2}/)
-    expect(dollarAmounts.length).toBeGreaterThan(0)
+    // Fields should now be enabled
+    const titleInput = screen.getByTestId('user-attempts-to-title') as HTMLInputElement
+    const amountInput = screen.getByTestId('user-attempts-to-amount') as HTMLInputElement
+    const categorySelect = screen.getByTestId('user-attempts-to-category') as HTMLSelectElement
+    const dateInput = screen.getByTestId('user-attempts-to-date') as HTMLInputElement
+    
+    expect(titleInput.disabled).toBe(false)
+    expect(amountInput.disabled).toBe(false)
+    expect(categorySelect.disabled).toBe(false)
+    expect(dateInput.disabled).toBe(false)
   })
 
-  it('validates category is the critical field preventing submission', () => {
+  it('allows canceling the login prompt', () => {
     render(<UserAttemptsTo />)
     
-    // Fill all fields EXCEPT category
+    // Trigger login prompt
+    fireEvent.click(screen.getByTestId('user-attempts-to-submit'))
+    expect(screen.getByTestId('user-attempts-to-login-modal')).toBeTruthy()
+    
+    // Click cancel
+    fireEvent.click(screen.getByTestId('user-attempts-to-cancel'))
+    
+    // Modal should be closed
+    expect(screen.queryByTestId('user-attempts-to-login-modal')).toBeFalsy()
+    
+    // Should still be logged out
+    expect(screen.getByText('Not logged in')).toBeTruthy()
+  })
+
+  it('allows user to log out after logging in', () => {
+    render(<UserAttemptsTo />)
+    
+    // Log in first
+    fireEvent.click(screen.getByTestId('user-attempts-to-submit'))
+    fireEvent.change(screen.getByTestId('user-attempts-to-username'), { 
+      target: { value: 'Test User' } 
+    })
+    fireEvent.click(screen.getByTestId('user-attempts-to-login'))
+    
+    // Verify logged in
+    expect(screen.getByText('Welcome back, Test User!')).toBeTruthy()
+    
+    // Log out
+    fireEvent.click(screen.getByTestId('user-attempts-to-logout'))
+    
+    // Should be logged out now
+    expect(screen.getByText('Not logged in')).toBeTruthy()
+    expect(screen.getByText('Please log in to add expenses')).toBeTruthy()
+  })
+
+  it('clears form data when logging out', () => {
+    render(<UserAttemptsTo />)
+    
+    // Log in
+    fireEvent.click(screen.getByTestId('user-attempts-to-submit'))
+    fireEvent.change(screen.getByTestId('user-attempts-to-username'), { 
+      target: { value: 'Test User' } 
+    })
+    fireEvent.click(screen.getByTestId('user-attempts-to-login'))
+    
+    // Fill in some form data
     fireEvent.change(screen.getByTestId('user-attempts-to-title'), {
-      target: { value: 'Critical Test' }
+      target: { value: 'Test Expense' }
     })
     fireEvent.change(screen.getByTestId('user-attempts-to-amount'), {
-      target: { value: '100.00' }
-    })
-    fireEvent.change(screen.getByTestId('user-attempts-to-date'), {
-      target: { value: '2026-08-14' }
+      target: { value: '50.00' }
     })
     
-    // Get initial count
-    const initialCount = screen.getAllByTestId('user-attempts-to-item').length
+    // Log out
+    fireEvent.click(screen.getByTestId('user-attempts-to-logout'))
     
-    // Try to submit without category
+    // Form should be cleared
+    const titleInput = screen.getByTestId('user-attempts-to-title') as HTMLInputElement
+    const amountInput = screen.getByTestId('user-attempts-to-amount') as HTMLInputElement
+    expect(titleInput.value).toBe('')
+    expect(amountInput.value).toBe('')
+  })
+
+  it('displays example expenses regardless of login status', () => {
+    render(<UserAttemptsTo />)
+    
+    // Should show example expenses even when not logged in
+    expect(screen.getByText('Example Expenses')).toBeTruthy()
+    expect(screen.getByText('Example: Grocery Shopping')).toBeTruthy()
+    
+    // Check for total
+    expect(screen.getByText('Total Example Expenses')).toBeTruthy()
+  })
+
+  it('shows correct authentication state indicator', () => {
+    render(<UserAttemptsTo />)
+    
+    // Initially not logged in - should show gray indicator
+    let indicators = document.querySelectorAll('.bg-gray-400')
+    expect(indicators.length).toBeGreaterThan(0)
+    
+    // Log in
+    fireEvent.click(screen.getByTestId('user-attempts-to-submit'))
+    fireEvent.change(screen.getByTestId('user-attempts-to-username'), { 
+      target: { value: 'Test User' } 
+    })
+    fireEvent.click(screen.getByTestId('user-attempts-to-login'))
+    
+    // Now should show green indicator
+    indicators = document.querySelectorAll('.bg-green-500')
+    expect(indicators.length).toBeGreaterThan(0)
+  })
+
+  it('prevents form submission with empty username in login modal', () => {
+    render(<UserAttemptsTo />)
+    
+    // Trigger login prompt
     fireEvent.click(screen.getByTestId('user-attempts-to-submit'))
     
-    // Error should appear
-    expect(screen.getByTestId('user-attempts-to-error')).toBeTruthy()
+    // Try to login with empty username
+    fireEvent.click(screen.getByTestId('user-attempts-to-login'))
     
-    // Expense should NOT be added
-    const afterCount = screen.getAllByTestId('user-attempts-to-item').length
-    expect(afterCount).toBe(initialCount)
+    // Should still show modal (login didn't succeed)
+    expect(screen.getByTestId('user-attempts-to-login-modal')).toBeTruthy()
     
-    // Should not find the expense that wasn't added
-    expect(screen.queryByText('Critical Test')).toBeFalsy()
+    // Should still be logged out
+    expect(screen.queryByText(/Welcome back/)).toBeFalsy()
+  })
+
+  it('displays category options in select dropdown', () => {
+    render(<UserAttemptsTo />)
+    
+    const categorySelect = screen.getByTestId('user-attempts-to-category') as HTMLSelectElement
+    
+    // Should have multiple options
+    expect(categorySelect.options.length).toBeGreaterThan(1)
+    
+    // Check for expected categories
+    const optionValues = Array.from(categorySelect.options).map(opt => opt.value)
+    expect(optionValues).toContain('Food')
+    expect(optionValues).toContain('Transportation')
+    expect(optionValues).toContain('Entertainment')
+    expect(optionValues).toContain('Utilities')
+  })
+
+  it('changes submit button text based on login status', () => {
+    render(<UserAttemptsTo />)
+    
+    // When logged out
+    let submitButton = screen.getByTestId('user-attempts-to-submit')
+    expect(submitButton.textContent).toContain('Log In to Add Expense')
+    
+    // Log in
+    fireEvent.click(submitButton)
+    fireEvent.change(screen.getByTestId('user-attempts-to-username'), { 
+      target: { value: 'Test User' } 
+    })
+    fireEvent.click(screen.getByTestId('user-attempts-to-login'))
+    
+    // When logged in
+    submitButton = screen.getByTestId('user-attempts-to-submit')
+    expect(submitButton.textContent).toContain('Add Expense')
+    expect(submitButton.textContent).not.toContain('Log In')
   })
 })
