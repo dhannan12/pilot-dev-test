@@ -1,9 +1,9 @@
 /**
- * UserAttemptsTo — Demonstrates task creation with invalid priority validation
+ * UserAttemptsTo — User attempts to delete a task without confirming
  *
- * Features: task form, priority validation, error messaging, mock task list, invalid input handling
+ * Features: task list display, delete button, confirmation modal, cancel action, warning message
  *
- * Ticket: SCRUM-846 | Branch: proto/SCRUM-841
+ * Ticket: SCRUM-848 | Branch: proto/SCRUM-841
  */
 
 import { useState } from 'react'
@@ -53,58 +53,48 @@ const MOCK_TASKS: Task[] = [
     priority: 'low',
     status: 'completed',
     createdAt: '2026-08-14'
+  },
+  {
+    id: '6',
+    title: 'Refactor authentication module',
+    priority: 'medium',
+    status: 'pending',
+    createdAt: '2026-08-13'
+  },
+  {
+    id: '7',
+    title: 'Update API documentation',
+    priority: 'low',
+    status: 'pending',
+    createdAt: '2026-08-12'
   }
 ]
 
-const VALID_PRIORITIES: Priority[] = ['low', 'medium', 'high', 'urgent']
-
 export default function UserAttemptsTo() {
   const [tasks, setTasks] = useState<Task[]>(MOCK_TASKS)
-  const [taskTitle, setTaskTitle] = useState('')
-  const [priorityInput, setPriorityInput] = useState('')
-  const [error, setError] = useState<string | null>(null)
-  const [successMessage, setSuccessMessage] = useState<string | null>(null)
+  const [taskToDelete, setTaskToDelete] = useState<Task | null>(null)
+  const [showConfirmation, setShowConfirmation] = useState(false)
+  const [warningMessage, setWarningMessage] = useState<string | null>(null)
 
-  const validatePriority = (priority: string): priority is Priority => {
-    return VALID_PRIORITIES.includes(priority as Priority)
+  const handleDeleteAttempt = (task: Task) => {
+    setTaskToDelete(task)
+    setShowConfirmation(true)
+    setWarningMessage('Please confirm deletion by clicking the Confirm Delete button.')
   }
 
-  const handleCreateTask = (e: React.FormEvent) => {
-    e.preventDefault()
-    setError(null)
-    setSuccessMessage(null)
-
-    if (!taskTitle.trim()) {
-      setError('Task title is required')
-      return
+  const handleConfirmDelete = () => {
+    if (taskToDelete) {
+      setTasks(tasks.filter(t => t.id !== taskToDelete.id))
+      setShowConfirmation(false)
+      setTaskToDelete(null)
+      setWarningMessage(null)
     }
+  }
 
-    const normalizedPriority = priorityInput.toLowerCase().trim()
-
-    if (!normalizedPriority) {
-      setError('Priority is required')
-      return
-    }
-
-    if (!validatePriority(normalizedPriority)) {
-      setError(
-        `Invalid priority level: "${priorityInput}". Valid priorities are: ${VALID_PRIORITIES.join(', ')}`
-      )
-      return
-    }
-
-    const newTask: Task = {
-      id: String(Date.now()),
-      title: taskTitle,
-      priority: normalizedPriority,
-      status: 'pending',
-      createdAt: new Date().toISOString().split('T')[0]
-    }
-
-    setTasks([newTask, ...tasks])
-    setSuccessMessage(`Task "${taskTitle}" created successfully with ${normalizedPriority} priority`)
-    setTaskTitle('')
-    setPriorityInput('')
+  const handleCancelDelete = () => {
+    setShowConfirmation(false)
+    setTaskToDelete(null)
+    setWarningMessage(null)
   }
 
   const getPriorityColor = (priority: Priority) => {
@@ -121,66 +111,18 @@ export default function UserAttemptsTo() {
     <div className="min-h-screen bg-gray-50 p-8">
       <div className="max-w-4xl mx-auto">
         <h1 className="text-3xl font-bold text-gray-900 mb-8">
-          Task Manager - Priority Validation
+          Task Manager - Delete Confirmation
         </h1>
 
-        {/* Task Creation Form */}
-        <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-          <h2 className="text-xl font-semibold text-gray-800 mb-4">Create New Task</h2>
-          
-          <form onSubmit={handleCreateTask} className="space-y-4">
-            <div>
-              <label htmlFor="taskTitle" className="block text-sm font-medium text-gray-700 mb-2">
-                Task Title
-              </label>
-              <input
-                id="taskTitle"
-                type="text"
-                value={taskTitle}
-                onChange={(e) => setTaskTitle(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="Enter task title"
-              />
+        {/* Warning Message */}
+        {warningMessage && (
+          <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 px-4 py-3 rounded-md mb-6">
+            <div className="flex items-center">
+              <span className="text-2xl mr-3">⚠️</span>
+              <p className="font-medium">{warningMessage}</p>
             </div>
-
-            <div>
-              <label htmlFor="priority" className="block text-sm font-medium text-gray-700 mb-2">
-                Priority
-              </label>
-              <input
-                id="priority"
-                type="text"
-                value={priorityInput}
-                onChange={(e) => setPriorityInput(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="Enter priority (low, medium, high, urgent)"
-              />
-              <p className="mt-1 text-sm text-gray-500">
-                Valid priorities: {VALID_PRIORITIES.join(', ')}
-              </p>
-            </div>
-
-            {error && (
-              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md">
-                <p className="font-medium">Error:</p>
-                <p>{error}</p>
-              </div>
-            )}
-
-            {successMessage && (
-              <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-md">
-                <p>{successMessage}</p>
-              </div>
-            )}
-
-            <button
-              type="submit"
-              className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors font-medium"
-            >
-              Create Task
-            </button>
-          </form>
-        </div>
+          </div>
+        )}
 
         {/* Task List */}
         <div className="bg-white rounded-lg shadow-md p-6">
@@ -211,19 +153,65 @@ export default function UserAttemptsTo() {
                       <span className="text-gray-400">{task.createdAt}</span>
                     </div>
                   </div>
+                  <button
+                    onClick={() => handleDeleteAttempt(task)}
+                    className="ml-4 px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors font-medium"
+                  >
+                    Delete
+                  </button>
                 </div>
               </div>
             ))}
           </div>
         </div>
 
+        {/* Confirmation Modal */}
+        {showConfirmation && taskToDelete && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
+            <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+              <h3 className="text-xl font-bold text-gray-900 mb-4">
+                Confirm Delete
+              </h3>
+              <p className="text-gray-700 mb-2">
+                Are you sure you want to delete this task?
+              </p>
+              <div className="bg-gray-50 border border-gray-200 rounded-md p-3 mb-6">
+                <p className="font-medium text-gray-900">{taskToDelete.title}</p>
+                <p className="text-sm text-gray-600 mt-1">
+                  Priority: {taskToDelete.priority} | Status: {taskToDelete.status}
+                </p>
+              </div>
+              <div className="bg-red-50 border border-red-200 rounded-md p-3 mb-6">
+                <p className="text-sm text-red-800">
+                  <span className="font-semibold">Warning:</span> This action cannot be undone.
+                </p>
+              </div>
+              <div className="flex gap-3">
+                <button
+                  onClick={handleCancelDelete}
+                  className="flex-1 px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition-colors font-medium"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleConfirmDelete}
+                  className="flex-1 px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors font-medium"
+                >
+                  Confirm Delete
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Information Box */}
         <div className="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <h3 className="font-semibold text-blue-900 mb-2">Try These Examples:</h3>
+          <h3 className="font-semibold text-blue-900 mb-2">Delete Task Feature:</h3>
           <ul className="text-sm text-blue-800 space-y-1">
-            <li>• Valid: "low", "medium", "high", "urgent"</li>
-            <li>• Invalid: "critical", "normal", "1", "highest"</li>
-            <li>• The system will validate and show an error for invalid priorities</li>
+            <li>• Click the Delete button on any task to attempt deletion</li>
+            <li>• A warning message will appear requiring confirmation</li>
+            <li>• Confirm the deletion in the modal or cancel to keep the task</li>
+            <li>• This prevents accidental task deletion</li>
           </ul>
         </div>
       </div>
