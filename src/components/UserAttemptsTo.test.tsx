@@ -22,113 +22,231 @@ describe('UserAttemptsTo', () => {
     render(<UserAttemptsTo />)
     // verify key testids exist — Playwright QA depends on these
     expect(screen.getByTestId('user-attempts-to')).toBeTruthy()
+    expect(screen.getByTestId('user-attempts-to-form')).toBeTruthy()
+    expect(screen.getByTestId('user-attempts-to-title')).toBeTruthy()
+    expect(screen.getByTestId('user-attempts-to-amount')).toBeTruthy()
+    expect(screen.getByTestId('user-attempts-to-category')).toBeTruthy()
+    expect(screen.getByTestId('user-attempts-to-date')).toBeTruthy()
+    expect(screen.getByTestId('user-attempts-to-submit')).toBeTruthy()
     expect(screen.getByTestId('user-attempts-to-list')).toBeTruthy()
-    expect(screen.getByTestId('user-attempts-to-others-list')).toBeTruthy()
     expect(document.querySelector('[data-testid="user-attempts-to-item"]')).toBeTruthy()
-    expect(document.querySelector('[data-testid="user-attempts-to-other-item"]')).toBeTruthy()
-    expect(document.querySelector('[data-testid="user-attempts-to-delete"]')).toBeTruthy()
-    expect(document.querySelector('[data-testid="user-attempts-to-delete-other"]')).toBeTruthy()
   })
 
-  it('separates expenses into user and others sections', () => {
+  it('displays form with all required fields', () => {
     render(<UserAttemptsTo />)
     
-    // Check both section headings exist
-    expect(screen.getByText(/Your Expenses \(You can delete\)/i)).toBeTruthy()
-    expect(screen.getByText(/Others' Expenses \(Cannot delete\)/i)).toBeTruthy()
+    // Check all form fields are present
+    expect(screen.getByLabelText(/Expense Title/i)).toBeTruthy()
+    expect(screen.getByLabelText(/Amount/i)).toBeTruthy()
+    expect(screen.getByLabelText(/Category/i)).toBeTruthy()
+    expect(screen.getByLabelText(/Date/i)).toBeTruthy()
+    expect(screen.getByTestId('user-attempts-to-submit')).toBeTruthy()
   })
 
-  it('shows error when user attempts to delete expense they did not add', () => {
+  it('displays predefined categories in dropdown', () => {
     render(<UserAttemptsTo />)
     
-    // Find a delete button for an expense added by other user
-    const deleteButtons = screen.getAllByTestId('user-attempts-to-delete-other')
+    const categorySelect = screen.getByTestId('user-attempts-to-category') as HTMLSelectElement
     
-    // Click the first one (should be "Gas Station" added by other_user)
-    fireEvent.click(deleteButtons[0])
-
-    // Should show error message
-    expect(screen.getByTestId('user-attempts-to-error')).toBeTruthy()
-    expect(screen.getByText(/You cannot delete/i)).toBeTruthy()
-    expect(screen.getByText(/you did not add it/i)).toBeTruthy()
+    // Check that select has options
+    expect(categorySelect.options.length).toBeGreaterThan(1)
+    
+    // Check for some expected categories
+    const optionTexts = Array.from(categorySelect.options).map(opt => opt.value)
+    expect(optionTexts).toContain('Food')
+    expect(optionTexts).toContain('Transportation')
+    expect(optionTexts).toContain('Entertainment')
   })
 
-  it('allows user to delete their own expenses', () => {
+  it('shows error when submitting without selecting a category', () => {
     render(<UserAttemptsTo />)
     
-    // Find a delete button for user's own expense
-    const deleteButtons = screen.getAllByTestId('user-attempts-to-delete')
-    const initialCount = deleteButtons.length
+    // Fill in all fields except category
+    fireEvent.change(screen.getByTestId('user-attempts-to-title'), {
+      target: { value: 'Test Expense' }
+    })
+    fireEvent.change(screen.getByTestId('user-attempts-to-amount'), {
+      target: { value: '50.00' }
+    })
+    fireEvent.change(screen.getByTestId('user-attempts-to-date'), {
+      target: { value: '2026-08-14' }
+    })
     
-    // Click to delete (should be "Grocery Shopping" added by current_user)
-    fireEvent.click(deleteButtons[0])
-
-    // Should show success message
-    expect(screen.getByTestId('user-attempts-to-success')).toBeTruthy()
-    expect(screen.getByText(/Successfully deleted/i)).toBeTruthy()
+    // Leave category empty and submit
+    fireEvent.click(screen.getByTestId('user-attempts-to-submit'))
     
-    // Expense count should decrease
-    const updatedDeleteButtons = screen.getAllByTestId('user-attempts-to-delete')
-    expect(updatedDeleteButtons.length).toBe(initialCount - 1)
-  })
-
-  it('prevents deletion of other users expenses with clear error message', () => {
-    render(<UserAttemptsTo />)
-    
-    // Get all expenses added by others
-    const otherDeleteButtons = screen.getAllByTestId('user-attempts-to-delete-other')
-    const initialOtherCount = otherDeleteButtons.length
-    
-    // Try to delete an expense from another user
-    fireEvent.click(otherDeleteButtons[0])
-    
-    // Check error appears
+    // Should show error about missing category
     const errorElement = screen.getByTestId('user-attempts-to-error')
     expect(errorElement).toBeTruthy()
-    expect(errorElement.textContent).toContain('you did not add it')
-    
-    // Verify expense was NOT deleted (count unchanged)
-    const afterDeleteButtons = screen.getAllByTestId('user-attempts-to-delete-other')
-    expect(afterDeleteButtons.length).toBe(initialOtherCount)
+    expect(errorElement.textContent).toContain('select a category')
   })
 
-  it('displays ownership information for each expense', () => {
+  it('shows error when submitting without title', () => {
     render(<UserAttemptsTo />)
     
-    // Check for "Added by you" text on user's expenses
-    const userLabels = screen.getAllByText('Added by you')
-    expect(userLabels.length).toBeGreaterThan(0)
+    // Fill in other fields but not title
+    fireEvent.change(screen.getByTestId('user-attempts-to-amount'), {
+      target: { value: '50.00' }
+    })
+    fireEvent.change(screen.getByTestId('user-attempts-to-category'), {
+      target: { value: 'Food' }
+    })
+    fireEvent.change(screen.getByTestId('user-attempts-to-date'), {
+      target: { value: '2026-08-14' }
+    })
     
-    // Check for "Added by other user" text on others' expenses
-    const otherLabels = screen.getAllByText('Added by other user')
-    expect(otherLabels.length).toBeGreaterThan(0)
+    // Submit without title
+    fireEvent.click(screen.getByTestId('user-attempts-to-submit'))
+    
+    // Should show error about missing title
+    expect(screen.getByTestId('user-attempts-to-error')).toBeTruthy()
+    expect(screen.getByText(/enter an expense title/i)).toBeTruthy()
   })
 
-  it('shows statistics for user and other expenses', () => {
+  it('shows error when submitting without amount', () => {
     render(<UserAttemptsTo />)
     
-    // Check that statistics are displayed
+    // Fill in other fields but not amount
+    fireEvent.change(screen.getByTestId('user-attempts-to-title'), {
+      target: { value: 'Test Expense' }
+    })
+    fireEvent.change(screen.getByTestId('user-attempts-to-category'), {
+      target: { value: 'Food' }
+    })
+    fireEvent.change(screen.getByTestId('user-attempts-to-date'), {
+      target: { value: '2026-08-14' }
+    })
+    
+    // Submit without amount
+    fireEvent.click(screen.getByTestId('user-attempts-to-submit'))
+    
+    // Should show error about invalid amount
+    expect(screen.getByTestId('user-attempts-to-error')).toBeTruthy()
+    expect(screen.getByText(/valid amount/i)).toBeTruthy()
+  })
+
+  it('shows error when submitting without date', () => {
+    render(<UserAttemptsTo />)
+    
+    // Fill in other fields but not date
+    fireEvent.change(screen.getByTestId('user-attempts-to-title'), {
+      target: { value: 'Test Expense' }
+    })
+    fireEvent.change(screen.getByTestId('user-attempts-to-amount'), {
+      target: { value: '50.00' }
+    })
+    fireEvent.change(screen.getByTestId('user-attempts-to-category'), {
+      target: { value: 'Food' }
+    })
+    
+    // Submit without date
+    fireEvent.click(screen.getByTestId('user-attempts-to-submit'))
+    
+    // Should show error about missing date
+    expect(screen.getByTestId('user-attempts-to-error')).toBeTruthy()
+    expect(screen.getByText(/select a date/i)).toBeTruthy()
+  })
+
+  it('successfully adds expense when all fields are filled including category', () => {
+    render(<UserAttemptsTo />)
+    
+    const initialItems = screen.getAllByTestId('user-attempts-to-item')
+    const initialCount = initialItems.length
+    
+    // Fill in all fields including category
+    fireEvent.change(screen.getByTestId('user-attempts-to-title'), {
+      target: { value: 'New Test Expense' }
+    })
+    fireEvent.change(screen.getByTestId('user-attempts-to-amount'), {
+      target: { value: '75.50' }
+    })
+    fireEvent.change(screen.getByTestId('user-attempts-to-category'), {
+      target: { value: 'Transportation' }
+    })
+    fireEvent.change(screen.getByTestId('user-attempts-to-date'), {
+      target: { value: '2026-08-14' }
+    })
+    
+    // Submit the form
+    fireEvent.click(screen.getByTestId('user-attempts-to-submit'))
+    
+    // Should show success message
+    expect(screen.getByTestId('user-attempts-to-success')).toBeTruthy()
+    expect(screen.getByText(/Successfully added/i)).toBeTruthy()
+    
+    // New expense should appear in the list
+    const updatedItems = screen.getAllByTestId('user-attempts-to-item')
+    expect(updatedItems.length).toBe(initialCount + 1)
+    
+    // Should find the new expense
+    expect(screen.getByText('New Test Expense')).toBeTruthy()
+    expect(screen.getByText('$75.50')).toBeTruthy()
+  })
+
+  it('clears form after successful submission', () => {
+    render(<UserAttemptsTo />)
+    
+    const titleInput = screen.getByTestId('user-attempts-to-title') as HTMLInputElement
+    const amountInput = screen.getByTestId('user-attempts-to-amount') as HTMLInputElement
+    const categorySelect = screen.getByTestId('user-attempts-to-category') as HTMLSelectElement
+    const dateInput = screen.getByTestId('user-attempts-to-date') as HTMLInputElement
+    
+    // Fill in all fields
+    fireEvent.change(titleInput, { target: { value: 'Test Expense' } })
+    fireEvent.change(amountInput, { target: { value: '50.00' } })
+    fireEvent.change(categorySelect, { target: { value: 'Food' } })
+    fireEvent.change(dateInput, { target: { value: '2026-08-14' } })
+    
+    // Submit
+    fireEvent.click(screen.getByTestId('user-attempts-to-submit'))
+    
+    // Form should be cleared
+    expect(titleInput.value).toBe('')
+    expect(amountInput.value).toBe('')
+    expect(categorySelect.value).toBe('')
+    expect(dateInput.value).toBe('')
+  })
+
+  it('displays total expenses and count', () => {
+    render(<UserAttemptsTo />)
+    
+    // Should display statistics
     expect(screen.getByText('Total Expenses')).toBeTruthy()
-    expect(screen.getByText('Your Expenses')).toBeTruthy()
-    expect(screen.getByText("Others' Expenses")).toBeTruthy()
+    expect(screen.getByText(/expense.*recorded/i)).toBeTruthy()
+    
+    // Should show a dollar amount
+    const dollarAmounts = screen.getAllByText(/\$\d+\.\d{2}/)
+    expect(dollarAmounts.length).toBeGreaterThan(0)
   })
 
-  it('clears error message when attempting another delete', () => {
+  it('validates category is the critical field preventing submission', () => {
     render(<UserAttemptsTo />)
     
-    // Try to delete someone else's expense
-    const otherDeleteButtons = screen.getAllByTestId('user-attempts-to-delete-other')
-    fireEvent.click(otherDeleteButtons[0])
+    // Fill all fields EXCEPT category
+    fireEvent.change(screen.getByTestId('user-attempts-to-title'), {
+      target: { value: 'Critical Test' }
+    })
+    fireEvent.change(screen.getByTestId('user-attempts-to-amount'), {
+      target: { value: '100.00' }
+    })
+    fireEvent.change(screen.getByTestId('user-attempts-to-date'), {
+      target: { value: '2026-08-14' }
+    })
+    
+    // Get initial count
+    const initialCount = screen.getAllByTestId('user-attempts-to-item').length
+    
+    // Try to submit without category
+    fireEvent.click(screen.getByTestId('user-attempts-to-submit'))
     
     // Error should appear
     expect(screen.getByTestId('user-attempts-to-error')).toBeTruthy()
     
-    // Now delete own expense
-    const userDeleteButtons = screen.getAllByTestId('user-attempts-to-delete')
-    fireEvent.click(userDeleteButtons[0])
+    // Expense should NOT be added
+    const afterCount = screen.getAllByTestId('user-attempts-to-item').length
+    expect(afterCount).toBe(initialCount)
     
-    // Error should be cleared and success message shown
-    expect(screen.queryByTestId('user-attempts-to-error')).toBeFalsy()
-    expect(screen.getByTestId('user-attempts-to-success')).toBeTruthy()
+    // Should not find the expense that wasn't added
+    expect(screen.queryByText('Critical Test')).toBeFalsy()
   })
 })
