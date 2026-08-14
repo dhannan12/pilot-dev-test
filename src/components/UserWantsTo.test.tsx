@@ -8,38 +8,45 @@ describe('UserWantsTo', () => {
     expect(document.body).toBeTruthy()
   })
 
-  it('displays the total monthly spend', () => {
+  it('displays the title and description', () => {
     render(<UserWantsTo />)
-    const totalElement = screen.getByTestId('user-wants-to-total-amount')
-    expect(totalElement).toBeTruthy()
-    expect(totalElement.textContent).toContain('$')
+    const title = screen.getByTestId('user-wants-to-title')
+    expect(title).toBeTruthy()
+    expect(title.textContent).toContain('Expense Breakdown')
   })
 
-  it('displays mock expense data', () => {
+  it('displays total expenses', () => {
     render(<UserWantsTo />)
-    // Check for transaction list
-    const transactionList = screen.getByTestId('user-wants-to-transaction-list')
-    expect(transactionList).toBeTruthy()
-    
-    // Check for transaction items
-    const transactionItems = screen.getAllByTestId('user-wants-to-transaction-item')
-    expect(transactionItems.length).toBeGreaterThan(0)
+    const total = screen.getByTestId('user-wants-to-total')
+    expect(total).toBeTruthy()
+    expect(total.textContent).toMatch(/\$\d+\.\d{2}/)
   })
 
-  it('displays category breakdown', () => {
+  it('displays category breakdown list', () => {
     render(<UserWantsTo />)
-    const categoryList = screen.getByTestId('user-wants-to-category-list')
-    expect(categoryList).toBeTruthy()
+    const breakdownList = screen.getByTestId('user-wants-to-breakdown-list')
+    expect(breakdownList).toBeTruthy()
     
     const categoryItems = screen.getAllByTestId('user-wants-to-category-item')
-    expect(categoryItems.length).toBeGreaterThan(0)
+    expect(categoryItems.length).toBeGreaterThanOrEqual(3)
   })
 
-  it('displays quick stats', () => {
+  it('displays visual chart', () => {
     render(<UserWantsTo />)
-    expect(screen.getByTestId('user-wants-to-stat-average')).toBeTruthy()
-    expect(screen.getByTestId('user-wants-to-stat-highest')).toBeTruthy()
-    expect(screen.getByTestId('user-wants-to-stat-lowest')).toBeTruthy()
+    const chart = screen.getByTestId('user-wants-to-chart')
+    expect(chart).toBeTruthy()
+    
+    const chartSegments = screen.getAllByTestId('user-wants-to-chart-segment')
+    expect(chartSegments.length).toBeGreaterThanOrEqual(3)
+  })
+
+  it('displays expense list with mock data', () => {
+    render(<UserWantsTo />)
+    const expenseList = screen.getByTestId('user-wants-to-expense-list')
+    expect(expenseList).toBeTruthy()
+    
+    const expenseRows = screen.getAllByTestId('user-wants-to-expense-row')
+    expect(expenseRows.length).toBeGreaterThanOrEqual(5)
   })
 
   it('has required data-testid attributes', () => {
@@ -47,27 +54,23 @@ describe('UserWantsTo', () => {
     
     // Verify key testids exist — Playwright QA depends on these
     expect(screen.getByTestId('user-wants-to')).toBeTruthy()
-    expect(screen.getByTestId('user-wants-to-total-card')).toBeTruthy()
-    expect(screen.getByTestId('user-wants-to-total-amount')).toBeTruthy()
-    expect(screen.getByTestId('user-wants-to-category-list')).toBeTruthy()
-    expect(screen.getByTestId('user-wants-to-transaction-list')).toBeTruthy()
-    
-    // Verify at least one of each item type
-    expect(document.querySelector('[data-testid="user-wants-to-category-item"]')).toBeTruthy()
-    expect(document.querySelector('[data-testid="user-wants-to-transaction-item"]')).toBeTruthy()
+    expect(screen.getByTestId('user-wants-to-title')).toBeTruthy()
+    expect(screen.getByTestId('user-wants-to-total')).toBeTruthy()
+    expect(screen.getByTestId('user-wants-to-breakdown-list')).toBeTruthy()
+    expect(screen.getByTestId('user-wants-to-chart')).toBeTruthy()
+    expect(screen.getByTestId('user-wants-to-expense-list')).toBeTruthy()
+    expect(document.querySelector('[data-testid]')).toBeTruthy()
   })
 
-  it('formats currency correctly', () => {
+  it('shows percentages for each category', () => {
     render(<UserWantsTo />)
-    const totalElement = screen.getByTestId('user-wants-to-total-amount')
-    
-    // Check that currency is formatted with $ and decimal points
-    expect(totalElement.textContent).toMatch(/\$[\d,]+\.\d{2}/)
+    const breakdownList = screen.getByTestId('user-wants-to-breakdown-list')
+    expect(breakdownList.textContent).toMatch(/\d+\.\d%/)
   })
 
-  it('displays transaction count', () => {
+  it('shows dollar amounts for expenses', () => {
     render(<UserWantsTo />)
-    const totalCard = screen.getByTestId('user-wants-to-total-card')
-    expect(totalCard.textContent).toContain('transactions')
+    const tbody = screen.getByTestId('user-wants-to-expense-tbody')
+    expect(tbody.textContent).toMatch(/\$\d+\.\d{2}/)
   })
 })
