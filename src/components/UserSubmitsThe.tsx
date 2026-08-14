@@ -1,316 +1,271 @@
 /**
- * UserSubmitsThe — Contact form with successful submission flow
+ * UserSubmitsThe — Contact form submission handler with invalid data validation
  *
- * Features: form validation, submission handling, success message, form reset, error display
+ * Features: form validation, error display, invalid data handling, field-level errors, submission feedback
  *
- * Ticket: SCRUM-831 | Branch: proto/SCRUM-828
+ * Ticket: SCRUM-836 | Branch: proto/SCRUM-828
  */
 
-import { useState } from 'react'
+import React, { useState } from 'react'
+
+interface ValidationError {
+  field: string
+  message: string
+}
 
 interface FormData {
   name: string
   email: string
+  phone: string
   subject: string
   message: string
 }
 
-interface SubmissionRecord {
-  id: number
-  name: string
-  email: string
-  subject: string
-  message: string
-  timestamp: string
-}
+const MOCK_VALIDATION_ERRORS: ValidationError[] = [
+  { field: 'email', message: 'Invalid email format. Please use a valid email address.' },
+  { field: 'phone', message: 'Phone number must be 10 digits.' },
+  { field: 'name', message: 'Name is required and must be at least 2 characters.' },
+  { field: 'subject', message: 'Subject cannot be empty.' },
+  { field: 'message', message: 'Message must be at least 10 characters long.' }
+]
 
-// Mock submission history data
-const MOCK_SUBMISSIONS: SubmissionRecord[] = [
-  {
-    id: 1,
-    name: 'Alice Johnson',
-    email: 'alice.johnson@example.com',
-    subject: 'Product Inquiry',
-    message: 'I would like to know more about your enterprise solutions.',
-    timestamp: '2026-08-13 10:30 AM'
-  },
-  {
-    id: 2,
-    name: 'Bob Smith',
-    email: 'bob.smith@example.com',
-    subject: 'Technical Support',
-    message: 'Having issues with login authentication on mobile app.',
-    timestamp: '2026-08-13 11:45 AM'
-  },
-  {
-    id: 3,
-    name: 'Carol Davis',
-    email: 'carol.davis@example.com',
-    subject: 'Partnership Opportunity',
-    message: 'Interested in exploring potential collaboration opportunities.',
-    timestamp: '2026-08-13 02:15 PM'
-  },
-  {
-    id: 4,
-    name: 'David Wilson',
-    email: 'david.wilson@example.com',
-    subject: 'Feature Request',
-    message: 'Would love to see dark mode support in the next release.',
-    timestamp: '2026-08-13 03:20 PM'
-  },
-  {
-    id: 5,
-    name: 'Emma Thompson',
-    email: 'emma.thompson@example.com',
-    subject: 'Billing Question',
-    message: 'Need clarification on the annual subscription pricing.',
-    timestamp: '2026-08-13 04:50 PM'
-  }
+const MOCK_INVALID_SUBMISSIONS = [
+  { name: '', email: 'invalid-email', phone: '123', subject: '', message: 'Hi' },
+  { name: 'J', email: 'test@', phone: '12345', subject: 'Help', message: 'Short' },
+  { name: 'John Doe', email: 'notanemail', phone: 'abcdefghij', subject: '', message: '' },
+  { name: 'Jane', email: 'jane@example', phone: '555', subject: 'Test', message: 'Test msg' },
+  { name: 'Bob', email: 'bob@.com', phone: '9999', subject: 'Query', message: 'Too short' }
 ]
 
 export default function UserSubmitsThe() {
   const [formData, setFormData] = useState<FormData>({
     name: '',
     email: '',
+    phone: '',
     subject: '',
     message: ''
   })
-  
-  const [submissions, setSubmissions] = useState<SubmissionRecord[]>(MOCK_SUBMISSIONS)
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [showSuccess, setShowSuccess] = useState(false)
-  const [errors, setErrors] = useState<Partial<FormData>>({})
+  const [errors, setErrors] = useState<ValidationError[]>([])
+  const [submitAttempted, setSubmitAttempted] = useState(false)
 
-  const validateForm = (): boolean => {
-    const newErrors: Partial<FormData> = {}
-    
-    if (!formData.name.trim()) {
-      newErrors.name = 'Name is required'
+  const validateForm = (): ValidationError[] => {
+    const newErrors: ValidationError[] = []
+
+    if (!formData.name || formData.name.length < 2) {
+      newErrors.push({ field: 'name', message: 'Name is required and must be at least 2 characters.' })
     }
-    
-    if (!formData.email.trim()) {
-      newErrors.email = 'Email is required'
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = 'Invalid email format'
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!formData.email || !emailRegex.test(formData.email)) {
+      newErrors.push({ field: 'email', message: 'Invalid email format. Please use a valid email address.' })
     }
-    
-    if (!formData.subject.trim()) {
-      newErrors.subject = 'Subject is required'
+
+    const phoneRegex = /^\d{10}$/
+    if (!formData.phone || !phoneRegex.test(formData.phone)) {
+      newErrors.push({ field: 'phone', message: 'Phone number must be 10 digits.' })
     }
-    
-    if (!formData.message.trim()) {
-      newErrors.message = 'Message is required'
-    } else if (formData.message.trim().length < 10) {
-      newErrors.message = 'Message must be at least 10 characters'
+
+    if (!formData.subject || formData.subject.trim().length === 0) {
+      newErrors.push({ field: 'subject', message: 'Subject cannot be empty.' })
     }
-    
-    setErrors(newErrors)
-    return Object.keys(newErrors).length === 0
+
+    if (!formData.message || formData.message.length < 10) {
+      newErrors.push({ field: 'message', message: 'Message must be at least 10 characters long.' })
+    }
+
+    return newErrors
   }
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    
-    if (!validateForm()) {
-      return
-    }
-    
-    setIsSubmitting(true)
-    setErrors({})
-    
-    // Simulate API submission delay
-    setTimeout(() => {
-      const newSubmission: SubmissionRecord = {
-        id: submissions.length + 1,
-        name: formData.name,
-        email: formData.email,
-        subject: formData.subject,
-        message: formData.message,
-        timestamp: new Date().toLocaleString('en-US', {
-          year: 'numeric',
-          month: '2-digit',
-          day: '2-digit',
-          hour: '2-digit',
-          minute: '2-digit',
-          hour12: true
-        })
-      }
-      
-      setSubmissions([newSubmission, ...submissions])
-      setIsSubmitting(false)
-      setShowSuccess(true)
-      
-      // Reset form
-      setFormData({
-        name: '',
-        email: '',
-        subject: '',
-        message: ''
-      })
-      
-      // Hide success message after 5 seconds
-      setTimeout(() => {
-        setShowSuccess(false)
-      }, 5000)
-    }, 1000)
+    setSubmitAttempted(true)
+    const validationErrors = validateForm()
+    setErrors(validationErrors)
   }
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }))
-    
-    // Clear error for this field when user starts typing
-    if (errors[name as keyof FormData]) {
-      setErrors(prev => ({
-        ...prev,
-        [name]: undefined
-      }))
-    }
+  const handleInputChange = (field: keyof FormData, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }))
+  }
+
+  const loadMockInvalidData = (index: number) => {
+    const mockData = MOCK_INVALID_SUBMISSIONS[index]
+    setFormData(mockData)
+    setSubmitAttempted(false)
+    setErrors([])
+  }
+
+  const getFieldError = (field: string): string | undefined => {
+    return errors.find(err => err.field === field)?.message
   }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-12 px-4">
-      <div className="max-w-4xl mx-auto">
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">Contact Us</h1>
-          <p className="text-gray-600">Send us a message and we'll get back to you soon</p>
-        </div>
+      <div className="max-w-3xl mx-auto">
+        <div className="bg-white rounded-xl shadow-lg p-8">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Contact Form</h1>
+          <p className="text-gray-600 mb-6">Submit your inquiry (validation will check for invalid data)</p>
 
-        {/* Success Message */}
-        {showSuccess && (
-          <div className="mb-6 p-4 bg-green-100 border border-green-400 text-green-700 rounded-lg flex items-center gap-3 animate-pulse">
-            <svg className="w-6 h-6 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-            </svg>
-            <div>
-              <p className="font-semibold">Success!</p>
-              <p className="text-sm">Your message has been submitted successfully. We'll get back to you soon.</p>
+          {submitAttempted && errors.length > 0 && (
+            <div className="mb-6 p-4 bg-red-50 border-l-4 border-red-500 rounded">
+              <div className="flex items-start">
+                <div className="flex-shrink-0">
+                  <svg className="h-5 w-5 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                <div className="ml-3">
+                  <h3 className="text-sm font-medium text-red-800">
+                    Form submission failed ({errors.length} error{errors.length !== 1 ? 's' : ''})
+                  </h3>
+                  <div className="mt-2 text-sm text-red-700">
+                    <ul className="list-disc pl-5 space-y-1">
+                      {errors.map((error, idx) => (
+                        <li key={idx}>{error.message}</li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {/* Contact Form */}
-        <div className="bg-white rounded-xl shadow-lg p-8 mb-8">
+          {submitAttempted && errors.length === 0 && (
+            <div className="mb-6 p-4 bg-green-50 border-l-4 border-green-500 rounded">
+              <div className="flex items-start">
+                <div className="flex-shrink-0">
+                  <svg className="h-5 w-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                <div className="ml-3">
+                  <h3 className="text-sm font-medium text-green-800">
+                    Form submitted successfully!
+                  </h3>
+                </div>
+              </div>
+            </div>
+          )}
+
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-              <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
-                Full Name *
+              <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
+                Name *
               </label>
               <input
-                type="text"
                 id="name"
-                name="name"
+                type="text"
                 value={formData.name}
-                onChange={handleChange}
+                onChange={(e) => handleInputChange('name', e.target.value)}
                 className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition ${
-                  errors.name ? 'border-red-500' : 'border-gray-300'
+                  getFieldError('name') ? 'border-red-500 bg-red-50' : 'border-gray-300'
                 }`}
-                placeholder="John Doe"
+                placeholder="Enter your full name"
               />
-              {errors.name && <p className="mt-1 text-sm text-red-600">{errors.name}</p>}
+              {getFieldError('name') && (
+                <p className="mt-1 text-sm text-red-600">{getFieldError('name')}</p>
+              )}
             </div>
 
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-                Email Address *
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+                Email *
               </label>
               <input
-                type="text"
                 id="email"
-                name="email"
+                type="text"
                 value={formData.email}
-                onChange={handleChange}
+                onChange={(e) => handleInputChange('email', e.target.value)}
                 className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition ${
-                  errors.email ? 'border-red-500' : 'border-gray-300'
+                  getFieldError('email') ? 'border-red-500 bg-red-50' : 'border-gray-300'
                 }`}
-                placeholder="john.doe@example.com"
+                placeholder="your.email@example.com"
               />
-              {errors.email && <p className="mt-1 text-sm text-red-600">{errors.email}</p>}
+              {getFieldError('email') && (
+                <p className="mt-1 text-sm text-red-600">{getFieldError('email')}</p>
+              )}
             </div>
 
             <div>
-              <label htmlFor="subject" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">
+                Phone *
+              </label>
+              <input
+                id="phone"
+                type="text"
+                value={formData.phone}
+                onChange={(e) => handleInputChange('phone', e.target.value)}
+                className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition ${
+                  getFieldError('phone') ? 'border-red-500 bg-red-50' : 'border-gray-300'
+                }`}
+                placeholder="1234567890"
+              />
+              {getFieldError('phone') && (
+                <p className="mt-1 text-sm text-red-600">{getFieldError('phone')}</p>
+              )}
+            </div>
+
+            <div>
+              <label htmlFor="subject" className="block text-sm font-medium text-gray-700 mb-1">
                 Subject *
               </label>
               <input
-                type="text"
                 id="subject"
-                name="subject"
+                type="text"
                 value={formData.subject}
-                onChange={handleChange}
+                onChange={(e) => handleInputChange('subject', e.target.value)}
                 className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition ${
-                  errors.subject ? 'border-red-500' : 'border-gray-300'
+                  getFieldError('subject') ? 'border-red-500 bg-red-50' : 'border-gray-300'
                 }`}
-                placeholder="How can we help?"
+                placeholder="What is this regarding?"
               />
-              {errors.subject && <p className="mt-1 text-sm text-red-600">{errors.subject}</p>}
+              {getFieldError('subject') && (
+                <p className="mt-1 text-sm text-red-600">{getFieldError('subject')}</p>
+              )}
             </div>
 
             <div>
-              <label htmlFor="message" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="message" className="block text-sm font-medium text-gray-700 mb-1">
                 Message *
               </label>
               <textarea
                 id="message"
-                name="message"
                 value={formData.message}
-                onChange={handleChange}
+                onChange={(e) => handleInputChange('message', e.target.value)}
                 rows={5}
                 className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition resize-none ${
-                  errors.message ? 'border-red-500' : 'border-gray-300'
+                  getFieldError('message') ? 'border-red-500 bg-red-50' : 'border-gray-300'
                 }`}
-                placeholder="Tell us more about your inquiry..."
+                placeholder="Describe your inquiry in detail (minimum 10 characters)"
               />
-              {errors.message && <p className="mt-1 text-sm text-red-600">{errors.message}</p>}
+              {getFieldError('message') && (
+                <p className="mt-1 text-sm text-red-600">{getFieldError('message')}</p>
+              )}
             </div>
 
             <button
               type="submit"
-              disabled={isSubmitting}
-              className={`w-full py-3 px-6 rounded-lg font-semibold text-white transition ${
-                isSubmitting
-                  ? 'bg-gray-400 cursor-not-allowed'
-                  : 'bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800'
-              }`}
+              className="w-full bg-indigo-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-indigo-700 transition shadow-md hover:shadow-lg"
             >
-              {isSubmitting ? (
-                <span className="flex items-center justify-center gap-2">
-                  <svg className="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                  </svg>
-                  Submitting...
-                </span>
-              ) : (
-                'Submit Message'
-              )}
+              Submit Form
             </button>
           </form>
-        </div>
 
-        {/* Recent Submissions */}
-        <div className="bg-white rounded-xl shadow-lg p-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">Recent Submissions</h2>
-          <div className="space-y-4">
-            {submissions.map(submission => (
-              <div
-                key={submission.id}
-                className="border border-gray-200 rounded-lg p-4 hover:border-indigo-300 transition"
-              >
-                <div className="flex justify-between items-start mb-2">
-                  <div>
-                    <h3 className="font-semibold text-gray-900">{submission.name}</h3>
-                    <p className="text-sm text-gray-500">{submission.email}</p>
-                  </div>
-                  <span className="text-xs text-gray-400">{submission.timestamp}</span>
-                </div>
-                <p className="font-medium text-indigo-600 mb-1">{submission.subject}</p>
-                <p className="text-gray-600 text-sm line-clamp-2">{submission.message}</p>
-              </div>
-            ))}
+          <div className="mt-8 pt-6 border-t border-gray-200">
+            <h2 className="text-lg font-semibold text-gray-900 mb-3">Test with Mock Invalid Data</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+              {MOCK_INVALID_SUBMISSIONS.map((_, index) => (
+                <button
+                  key={index}
+                  onClick={() => loadMockInvalidData(index)}
+                  className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition text-sm font-medium"
+                >
+                  Load Invalid #{index + 1}
+                </button>
+              ))}
+            </div>
+            <p className="mt-3 text-sm text-gray-500">
+              Click a button to populate the form with invalid test data, then submit to see validation errors.
+            </p>
           </div>
         </div>
       </div>
