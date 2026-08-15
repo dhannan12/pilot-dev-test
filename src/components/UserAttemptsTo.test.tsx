@@ -8,108 +8,108 @@ describe('UserAttemptsTo', () => {
     expect(document.body).toBeTruthy()
   })
 
-  it('displays the main heading', () => {
+  it('displays mock case data with document checklist', () => {
     render(<UserAttemptsTo />)
-    expect(screen.getByText('Case Status Management')).toBeTruthy()
+    
+    // Check for header
+    expect(screen.getByText('Case Closure Manager')).toBeTruthy()
+    
+    // Check for document checklist
+    expect(screen.getByText(/Document Checklist/)).toBeTruthy()
+    expect(screen.getAllByText(/Initial Complaint/).length).toBeGreaterThan(0)
+    expect(screen.getAllByText(/Evidence Documentation/).length).toBeGreaterThan(0)
   })
 
-  it('displays mock cases in the list', () => {
+  it('shows warning when attempting to close case with incomplete documents', () => {
     render(<UserAttemptsTo />)
-    expect(screen.getByText('CASE-2024-001')).toBeTruthy()
-    expect(screen.getByText('Acme Corporation')).toBeTruthy()
-    expect(screen.getByText('TechStart Inc')).toBeTruthy()
-    expect(screen.getByText('Global Ventures LLC')).toBeTruthy()
-    expect(screen.getByText('Riverside Properties')).toBeTruthy()
+    
+    const closeButton = screen.getByTestId('userattemptsto-close')
+    fireEvent.click(closeButton)
+    
+    // Warning should appear
+    const warning = screen.getByTestId('userattemptsto-warning')
+    expect(warning).toBeTruthy()
+    expect(screen.getByText(/Cannot Close Case - Incomplete Documents/)).toBeTruthy()
+  })
+
+  it('displays completion progress with percentage', () => {
+    render(<UserAttemptsTo />)
+    
+    // Check for completion stats
+    expect(screen.getByText(/Document Completion Progress/)).toBeTruthy()
+    // Should show some fraction (e.g., "2 / 5")
+    const progressText = document.body.textContent || ''
+    expect(progressText).toMatch(/\d+\s*\/\s*\d+/)
+  })
+
+  it('allows switching between different cases', () => {
+    render(<UserAttemptsTo />)
+    
+    const caseSelect = screen.getByTestId('userattemptsto-case-select') as HTMLSelectElement
+    
+    // Initially should show first case
+    expect(caseSelect.value).toBe('1')
+    
+    // Change to second case
+    fireEvent.change(caseSelect, { target: { value: '2' } })
+    
+    // Should now show second case
+    expect(caseSelect.value).toBe('2')
+    expect(screen.getAllByText(/Williams Estate/).length).toBeGreaterThan(0)
   })
 
   it('has required data-testid attributes', () => {
     render(<UserAttemptsTo />)
-    // Main wrapper
-    expect(document.querySelector('[data-testid="userattemptsto"]')).toBeTruthy()
-    // Form fields
-    expect(document.querySelector('[data-testid="userattemptsto-case"]')).toBeTruthy()
-    expect(document.querySelector('[data-testid="userattemptsto-status"]')).toBeTruthy()
-    // Submit button
-    expect(document.querySelector('[data-testid="userattemptsto-submit"]')).toBeTruthy()
-    // List containers
-    expect(document.querySelector('[data-testid="userattemptsto-list"]')).toBeTruthy()
-    // List items
-    const items = document.querySelectorAll('[data-testid="userattemptsto-item"]')
-    expect(items.length).toBeGreaterThan(0)
+    
+    // Verify key testids exist — Playwright QA depends on these
+    expect(screen.getByTestId('userattemptsto')).toBeTruthy()
+    expect(screen.getByTestId('userattemptsto-case-select')).toBeTruthy()
+    expect(screen.getByTestId('userattemptsto-close')).toBeTruthy()
+    expect(screen.getByTestId('userattemptsto-cancel')).toBeTruthy()
+    expect(screen.getByTestId('userattemptsto-list')).toBeTruthy()
+    
+    // Check that list items have testid
+    const listItems = screen.getAllByTestId('userattemptsto-item')
+    expect(listItems.length).toBeGreaterThan(0)
   })
 
-  it('allows selecting a case from dropdown', () => {
+  it('lists incomplete required documents in warning', () => {
     render(<UserAttemptsTo />)
-    const caseSelect = screen.getByTestId('userattemptsto-case') as HTMLSelectElement
     
-    fireEvent.change(caseSelect, { target: { value: '1' } })
-    expect(caseSelect.value).toBe('1')
+    // Click close button to trigger warning
+    const closeButton = screen.getByTestId('userattemptsto-close')
+    fireEvent.click(closeButton)
+    
+    // Warning should be present and list incomplete documents
+    const warning = screen.getByTestId('userattemptsto-warning')
+    expect(warning.textContent).toMatch(/Witness Statements/)
+    expect(warning.textContent).toMatch(/Final Judgment/)
+    expect(warning.textContent).toMatch(/Client Signature/)
   })
 
-  it('shows current status when case is selected', () => {
+  it('hides warning when cancel button is clicked', () => {
     render(<UserAttemptsTo />)
-    const caseSelect = screen.getByTestId('userattemptsto-case') as HTMLSelectElement
     
-    fireEvent.change(caseSelect, { target: { value: '1' } })
-    expect(screen.getByText(/Current Status:/)).toBeTruthy()
-    expect(screen.getByText('Valid transitions: In Progress, On Hold, Closed')).toBeTruthy()
+    // Trigger warning
+    const closeButton = screen.getByTestId('userattemptsto-close')
+    fireEvent.click(closeButton)
+    
+    // Warning should be visible
+    expect(screen.getByTestId('userattemptsto-warning')).toBeTruthy()
+    
+    // Click cancel
+    const cancelButton = screen.getByTestId('userattemptsto-cancel')
+    fireEvent.click(cancelButton)
+    
+    // Warning should be hidden
+    expect(screen.queryByTestId('userattemptsto-warning')).toBeNull()
   })
 
-  it('allows selecting a new status', () => {
+  it('displays status badge for case', () => {
     render(<UserAttemptsTo />)
-    const statusSelect = screen.getByTestId('userattemptsto-status') as HTMLSelectElement
     
-    fireEvent.change(statusSelect, { target: { value: 'Closed' } })
-    expect(statusSelect.value).toBe('Closed')
-  })
-
-  it('submit button is disabled when no case or status selected', () => {
-    render(<UserAttemptsTo />)
-    const submitButton = screen.getByTestId('userattemptsto-submit') as HTMLButtonElement
-    
-    expect(submitButton.disabled).toBe(true)
-  })
-
-  it('submit button is enabled when both case and status are selected', () => {
-    render(<UserAttemptsTo />)
-    const caseSelect = screen.getByTestId('userattemptsto-case') as HTMLSelectElement
-    const statusSelect = screen.getByTestId('userattemptsto-status') as HTMLSelectElement
-    const submitButton = screen.getByTestId('userattemptsto-submit') as HTMLButtonElement
-    
-    fireEvent.change(caseSelect, { target: { value: '1' } })
-    fireEvent.change(statusSelect, { target: { value: 'In Progress' } })
-    
-    expect(submitButton.disabled).toBe(false)
-  })
-
-  it('shows error message when invalid status is attempted', () => {
-    render(<UserAttemptsTo />)
-    const caseSelect = screen.getByTestId('userattemptsto-case') as HTMLSelectElement
-    const statusSelect = screen.getByTestId('userattemptsto-status') as HTMLSelectElement
-    const submitButton = screen.getByTestId('userattemptsto-submit') as HTMLButtonElement
-    
-    // Select case with status 'Open' (valid statuses: In Progress, On Hold, Closed)
-    fireEvent.change(caseSelect, { target: { value: '1' } })
-    // Try to set an invalid status
-    fireEvent.change(statusSelect, { target: { value: 'Archived' } })
-    fireEvent.click(submitButton)
-    
-    // Check that error appears in multiple places (form and history)
-    const errorMessages = screen.getAllByText(/Invalid status transition/)
-    expect(errorMessages.length).toBeGreaterThan(0)
-  })
-
-  it('creates history entry after status update attempt', () => {
-    render(<UserAttemptsTo />)
-    const caseSelect = screen.getByTestId('userattemptsto-case') as HTMLSelectElement
-    const statusSelect = screen.getByTestId('userattemptsto-status') as HTMLSelectElement
-    const submitButton = screen.getByTestId('userattemptsto-submit') as HTMLButtonElement
-    
-    fireEvent.change(caseSelect, { target: { value: '1' } })
-    fireEvent.change(statusSelect, { target: { value: 'In Progress' } })
-    fireEvent.click(submitButton)
-    
-    // History section should appear
-    expect(screen.getByText('Status Update History')).toBeTruthy()
+    // Should show status (e.g., "OPEN")
+    const bodyText = document.body.textContent || ''
+    expect(bodyText).toMatch(/OPEN|PENDING|CLOSED/)
   })
 })
