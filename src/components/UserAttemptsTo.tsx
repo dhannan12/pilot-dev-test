@@ -1,359 +1,274 @@
 /**
- * UserAttemptsTo — Handles user attempting to close a case with incomplete document checklist
+ * UserAttemptsTo — Displays cases that users attempt to proceed with despite missing scheduled court dates
  *
- * Features: case closure validation, document checklist tracking, validation warnings, status indicators, user feedback
+ * Features: case validation, missing court date warnings, case status display, action blocking, user guidance
  *
- * Ticket: SCRUM-896 | Branch: proto/SCRUM-892
+ * Ticket: SCRUM-898 | Branch: proto/SCRUM-892
  */
 
 import React, { useState } from 'react'
 
-interface Document {
-  id: string
-  name: string
-  required: boolean
-  completed: boolean
-}
-
-interface CaseData {
+interface CaseAttempt {
   id: string
   caseNumber: string
+  caseName: string
   clientName: string
-  status: 'open' | 'pending' | 'closed'
-  documents: Document[]
+  status: 'active' | 'pending' | 'review'
+  courtDateScheduled: boolean
+  lastAttemptDate: string
+  attemptReason: string
 }
 
-const MOCK_CASES: CaseData[] = [
+const mockCaseAttempts: CaseAttempt[] = [
   {
     id: '1',
-    caseNumber: 'CASE-2024-001',
-    clientName: 'Smith vs. Johnson',
-    status: 'open',
-    documents: [
-      { id: 'd1', name: 'Initial Complaint', required: true, completed: true },
-      { id: 'd2', name: 'Evidence Documentation', required: true, completed: true },
-      { id: 'd3', name: 'Witness Statements', required: true, completed: false },
-      { id: 'd4', name: 'Final Judgment', required: true, completed: false },
-      { id: 'd5', name: 'Client Signature', required: true, completed: false },
-    ],
+    caseNumber: 'CV-2026-001234',
+    caseName: 'Smith v. Johnson Construction LLC',
+    clientName: 'Robert Smith',
+    status: 'active',
+    courtDateScheduled: false,
+    lastAttemptDate: '2026-08-10',
+    attemptReason: 'Attempted to file motion for summary judgment'
   },
   {
     id: '2',
-    caseNumber: 'CASE-2024-002',
-    clientName: 'Williams Estate',
-    status: 'open',
-    documents: [
-      { id: 'd6', name: 'Will Document', required: true, completed: true },
-      { id: 'd7', name: 'Death Certificate', required: true, completed: false },
-      { id: 'd8', name: 'Asset Inventory', required: true, completed: true },
-      { id: 'd9', name: 'Beneficiary Consent', required: true, completed: false },
-      { id: 'd10', name: 'Court Filing', required: true, completed: false },
-    ],
+    caseNumber: 'CR-2026-005678',
+    caseName: 'State v. Williams',
+    clientName: 'Jennifer Williams',
+    status: 'pending',
+    courtDateScheduled: false,
+    lastAttemptDate: '2026-08-12',
+    attemptReason: 'Attempted to submit plea bargain documents'
   },
   {
     id: '3',
-    caseNumber: 'CASE-2024-003',
-    clientName: 'Davis Inc. Contract Dispute',
-    status: 'open',
-    documents: [
-      { id: 'd11', name: 'Original Contract', required: true, completed: true },
-      { id: 'd12', name: 'Breach Documentation', required: true, completed: false },
-      { id: 'd13', name: 'Email Correspondence', required: false, completed: true },
-      { id: 'd14', name: 'Settlement Offer', required: true, completed: false },
-      { id: 'd15', name: 'Legal Opinion', required: true, completed: false },
-    ],
+    caseNumber: 'CV-2026-002345',
+    caseName: 'Martinez v. City Transit Authority',
+    clientName: 'Carlos Martinez',
+    status: 'active',
+    courtDateScheduled: false,
+    lastAttemptDate: '2026-08-14',
+    attemptReason: 'Attempted to proceed with settlement conference'
   },
   {
     id: '4',
-    caseNumber: 'CASE-2024-004',
-    clientName: 'Martinez Personal Injury',
-    status: 'open',
-    documents: [
-      { id: 'd16', name: 'Medical Records', required: true, completed: false },
-      { id: 'd17', name: 'Accident Report', required: true, completed: true },
-      { id: 'd18', name: 'Insurance Claim', required: true, completed: false },
-      { id: 'd19', name: 'Witness Depositions', required: true, completed: false },
-      { id: 'd20', name: 'Damage Assessment', required: true, completed: true },
-    ],
+    caseNumber: 'FL-2026-003456',
+    caseName: 'Anderson Divorce Proceedings',
+    clientName: 'Patricia Anderson',
+    status: 'review',
+    courtDateScheduled: false,
+    lastAttemptDate: '2026-08-13',
+    attemptReason: 'Attempted to finalize custody arrangement'
   },
   {
     id: '5',
-    caseNumber: 'CASE-2024-005',
-    clientName: 'Brown Family Custody',
-    status: 'open',
-    documents: [
-      { id: 'd21', name: 'Custody Petition', required: true, completed: true },
-      { id: 'd22', name: 'Home Study Report', required: true, completed: false },
-      { id: 'd23', name: 'Financial Disclosure', required: true, completed: true },
-      { id: 'd24', name: 'Child Welfare Report', required: true, completed: false },
-      { id: 'd25', name: 'Parenting Plan', required: true, completed: false },
-    ],
-  },
+    caseNumber: 'CV-2026-004567',
+    caseName: 'Brown v. Medical Associates Inc',
+    clientName: 'Michael Brown',
+    status: 'active',
+    courtDateScheduled: false,
+    lastAttemptDate: '2026-08-11',
+    attemptReason: 'Attempted to submit expert witness testimony'
+  }
 ]
 
 export default function UserAttemptsTo() {
-  const [selectedCase, setSelectedCase] = useState<CaseData>(MOCK_CASES[0])
-  const [showWarning, setShowWarning] = useState(false)
-  const [attemptedClose, setAttemptedClose] = useState(false)
+  const [selectedCase, setSelectedCase] = useState<string | null>(null)
+  const [showScheduleModal, setShowScheduleModal] = useState(false)
 
-  const getCompletionStats = (caseData: CaseData) => {
-    const requiredDocs = caseData.documents.filter((doc) => doc.required)
-    const completedRequired = requiredDocs.filter((doc) => doc.completed)
-    return {
-      total: requiredDocs.length,
-      completed: completedRequired.length,
-      percentage: Math.round((completedRequired.length / requiredDocs.length) * 100),
+  const handleProceedAttempt = (caseId: string) => {
+    setSelectedCase(caseId)
+    setShowScheduleModal(true)
+  }
+
+  const handleScheduleDate = () => {
+    setShowScheduleModal(false)
+    setSelectedCase(null)
+  }
+
+  const handleCancel = () => {
+    setShowScheduleModal(false)
+    setSelectedCase(null)
+  }
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'active':
+        return 'bg-green-100 text-green-800'
+      case 'pending':
+        return 'bg-yellow-100 text-yellow-800'
+      case 'review':
+        return 'bg-blue-100 text-blue-800'
+      default:
+        return 'bg-gray-100 text-gray-800'
     }
   }
-
-  const handleCloseCase = () => {
-    const stats = getCompletionStats(selectedCase)
-    if (stats.completed < stats.total) {
-      setShowWarning(true)
-      setAttemptedClose(true)
-    } else {
-      setShowWarning(false)
-      setAttemptedClose(false)
-      // Would close the case here
-      alert('Case closed successfully!')
-    }
-  }
-
-  const getIncompleteRequiredDocs = () => {
-    return selectedCase.documents.filter((doc) => doc.required && !doc.completed)
-  }
-
-  const stats = getCompletionStats(selectedCase)
 
   return (
-    <div data-testid="userattemptsto" className="min-h-screen bg-gray-50 p-8">
-      <div className="max-w-4xl mx-auto">
-        <header className="mb-8">
+    <div data-testid="userattemptsto" className="min-h-screen bg-gray-50 p-6">
+      <div className="max-w-7xl mx-auto">
+        <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Case Closure Manager
+            Cases Without Scheduled Court Dates
           </h1>
           <p className="text-gray-600">
-            Ensure all required documents are completed before closing a case
+            The following cases have been blocked from proceeding due to missing court date scheduling
           </p>
-        </header>
-
-        {/* Case Selection */}
-        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-          <label
-            htmlFor="case-select"
-            className="block text-sm font-medium text-gray-700 mb-2"
-          >
-            Select Case
-          </label>
-          <select
-            id="case-select"
-            data-testid="userattemptsto-case-select"
-            value={selectedCase.id}
-            onChange={(e) => {
-              const newCase = MOCK_CASES.find((c) => c.id === e.target.value)
-              if (newCase) {
-                setSelectedCase(newCase)
-                setShowWarning(false)
-                setAttemptedClose(false)
-              }
-            }}
-            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            {MOCK_CASES.map((caseData) => (
-              <option key={caseData.id} value={caseData.id}>
-                {caseData.caseNumber} - {caseData.clientName}
-              </option>
-            ))}
-          </select>
         </div>
 
-        {/* Case Details */}
-        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-          <div className="flex justify-between items-start mb-4">
-            <div>
-              <h2 className="text-xl font-semibold text-gray-900">
-                {selectedCase.caseNumber}
-              </h2>
-              <p className="text-gray-600">{selectedCase.clientName}</p>
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+          <div className="flex items-start">
+            <div className="flex-shrink-0">
+              <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+              </svg>
             </div>
-            <span
-              className={`px-3 py-1 rounded-full text-sm font-medium ${
-                selectedCase.status === 'open'
-                  ? 'bg-green-100 text-green-800'
-                  : selectedCase.status === 'pending'
-                  ? 'bg-yellow-100 text-yellow-800'
-                  : 'bg-gray-100 text-gray-800'
-              }`}
+            <div className="ml-3">
+              <h3 className="text-sm font-medium text-red-800">Action Required</h3>
+              <p className="text-sm text-red-700 mt-1">
+                A court date must be scheduled before proceeding with these cases
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div data-testid="userattemptsto-list" className="space-y-4">
+          {mockCaseAttempts.map((caseAttempt) => (
+            <div
+              key={caseAttempt.id}
+              data-testid="userattemptsto-item"
+              className="bg-white rounded-lg shadow p-6 border border-gray-200"
             >
-              {selectedCase.status.toUpperCase()}
-            </span>
-          </div>
-
-          {/* Completion Progress */}
-          <div className="mb-4">
-            <div className="flex justify-between items-center mb-2">
-              <span className="text-sm font-medium text-gray-700">
-                Document Completion Progress
-              </span>
-              <span className="text-sm font-semibold text-gray-900">
-                {stats.completed} / {stats.total} ({stats.percentage}%)
-              </span>
-            </div>
-            <div className="w-full bg-gray-200 rounded-full h-3">
-              <div
-                className={`h-3 rounded-full transition-all ${
-                  stats.percentage === 100
-                    ? 'bg-green-500'
-                    : stats.percentage >= 50
-                    ? 'bg-yellow-500'
-                    : 'bg-red-500'
-                }`}
-                style={{ width: `${stats.percentage}%` }}
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Document Checklist */}
-        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">
-            Document Checklist
-          </h3>
-          <ul data-testid="userattemptsto-list" className="space-y-3">
-            {selectedCase.documents.map((doc) => (
-              <li
-                key={doc.id}
-                data-testid="userattemptsto-item"
-                className={`flex items-center justify-between p-3 rounded-md border ${
-                  doc.completed
-                    ? 'bg-green-50 border-green-200'
-                    : doc.required
-                    ? 'bg-red-50 border-red-200'
-                    : 'bg-gray-50 border-gray-200'
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <div
-                    className={`w-5 h-5 rounded border-2 flex items-center justify-center ${
-                      doc.completed
-                        ? 'bg-green-500 border-green-500'
-                        : 'bg-white border-gray-300'
-                    }`}
-                  >
-                    {doc.completed && (
-                      <svg
-                        className="w-4 h-4 text-white"
-                        fill="none"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path d="M5 13l4 4L19 7" />
-                      </svg>
-                    )}
-                  </div>
-                  <span
-                    className={`font-medium ${
-                      doc.completed ? 'text-gray-900' : 'text-gray-700'
-                    }`}
-                  >
-                    {doc.name}
-                  </span>
-                </div>
-                <div className="flex items-center gap-2">
-                  {doc.required && (
-                    <span className="text-xs px-2 py-1 bg-blue-100 text-blue-800 rounded">
-                      Required
+              <div className="flex items-start justify-between mb-4">
+                <div className="flex-1">
+                  <div className="flex items-center gap-3 mb-2">
+                    <h2 className="text-xl font-semibold text-gray-900">
+                      {caseAttempt.caseNumber}
+                    </h2>
+                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(caseAttempt.status)}`}>
+                      {caseAttempt.status}
                     </span>
-                  )}
-                  <span
-                    className={`text-sm font-medium ${
-                      doc.completed ? 'text-green-600' : 'text-red-600'
-                    }`}
-                  >
-                    {doc.completed ? 'Complete' : 'Incomplete'}
-                  </span>
+                  </div>
+                  <p className="text-gray-900 font-medium mb-1">{caseAttempt.caseName}</p>
+                  <p className="text-gray-600 text-sm">Client: {caseAttempt.clientName}</p>
                 </div>
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        {/* Warning Message */}
-        {showWarning && attemptedClose && (
-          <div
-            data-testid="userattemptsto-warning"
-            className="bg-red-50 border-l-4 border-red-500 p-6 mb-6 rounded-r-lg"
-          >
-            <div className="flex items-start">
-              <div className="flex-shrink-0">
-                <svg
-                  className="h-6 w-6 text-red-500"
-                  fill="none"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                </svg>
+                <div className="flex items-center gap-2 text-red-600">
+                  <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                  <span className="font-semibold text-sm">No Court Date</span>
+                </div>
               </div>
-              <div className="ml-3">
-                <h3 className="text-lg font-semibold text-red-800 mb-2">
-                  Cannot Close Case - Incomplete Documents
-                </h3>
-                <p className="text-red-700 mb-3">
-                  The following required documents must be completed before closing
-                  this case:
+
+              <div className="bg-gray-50 rounded p-4 mb-4">
+                <p className="text-sm text-gray-700 mb-2">
+                  <span className="font-semibold">Last Attempt:</span> {caseAttempt.lastAttemptDate}
                 </p>
-                <ul className="list-disc list-inside space-y-1 text-red-700">
-                  {getIncompleteRequiredDocs().map((doc) => (
-                    <li key={doc.id}>{doc.name}</li>
-                  ))}
-                </ul>
-                <p className="mt-3 text-sm text-red-600">
-                  Please complete all required documents and try again.
+                <p className="text-sm text-gray-700">
+                  <span className="font-semibold">Reason:</span> {caseAttempt.attemptReason}
                 </p>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <button
+                  data-testid="userattemptsto-schedule"
+                  onClick={() => handleProceedAttempt(caseAttempt.id)}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium transition-colors"
+                >
+                  Schedule Court Date
+                </button>
+                <button
+                  data-testid="userattemptsto-view"
+                  className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 font-medium transition-colors"
+                >
+                  View Case Details
+                </button>
               </div>
             </div>
-          </div>
-        )}
-
-        {/* Action Buttons */}
-        <div className="flex gap-4">
-          <button
-            data-testid="userattemptsto-close"
-            onClick={handleCloseCase}
-            className={`flex-1 px-6 py-3 rounded-md font-semibold transition-colors ${
-              stats.percentage === 100
-                ? 'bg-blue-600 text-white hover:bg-blue-700'
-                : 'bg-blue-600 text-white hover:bg-blue-700'
-            }`}
-          >
-            Close Case
-          </button>
-          <button
-            data-testid="userattemptsto-cancel"
-            onClick={() => {
-              setShowWarning(false)
-              setAttemptedClose(false)
-            }}
-            className="px-6 py-3 bg-gray-200 text-gray-700 rounded-md font-semibold hover:bg-gray-300 transition-colors"
-          >
-            Cancel
-          </button>
+          ))}
         </div>
 
-        {/* Attempt Counter */}
-        {attemptedClose && (
-          <div className="mt-6 text-center">
-            <p className="text-sm text-gray-600">
-              Case closure attempted. {stats.completed} of {stats.total} required
-              documents completed.
-            </p>
+        {showScheduleModal && (
+          <div data-testid="userattemptsto-modal" className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+              <h2 className="text-2xl font-bold text-gray-900 mb-4">Schedule Court Date</h2>
+              <p className="text-gray-600 mb-6">
+                Please schedule a court date before proceeding with this case.
+              </p>
+
+              <div className="space-y-4 mb-6">
+                <div>
+                  <label htmlFor="court-date" className="block text-sm font-medium text-gray-700 mb-2">
+                    Court Date
+                  </label>
+                  <input
+                    id="court-date"
+                    data-testid="userattemptsto-date"
+                    type="date"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="court-time" className="block text-sm font-medium text-gray-700 mb-2">
+                    Court Time
+                  </label>
+                  <input
+                    id="court-time"
+                    data-testid="userattemptsto-time"
+                    type="time"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="courtroom" className="block text-sm font-medium text-gray-700 mb-2">
+                    Courtroom
+                  </label>
+                  <input
+                    id="courtroom"
+                    data-testid="userattemptsto-courtroom"
+                    type="text"
+                    placeholder="e.g., Courtroom 3A"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="judge" className="block text-sm font-medium text-gray-700 mb-2">
+                    Judge
+                  </label>
+                  <select
+                    id="judge"
+                    data-testid="userattemptsto-judge"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="">Select a judge</option>
+                    <option value="judge1">Hon. Margaret Chen</option>
+                    <option value="judge2">Hon. David Morrison</option>
+                    <option value="judge3">Hon. Sarah Thompson</option>
+                    <option value="judge4">Hon. Robert Garcia</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  data-testid="userattemptsto-submit"
+                  onClick={handleScheduleDate}
+                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium transition-colors"
+                >
+                  Schedule Date
+                </button>
+                <button
+                  data-testid="userattemptsto-cancel"
+                  onClick={handleCancel}
+                  className="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 font-medium transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
           </div>
         )}
       </div>

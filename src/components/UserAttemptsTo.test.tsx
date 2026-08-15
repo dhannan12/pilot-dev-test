@@ -8,108 +8,104 @@ describe('UserAttemptsTo', () => {
     expect(document.body).toBeTruthy()
   })
 
-  it('displays mock case data with document checklist', () => {
+  it('displays the main heading', () => {
     render(<UserAttemptsTo />)
-    
-    // Check for header
-    expect(screen.getByText('Case Closure Manager')).toBeTruthy()
-    
-    // Check for document checklist
-    expect(screen.getByText(/Document Checklist/)).toBeTruthy()
-    expect(screen.getAllByText(/Initial Complaint/).length).toBeGreaterThan(0)
-    expect(screen.getAllByText(/Evidence Documentation/).length).toBeGreaterThan(0)
+    expect(screen.getByText('Cases Without Scheduled Court Dates')).toBeTruthy()
   })
 
-  it('shows warning when attempting to close case with incomplete documents', () => {
+  it('displays mock case data', () => {
     render(<UserAttemptsTo />)
-    
-    const closeButton = screen.getByTestId('userattemptsto-close')
-    fireEvent.click(closeButton)
-    
-    // Warning should appear
-    const warning = screen.getByTestId('userattemptsto-warning')
-    expect(warning).toBeTruthy()
-    expect(screen.getByText(/Cannot Close Case - Incomplete Documents/)).toBeTruthy()
+    expect(screen.getByText('CV-2026-001234')).toBeTruthy()
+    expect(screen.getByText('Smith v. Johnson Construction LLC')).toBeTruthy()
+    expect(screen.getByText(/Robert Smith/)).toBeTruthy()
+    expect(screen.getByText('CR-2026-005678')).toBeTruthy()
+    expect(screen.getByText(/Jennifer Williams/)).toBeTruthy()
   })
 
-  it('displays completion progress with percentage', () => {
+  it('displays warning message about missing court dates', () => {
     render(<UserAttemptsTo />)
-    
-    // Check for completion stats
-    expect(screen.getByText(/Document Completion Progress/)).toBeTruthy()
-    // Should show some fraction (e.g., "2 / 5")
-    const progressText = document.body.textContent || ''
-    expect(progressText).toMatch(/\d+\s*\/\s*\d+/)
+    expect(screen.getByText(/A court date must be scheduled before proceeding/)).toBeTruthy()
   })
 
-  it('allows switching between different cases', () => {
+  it('displays last attempt information', () => {
     render(<UserAttemptsTo />)
-    
-    const caseSelect = screen.getByTestId('userattemptsto-case-select') as HTMLSelectElement
-    
-    // Initially should show first case
-    expect(caseSelect.value).toBe('1')
-    
-    // Change to second case
-    fireEvent.change(caseSelect, { target: { value: '2' } })
-    
-    // Should now show second case
-    expect(caseSelect.value).toBe('2')
-    expect(screen.getAllByText(/Williams Estate/).length).toBeGreaterThan(0)
+    expect(screen.getByText(/Attempted to file motion for summary judgment/)).toBeTruthy()
+    expect(screen.getByText(/Attempted to submit plea bargain documents/)).toBeTruthy()
   })
 
   it('has required data-testid attributes', () => {
     render(<UserAttemptsTo />)
     
-    // Verify key testids exist — Playwright QA depends on these
-    expect(screen.getByTestId('userattemptsto')).toBeTruthy()
-    expect(screen.getByTestId('userattemptsto-case-select')).toBeTruthy()
-    expect(screen.getByTestId('userattemptsto-close')).toBeTruthy()
-    expect(screen.getByTestId('userattemptsto-cancel')).toBeTruthy()
-    expect(screen.getByTestId('userattemptsto-list')).toBeTruthy()
+    // Main wrapper
+    expect(document.querySelector('[data-testid="userattemptsto"]')).toBeTruthy()
     
-    // Check that list items have testid
-    const listItems = screen.getAllByTestId('userattemptsto-item')
-    expect(listItems.length).toBeGreaterThan(0)
+    // List container and items
+    expect(document.querySelector('[data-testid="userattemptsto-list"]')).toBeTruthy()
+    const items = document.querySelectorAll('[data-testid="userattemptsto-item"]')
+    expect(items.length).toBeGreaterThan(0)
+    
+    // Buttons
+    expect(document.querySelector('[data-testid="userattemptsto-schedule"]')).toBeTruthy()
+    expect(document.querySelector('[data-testid="userattemptsto-view"]')).toBeTruthy()
   })
 
-  it('lists incomplete required documents in warning', () => {
+  it('opens schedule modal when schedule button is clicked', () => {
     render(<UserAttemptsTo />)
     
-    // Click close button to trigger warning
-    const closeButton = screen.getByTestId('userattemptsto-close')
-    fireEvent.click(closeButton)
+    const scheduleButtons = document.querySelectorAll('[data-testid="userattemptsto-schedule"]')
+    fireEvent.click(scheduleButtons[0])
     
-    // Warning should be present and list incomplete documents
-    const warning = screen.getByTestId('userattemptsto-warning')
-    expect(warning.textContent).toMatch(/Witness Statements/)
-    expect(warning.textContent).toMatch(/Final Judgment/)
-    expect(warning.textContent).toMatch(/Client Signature/)
+    // Modal should appear
+    expect(document.querySelector('[data-testid="userattemptsto-modal"]')).toBeTruthy()
+    expect(screen.getByText(/Please schedule a court date before proceeding/)).toBeTruthy()
   })
 
-  it('hides warning when cancel button is clicked', () => {
+  it('has all form fields in modal with correct data-testid', () => {
     render(<UserAttemptsTo />)
     
-    // Trigger warning
-    const closeButton = screen.getByTestId('userattemptsto-close')
-    fireEvent.click(closeButton)
+    const scheduleButtons = document.querySelectorAll('[data-testid="userattemptsto-schedule"]')
+    fireEvent.click(scheduleButtons[0])
     
-    // Warning should be visible
-    expect(screen.getByTestId('userattemptsto-warning')).toBeTruthy()
+    // Check form fields
+    expect(document.querySelector('[data-testid="userattemptsto-date"]')).toBeTruthy()
+    expect(document.querySelector('[data-testid="userattemptsto-time"]')).toBeTruthy()
+    expect(document.querySelector('[data-testid="userattemptsto-courtroom"]')).toBeTruthy()
+    expect(document.querySelector('[data-testid="userattemptsto-judge"]')).toBeTruthy()
+    expect(document.querySelector('[data-testid="userattemptsto-submit"]')).toBeTruthy()
+    expect(document.querySelector('[data-testid="userattemptsto-cancel"]')).toBeTruthy()
+  })
+
+  it('closes modal when cancel button is clicked', () => {
+    render(<UserAttemptsTo />)
+    
+    const scheduleButtons = document.querySelectorAll('[data-testid="userattemptsto-schedule"]')
+    fireEvent.click(scheduleButtons[0])
+    
+    // Modal is open
+    expect(document.querySelector('[data-testid="userattemptsto-modal"]')).toBeTruthy()
     
     // Click cancel
-    const cancelButton = screen.getByTestId('userattemptsto-cancel')
+    const cancelButton = document.querySelector('[data-testid="userattemptsto-cancel"]') as HTMLElement
     fireEvent.click(cancelButton)
     
-    // Warning should be hidden
-    expect(screen.queryByTestId('userattemptsto-warning')).toBeNull()
+    // Modal should be closed
+    expect(document.querySelector('[data-testid="userattemptsto-modal"]')).toBeFalsy()
   })
 
-  it('displays status badge for case', () => {
+  it('closes modal when submit button is clicked', () => {
     render(<UserAttemptsTo />)
     
-    // Should show status (e.g., "OPEN")
-    const bodyText = document.body.textContent || ''
-    expect(bodyText).toMatch(/OPEN|PENDING|CLOSED/)
+    const scheduleButtons = document.querySelectorAll('[data-testid="userattemptsto-schedule"]')
+    fireEvent.click(scheduleButtons[0])
+    
+    // Modal is open
+    expect(document.querySelector('[data-testid="userattemptsto-modal"]')).toBeTruthy()
+    
+    // Click submit
+    const submitButton = document.querySelector('[data-testid="userattemptsto-submit"]') as HTMLElement
+    fireEvent.click(submitButton)
+    
+    // Modal should be closed
+    expect(document.querySelector('[data-testid="userattemptsto-modal"]')).toBeFalsy()
   })
 })
