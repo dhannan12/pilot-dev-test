@@ -3,7 +3,7 @@
  *
  * Features: file upload, status tracking, document list, upload history, confirmation display
  *
- * Ticket: SCRUM-886 | Branch: proto/SCRUM-879
+ * Ticket: SCRUM-888 | Branch: proto/SCRUM-879
  */
 
 import { useState } from 'react'
