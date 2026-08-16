@@ -1,336 +1,356 @@
 /**
- * UserAttemptsTo — Handles user attempts to book a class with an expired membership
+ * UserAttemptsTo — Displays user attempt to book a class with expired membership and redirects
  *
- * Features: class selection, membership validation, expired membership detection, renewal prompt, booking restrictions
+ * Features: membership status check, class booking validation, expiry notification, renewal redirect, booking history
  *
- * Ticket: SCRUM-958 | Branch: proto/SCRUM-951
+ * Ticket: SCRUM-960 | Branch: proto/SCRUM-951
  */
 
 import { useState } from 'react'
 
-interface GymClass {
+interface ClassSchedule {
   id: string
-  className: string
+  name: string
   instructor: string
   time: string
   date: string
   capacity: number
-  currentBookings: number
-  location: string
+  enrolled: number
 }
 
 interface Membership {
   id: string
-  memberName: string
-  membershipType: string
-  startDate: string
+  userId: string
+  type: string
+  status: 'active' | 'expired' | 'pending'
   expiryDate: string
-  isActive: boolean
+  startDate: string
 }
 
-const MOCK_CLASSES: GymClass[] = [
+interface BookingAttempt {
+  id: string
+  classId: string
+  className: string
+  attemptTime: string
+  status: 'blocked' | 'success' | 'failed'
+  reason?: string
+}
+
+const mockClasses: ClassSchedule[] = [
   {
-    id: 'cls-001',
-    className: 'High-Intensity Interval Training',
-    instructor: 'Sarah Martinez',
-    time: '6:00 AM',
+    id: 'class-1',
+    name: 'Yoga Flow',
+    instructor: 'Sarah Johnson',
+    time: '09:00 AM',
     date: '2026-08-17',
     capacity: 20,
-    currentBookings: 12,
-    location: 'Studio A'
+    enrolled: 15
   },
   {
-    id: 'cls-002',
-    className: 'Yoga Flow',
-    instructor: 'Michael Chen',
-    time: '7:30 AM',
+    id: 'class-2',
+    name: 'HIIT Training',
+    instructor: 'Mike Thompson',
+    time: '10:30 AM',
     date: '2026-08-17',
     capacity: 15,
-    currentBookings: 8,
-    location: 'Studio B'
+    enrolled: 12
   },
   {
-    id: 'cls-003',
-    className: 'Spin Class',
-    instructor: 'Jennifer Davis',
-    time: '12:00 PM',
+    id: 'class-3',
+    name: 'Spin Class',
+    instructor: 'Lisa Chen',
+    time: '06:00 PM',
     date: '2026-08-17',
     capacity: 25,
-    currentBookings: 18,
-    location: 'Cycling Room'
+    enrolled: 20
   },
   {
-    id: 'cls-004',
-    className: 'Boxing Fundamentals',
-    instructor: 'David Thompson',
-    time: '5:30 PM',
-    date: '2026-08-17',
-    capacity: 12,
-    currentBookings: 7,
-    location: 'Training Area'
-  },
-  {
-    id: 'cls-005',
-    className: 'Power Pilates',
-    instructor: 'Emily Rodriguez',
-    time: '8:00 AM',
+    id: 'class-4',
+    name: 'Pilates',
+    instructor: 'Emily Davis',
+    time: '11:00 AM',
     date: '2026-08-18',
     capacity: 18,
-    currentBookings: 10,
-    location: 'Studio C'
+    enrolled: 10
   },
   {
-    id: 'cls-006',
-    className: 'Zumba Dance',
-    instructor: 'Carlos Santos',
-    time: '6:00 PM',
+    id: 'class-5',
+    name: 'Zumba Dance',
+    instructor: 'Carlos Rodriguez',
+    time: '07:00 PM',
     date: '2026-08-18',
     capacity: 30,
-    currentBookings: 22,
-    location: 'Main Hall'
+    enrolled: 25
   }
 ]
 
-const MOCK_MEMBERSHIP: Membership = {
+const mockMembership: Membership = {
   id: 'mem-001',
-  memberName: 'John Doe',
-  membershipType: 'Gold Annual',
-  startDate: '2025-08-01',
-  expiryDate: '2026-07-31',
-  isActive: false
+  userId: 'user-123',
+  type: 'Premium',
+  status: 'expired',
+  expiryDate: '2026-08-10',
+  startDate: '2025-08-10'
 }
 
-export default function UserAttemptsTo() {
-  const [selectedClass, setSelectedClass] = useState<GymClass | null>(null)
-  const [bookingStatus, setBookingStatus] = useState<'idle' | 'attempting' | 'failed' | 'expired'>('idle')
-  const [errorMessage, setErrorMessage] = useState<string>('')
-  const [membership] = useState<Membership>(MOCK_MEMBERSHIP)
-  const [showRenewalPrompt, setShowRenewalPrompt] = useState<boolean>(false)
-
-  const handleSelectClass = (classItem: GymClass) => {
-    setSelectedClass(classItem)
-    setBookingStatus('idle')
-    setErrorMessage('')
-    setShowRenewalPrompt(false)
+const mockBookingAttempts: BookingAttempt[] = [
+  {
+    id: 'attempt-1',
+    classId: 'class-1',
+    className: 'Yoga Flow',
+    attemptTime: '2026-08-16 08:30 AM',
+    status: 'blocked',
+    reason: 'Membership expired on 2026-08-10'
+  },
+  {
+    id: 'attempt-2',
+    classId: 'class-2',
+    className: 'HIIT Training',
+    attemptTime: '2026-08-16 09:15 AM',
+    status: 'blocked',
+    reason: 'Membership expired on 2026-08-10'
+  },
+  {
+    id: 'attempt-3',
+    classId: 'class-4',
+    className: 'Pilates',
+    attemptTime: '2026-08-16 09:45 AM',
+    status: 'blocked',
+    reason: 'Membership expired on 2026-08-10'
+  },
+  {
+    id: 'attempt-4',
+    classId: 'class-5',
+    className: 'Zumba Dance',
+    attemptTime: '2026-08-16 10:00 AM',
+    status: 'blocked',
+    reason: 'Membership expired on 2026-08-10'
+  },
+  {
+    id: 'attempt-5',
+    classId: 'class-3',
+    className: 'Spin Class',
+    attemptTime: '2026-08-16 10:30 AM',
+    status: 'blocked',
+    reason: 'Membership expired on 2026-08-10'
   }
+]
 
-  const handleBookClass = () => {
-    if (!selectedClass) return
+export default function UserAttemptsTo() {
+  const [selectedClass, setSelectedClass] = useState<string | null>(null)
+  const [showExpiredModal, setShowExpiredModal] = useState(false)
+  const [bookingAttempts, setBookingAttempts] = useState<BookingAttempt[]>(mockBookingAttempts)
+  const [redirected, setRedirected] = useState(false)
 
-    setBookingStatus('attempting')
+  const handleBookClass = (classItem: ClassSchedule) => {
+    setSelectedClass(classItem.id)
     
-    // Simulate booking attempt with membership validation
-    setTimeout(() => {
-      if (!membership.isActive) {
-        setBookingStatus('expired')
-        setErrorMessage(
-          `Unable to book ${selectedClass.className}. Your ${membership.membershipType} membership expired on ${membership.expiryDate}. Please renew your membership to continue booking classes.`
-        )
-        setShowRenewalPrompt(true)
+    if (mockMembership.status === 'expired') {
+      const newAttempt: BookingAttempt = {
+        id: `attempt-${Date.now()}`,
+        classId: classItem.id,
+        className: classItem.name,
+        attemptTime: new Date().toLocaleString(),
+        status: 'blocked',
+        reason: `Membership expired on ${mockMembership.expiryDate}`
       }
-    }, 500)
+      setBookingAttempts([newAttempt, ...bookingAttempts])
+      setShowExpiredModal(true)
+    }
   }
 
   const handleRenewMembership = () => {
-    // In a real app, this would redirect to the renewal page
-    alert('Redirecting to membership renewal page...')
+    setRedirected(true)
+    setShowExpiredModal(false)
   }
 
-  const calculateDaysExpired = (expiryDate: string): number => {
-    const expiry = new Date(expiryDate)
-    const today = new Date('2026-08-16') // Using current date from context
-    const diffTime = today.getTime() - expiry.getTime()
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
-    return diffDays
+  const handleCloseModal = () => {
+    setShowExpiredModal(false)
+    setSelectedClass(null)
+  }
+
+  if (redirected) {
+    return (
+      <div data-testid="userattemptsto" className="min-h-screen bg-gray-50 p-8">
+        <div className="max-w-2xl mx-auto">
+          <div className="bg-blue-50 border-2 border-blue-300 rounded-lg p-8 text-center">
+            <div className="text-6xl mb-4">🔄</div>
+            <h2 className="text-2xl font-bold text-blue-900 mb-4">Redirecting to Renewal Page</h2>
+            <p className="text-blue-700 mb-6">
+              Please renew your membership to continue booking classes.
+            </p>
+            <div className="bg-white rounded-lg p-4 mb-6">
+              <p className="text-sm text-gray-600 mb-2">Membership Details</p>
+              <p className="font-semibold text-gray-900">Type: {mockMembership.type}</p>
+              <p className="text-red-600 font-semibold">Expired: {mockMembership.expiryDate}</p>
+            </div>
+            <button
+              data-testid="userattemptsto-back"
+              onClick={() => setRedirected(false)}
+              className="px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors"
+            >
+              Back to Classes
+            </button>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (
-    <div data-testid="userattemptsto" className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-7xl mx-auto">
+    <div data-testid="userattemptsto" className="min-h-screen bg-gray-50 p-8">
+      <div className="max-w-6xl mx-auto">
         <header className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Class Booking</h1>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Book a Class</h1>
           <p className="text-gray-600">Select a class to book your spot</p>
         </header>
 
-        {/* Membership Status Alert */}
-        {!membership.isActive && (
-          <div className="mb-6 bg-red-50 border-l-4 border-red-500 p-4 rounded-lg">
-            <div className="flex items-start">
-              <svg className="w-6 h-6 text-red-600 flex-shrink-0 mt-0.5 mr-3" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-              </svg>
-              <div className="flex-1">
-                <h3 className="text-sm font-semibold text-red-800 mb-1">Membership Expired</h3>
-                <p className="text-sm text-red-700">
-                  Your {membership.membershipType} membership expired on {membership.expiryDate} 
-                  ({calculateDaysExpired(membership.expiryDate)} days ago). 
-                  Renew your membership to continue booking classes.
-                </p>
-                <button
-                  data-testid="userattemptsto-renew-header"
-                  onClick={handleRenewMembership}
-                  className="mt-3 px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition-colors"
-                >
-                  Renew Membership
-                </button>
-              </div>
+        {/* Membership Status Warning */}
+        <div className="bg-red-50 border-2 border-red-300 rounded-lg p-4 mb-6">
+          <div className="flex items-start">
+            <div className="text-2xl mr-3">⚠️</div>
+            <div className="flex-1">
+              <h3 className="font-bold text-red-900 mb-1">Membership Expired</h3>
+              <p className="text-red-700 text-sm mb-2">
+                Your {mockMembership.type} membership expired on {mockMembership.expiryDate}.
+                You need an active membership to book classes.
+              </p>
+              <button
+                data-testid="userattemptsto-renew"
+                onClick={handleRenewMembership}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm font-semibold"
+              >
+                Renew Membership
+              </button>
             </div>
           </div>
-        )}
+        </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Class List */}
-          <div className="lg:col-span-2">
-            <div className="bg-white rounded-lg shadow-sm p-6">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">Available Classes</h2>
-              <ul data-testid="userattemptsto-list" className="space-y-3">
-                {MOCK_CLASSES.map((classItem) => (
-                  <li
-                    key={classItem.id}
-                    data-testid="userattemptsto-item"
-                    className={`border rounded-lg p-4 cursor-pointer transition-all ${
-                      selectedClass?.id === classItem.id
-                        ? 'border-blue-500 bg-blue-50'
-                        : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+        {/* Available Classes */}
+        <div className="mb-8">
+          <h2 className="text-xl font-bold text-gray-900 mb-4">Available Classes</h2>
+          <ul data-testid="userattemptsto-list" className="space-y-4">
+            {mockClasses.map((classItem) => (
+              <li
+                key={classItem.id}
+                data-testid="userattemptsto-item"
+                className="bg-white rounded-lg shadow p-6 border border-gray-200"
+              >
+                <div className="flex justify-between items-start mb-4">
+                  <div className="flex-1">
+                    <h3 className="text-lg font-bold text-gray-900">{classItem.name}</h3>
+                    <p className="text-gray-600 text-sm">Instructor: {classItem.instructor}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm font-semibold text-gray-700">{classItem.date}</p>
+                    <p className="text-sm text-gray-600">{classItem.time}</p>
+                  </div>
+                </div>
+                <div className="flex justify-between items-center">
+                  <div className="text-sm text-gray-600">
+                    <span className="font-semibold">{classItem.enrolled}/{classItem.capacity}</span> spots filled
+                  </div>
+                  <button
+                    data-testid="userattemptsto-book"
+                    onClick={() => handleBookClass(classItem)}
+                    className={`px-6 py-2 rounded-lg font-semibold transition-colors ${
+                      selectedClass === classItem.id
+                        ? 'bg-gray-400 text-white cursor-not-allowed'
+                        : 'bg-blue-600 text-white hover:bg-blue-700'
                     }`}
-                    onClick={() => handleSelectClass(classItem)}
+                    disabled={selectedClass === classItem.id}
+                  >
+                    {selectedClass === classItem.id ? 'Attempted' : 'Book Now'}
+                  </button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        {/* Booking Attempt History */}
+        <div>
+          <h2 className="text-xl font-bold text-gray-900 mb-4">Recent Booking Attempts</h2>
+          <div className="bg-white rounded-lg shadow border border-gray-200">
+            {bookingAttempts.length === 0 ? (
+              <p className="p-6 text-gray-500 text-center">No booking attempts yet</p>
+            ) : (
+              <ul data-testid="userattemptsto-attempts-list" className="divide-y divide-gray-200">
+                {bookingAttempts.map((attempt) => (
+                  <li
+                    key={attempt.id}
+                    data-testid="userattemptsto-attempt-item"
+                    className="p-4 hover:bg-gray-50 transition-colors"
                   >
                     <div className="flex justify-between items-start">
                       <div className="flex-1">
-                        <h3 className="font-semibold text-gray-900">{classItem.className}</h3>
-                        <p className="text-sm text-gray-600 mt-1">
-                          Instructor: {classItem.instructor}
-                        </p>
-                        <div className="flex gap-4 mt-2 text-sm text-gray-500">
-                          <span>{classItem.date} at {classItem.time}</span>
-                          <span>• {classItem.location}</span>
-                        </div>
+                        <h4 className="font-semibold text-gray-900">{attempt.className}</h4>
+                        <p className="text-sm text-gray-600 mt-1">{attempt.attemptTime}</p>
+                        {attempt.reason && (
+                          <p className="text-sm text-red-600 mt-1">❌ {attempt.reason}</p>
+                        )}
                       </div>
-                      <div className="text-right">
-                        <div className="text-sm text-gray-600">
-                          {classItem.currentBookings}/{classItem.capacity} spots
-                        </div>
-                        <div className="text-sm font-medium text-green-600 mt-1">
-                          Available
-                        </div>
-                      </div>
+                      <span
+                        className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                          attempt.status === 'blocked'
+                            ? 'bg-red-100 text-red-800'
+                            : attempt.status === 'success'
+                            ? 'bg-green-100 text-green-800'
+                            : 'bg-gray-100 text-gray-800'
+                        }`}
+                      >
+                        {attempt.status.toUpperCase()}
+                      </span>
                     </div>
                   </li>
                 ))}
               </ul>
-            </div>
-          </div>
-
-          {/* Booking Panel */}
-          <div className="lg:col-span-1">
-            <div className="bg-white rounded-lg shadow-sm p-6 sticky top-6">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">Booking Details</h2>
-              
-              {/* Membership Info */}
-              <div className="mb-4 pb-4 border-b border-gray-200">
-                <h3 className="text-sm font-semibold text-gray-700 mb-2">Membership Status</h3>
-                <div className="space-y-1 text-sm">
-                  <p><span className="text-gray-600">Member:</span> <span className="font-medium text-gray-900">{membership.memberName}</span></p>
-                  <p><span className="text-gray-600">Type:</span> <span className="font-medium text-gray-900">{membership.membershipType}</span></p>
-                  <p><span className="text-gray-600">Expires:</span> <span className={`font-medium ${membership.isActive ? 'text-green-600' : 'text-red-600'}`}>
-                    {membership.expiryDate}
-                  </span></p>
-                  <div className="mt-2">
-                    <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold ${
-                      membership.isActive 
-                        ? 'bg-green-100 text-green-800' 
-                        : 'bg-red-100 text-red-800'
-                    }`}>
-                      {membership.isActive ? '● Active' : '● Expired'}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {!selectedClass ? (
-                <div className="text-center py-8 text-gray-500">
-                  <p>Select a class to view booking options</p>
-                </div>
-              ) : (
-                <div>
-                  <div className="mb-4 pb-4 border-b border-gray-200">
-                    <h3 className="font-semibold text-gray-900 mb-2">
-                      {selectedClass.className}
-                    </h3>
-                    <div className="space-y-1 text-sm text-gray-600">
-                      <p><span className="font-medium">Instructor:</span> {selectedClass.instructor}</p>
-                      <p><span className="font-medium">Date:</span> {selectedClass.date}</p>
-                      <p><span className="font-medium">Time:</span> {selectedClass.time}</p>
-                      <p><span className="font-medium">Location:</span> {selectedClass.location}</p>
-                      <p><span className="font-medium">Availability:</span> {selectedClass.capacity - selectedClass.currentBookings} spots remaining</p>
-                    </div>
-                  </div>
-
-                  {bookingStatus === 'expired' && errorMessage && (
-                    <div 
-                      data-testid="userattemptsto-error"
-                      className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg"
-                    >
-                      <div className="flex items-start gap-2">
-                        <svg className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                        </svg>
-                        <div>
-                          <p className="text-sm font-semibold text-red-800 mb-1">Booking Failed</p>
-                          <p className="text-sm text-red-700">{errorMessage}</p>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  <div className="space-y-2">
-                    <button
-                      data-testid="userattemptsto-book"
-                      onClick={handleBookClass}
-                      disabled={bookingStatus === 'attempting' || !membership.isActive}
-                      className="w-full px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed disabled:text-gray-500"
-                    >
-                      {bookingStatus === 'attempting' ? 'Booking...' : 'Book Class'}
-                    </button>
-                    
-                    {showRenewalPrompt && (
-                      <button
-                        data-testid="userattemptsto-renew"
-                        onClick={handleRenewMembership}
-                        className="w-full px-4 py-2 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 transition-colors"
-                      >
-                        Renew Membership Now
-                      </button>
-                    )}
-                    
-                    <button
-                      data-testid="userattemptsto-cancel"
-                      onClick={() => {
-                        setSelectedClass(null)
-                        setBookingStatus('idle')
-                        setErrorMessage('')
-                        setShowRenewalPrompt(false)
-                      }}
-                      className="w-full px-4 py-2 bg-gray-200 text-gray-700 font-medium rounded-lg hover:bg-gray-300 transition-colors"
-                    >
-                      Cancel
-                    </button>
-                  </div>
-
-                  {!membership.isActive && (
-                    <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                      <p className="text-xs text-yellow-800">
-                        <strong>Note:</strong> You cannot book classes with an expired membership. 
-                        Please renew to continue using our facilities.
-                      </p>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
+            )}
           </div>
         </div>
       </div>
+
+      {/* Expired Membership Modal */}
+      {showExpiredModal && (
+        <div
+          data-testid="userattemptsto-modal"
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+        >
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+            <div className="text-center mb-4">
+              <div className="text-5xl mb-3">🚫</div>
+              <h3 className="text-xl font-bold text-gray-900 mb-2">Booking Failed</h3>
+              <p className="text-gray-600">
+                Your membership has expired and you cannot book classes.
+              </p>
+            </div>
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+              <p className="text-sm text-red-800 mb-1">
+                <strong>Membership Type:</strong> {mockMembership.type}
+              </p>
+              <p className="text-sm text-red-800">
+                <strong>Expired On:</strong> {mockMembership.expiryDate}
+              </p>
+            </div>
+            <div className="space-y-3">
+              <button
+                data-testid="userattemptsto-redirect"
+                onClick={handleRenewMembership}
+                className="w-full px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold"
+              >
+                Renew Membership Now
+              </button>
+              <button
+                data-testid="userattemptsto-close"
+                onClick={handleCloseModal}
+                className="w-full px-6 py-3 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors font-semibold"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
