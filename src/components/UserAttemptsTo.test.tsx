@@ -8,140 +8,123 @@ describe('UserAttemptsTo', () => {
     expect(document.body).toBeTruthy()
   })
 
-  it('displays the membership sign-up form', () => {
+  it('displays mock class data', () => {
     render(<UserAttemptsTo />)
-    expect(screen.getByText(/Gym Membership Sign-Up/i)).toBeInTheDocument()
-    expect(screen.getByText(/Personal Information/i)).toBeInTheDocument()
-    expect(screen.getByText(/Choose Your Plan/i)).toBeInTheDocument()
-    expect(screen.getByText(/Select Payment Method/i)).toBeInTheDocument()
-  })
-
-  it('displays all membership plans', () => {
-    render(<UserAttemptsTo />)
-    const planItems = screen.getAllByTestId('userattemptsto-plan-item')
-    expect(planItems.length).toBe(5)
-    expect(screen.getAllByText('Basic').length).toBeGreaterThan(0)
-    expect(screen.getAllByText('Standard').length).toBeGreaterThan(0)
-    expect(screen.getAllByText('Premium').length).toBeGreaterThan(0)
-  })
-
-  it('displays all payment methods', () => {
-    render(<UserAttemptsTo />)
-    expect(screen.getByText('Credit Card')).toBeInTheDocument()
-    expect(screen.getByText('Debit Card')).toBeInTheDocument()
-    expect(screen.getByText('PayPal')).toBeInTheDocument()
-    expect(screen.getByText('Apple Pay')).toBeInTheDocument()
-    expect(screen.getByText('Google Pay')).toBeInTheDocument()
-  })
-
-  it('shows validation error when attempting to submit without payment method', () => {
-    render(<UserAttemptsTo />)
-    
-    const firstNameInput = screen.getByTestId('userattemptsto-firstname')
-    const lastNameInput = screen.getByTestId('userattemptsto-lastname')
-    const emailInput = screen.getByTestId('userattemptsto-email')
-    
-    fireEvent.change(firstNameInput, { target: { value: 'John' } })
-    fireEvent.change(lastNameInput, { target: { value: 'Doe' } })
-    fireEvent.change(emailInput, { target: { value: 'john.doe@example.com' } })
-    
-    const submitButton = screen.getByTestId('userattemptsto-submit')
-    fireEvent.click(submitButton)
-    
-    expect(screen.getByText(/Please select a payment method to complete your membership sign-up/i)).toBeInTheDocument()
-  })
-
-  it('allows user to select a payment method', () => {
-    render(<UserAttemptsTo />)
-    
-    const paymentItems = screen.getAllByTestId('userattemptsto-payment-item')
-    expect(paymentItems.length).toBeGreaterThan(0)
-    
-    fireEvent.click(paymentItems[0])
-    
-    expect(paymentItems[0]).toHaveClass('border-indigo-600')
-  })
-
-  it('allows user to select a membership plan', () => {
-    render(<UserAttemptsTo />)
-    
-    const planItems = screen.getAllByTestId('userattemptsto-plan-item')
-    expect(planItems.length).toBe(5)
-    
-    fireEvent.click(planItems[2])
-    
-    expect(planItems[2]).toHaveClass('border-indigo-600')
-  })
-
-  it('shows order summary with selected plan', () => {
-    render(<UserAttemptsTo />)
-    
-    expect(screen.getByText('Order Summary')).toBeInTheDocument()
-    expect(screen.getByText(/Membership Plan:/i)).toBeInTheDocument()
-    expect(screen.getByText(/Billing Period:/i)).toBeInTheDocument()
-    expect(screen.getByText(/Payment Method:/i)).toBeInTheDocument()
-  })
-
-  it('validates required fields and email format', () => {
-    render(<UserAttemptsTo />)
-    
-    const submitButton = screen.getByTestId('userattemptsto-submit')
-    
-    // Submit empty form
-    fireEvent.click(submitButton)
-    
-    // All required field errors should appear
-    expect(screen.getByText(/First name is required/i)).toBeInTheDocument()
-    expect(screen.getByText(/Last name is required/i)).toBeInTheDocument()
-    expect(screen.getByText(/Email is required/i)).toBeInTheDocument()
-    expect(screen.getByText(/Please select a payment method/i)).toBeInTheDocument()
-  })
-
-  it('requires first name and last name', () => {
-    render(<UserAttemptsTo />)
-    
-    const submitButton = screen.getByTestId('userattemptsto-submit')
-    
-    fireEvent.click(submitButton)
-    
-    // Check that error messages appear
-    expect(screen.getByText(/First name is required/i)).toBeInTheDocument()
-    expect(screen.getByText(/Last name is required/i)).toBeInTheDocument()
+    expect(screen.getByText('High-Intensity Interval Training')).toBeTruthy()
+    expect(screen.getByText('Yoga Flow')).toBeTruthy()
+    expect(screen.getByText('Spin Class')).toBeTruthy()
+    expect(screen.getByText('Boxing Fundamentals')).toBeTruthy()
+    expect(screen.getByText('Power Pilates')).toBeTruthy()
   })
 
   it('has required data-testid attributes', () => {
     render(<UserAttemptsTo />)
-    
-    expect(screen.getByTestId('userattemptsto')).toBeInTheDocument()
-    expect(screen.getByTestId('userattemptsto-firstname')).toBeInTheDocument()
-    expect(screen.getByTestId('userattemptsto-lastname')).toBeInTheDocument()
-    expect(screen.getByTestId('userattemptsto-email')).toBeInTheDocument()
-    expect(screen.getByTestId('userattemptsto-submit')).toBeInTheDocument()
-    expect(screen.getByTestId('userattemptsto-plan-list')).toBeInTheDocument()
-    expect(screen.getByTestId('userattemptsto-payment-list')).toBeInTheDocument()
-    
-    const planItems = screen.getAllByTestId('userattemptsto-plan-item')
-    expect(planItems.length).toBe(5)
-    
-    const paymentItems = screen.getAllByTestId('userattemptsto-payment-item')
-    expect(paymentItems.length).toBe(5)
+    // Main wrapper
+    expect(screen.getByTestId('userattemptsto')).toBeTruthy()
+    // List container
+    expect(screen.getByTestId('userattemptsto-list')).toBeTruthy()
+    // List items
+    const items = screen.getAllByTestId('userattemptsto-item')
+    expect(items.length).toBeGreaterThan(0)
+    // Cancel button
+    const cancelButton = screen.queryByTestId('userattemptsto-cancel')
+    // Book button will appear after selecting a class
+    expect(cancelButton).toBeFalsy() // Not visible until a class is selected
   })
 
-  it('submits successfully when all fields are valid', async () => {
+  it('shows booking details when a class is selected', () => {
+    render(<UserAttemptsTo />)
+    const firstClass = screen.getAllByTestId('userattemptsto-item')[0]
+    fireEvent.click(firstClass)
+    
+    // Booking panel should now show buttons
+    expect(screen.getByTestId('userattemptsto-book')).toBeTruthy()
+    expect(screen.getByTestId('userattemptsto-cancel')).toBeTruthy()
+  })
+
+  it('displays error message when attempting to book a full class', async () => {
     render(<UserAttemptsTo />)
     
-    fireEvent.change(screen.getByTestId('userattemptsto-firstname'), { target: { value: 'Jane' } })
-    fireEvent.change(screen.getByTestId('userattemptsto-lastname'), { target: { value: 'Smith' } })
-    fireEvent.change(screen.getByTestId('userattemptsto-email'), { target: { value: 'jane.smith@example.com' } })
+    // Select first class (which is full)
+    const firstClass = screen.getAllByTestId('userattemptsto-item')[0]
+    fireEvent.click(firstClass)
     
-    const paymentItems = screen.getAllByTestId('userattemptsto-payment-item')
-    fireEvent.click(paymentItems[0])
+    // Click book button
+    const bookButton = screen.getByTestId('userattemptsto-book')
+    fireEvent.click(bookButton)
     
-    fireEvent.click(screen.getByTestId('userattemptsto-submit'))
-    
-    // Wait for success message to appear
+    // Wait for error message
     await waitFor(() => {
-      expect(screen.getByText(/Membership Sign-Up Complete!/i)).toBeInTheDocument()
+      expect(screen.getByTestId('userattemptsto-error')).toBeTruthy()
     })
+    
+    expect(screen.getByText(/Unable to book/)).toBeTruthy()
+    expect(screen.getByText(/reached its maximum capacity/)).toBeTruthy()
+  })
+
+  it('shows waitlist button after booking fails', async () => {
+    render(<UserAttemptsTo />)
+    
+    // Select first class
+    const firstClass = screen.getAllByTestId('userattemptsto-item')[0]
+    fireEvent.click(firstClass)
+    
+    // Click book button
+    const bookButton = screen.getByTestId('userattemptsto-book')
+    fireEvent.click(bookButton)
+    
+    // Wait for waitlist button to appear
+    await waitFor(() => {
+      expect(screen.getByTestId('userattemptsto-waitlist')).toBeTruthy()
+    })
+  })
+
+  it('allows user to join waitlist after failed booking', async () => {
+    render(<UserAttemptsTo />)
+    
+    // Select first class
+    const firstClass = screen.getAllByTestId('userattemptsto-item')[0]
+    fireEvent.click(firstClass)
+    
+    // Click book button
+    const bookButton = screen.getByTestId('userattemptsto-book')
+    fireEvent.click(bookButton)
+    
+    // Wait for waitlist button and click it
+    await waitFor(() => {
+      const waitlistButton = screen.getByTestId('userattemptsto-waitlist')
+      fireEvent.click(waitlistButton)
+    })
+    
+    // Check for success message
+    await waitFor(() => {
+      expect(screen.getByTestId('userattemptsto-success')).toBeTruthy()
+    })
+    
+    expect(screen.getByText(/Added to Waitlist/)).toBeTruthy()
+  })
+
+  it('shows FULL badge for classes at capacity', () => {
+    render(<UserAttemptsTo />)
+    const fullBadges = screen.getAllByText('FULL')
+    expect(fullBadges.length).toBeGreaterThan(0)
+  })
+
+  it('clears selection when cancel button is clicked', () => {
+    render(<UserAttemptsTo />)
+    
+    // Select a class
+    const firstClass = screen.getAllByTestId('userattemptsto-item')[0]
+    fireEvent.click(firstClass)
+    
+    // Cancel button should be visible
+    const cancelButton = screen.getByTestId('userattemptsto-cancel')
+    expect(cancelButton).toBeTruthy()
+    
+    // Click cancel
+    fireEvent.click(cancelButton)
+    
+    // Book button should no longer be visible
+    expect(screen.queryByTestId('userattemptsto-book')).toBeFalsy()
   })
 })
