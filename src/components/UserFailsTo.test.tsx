@@ -8,121 +8,111 @@ describe('UserFailsTo', () => {
     expect(document.body).toBeTruthy()
   })
 
-  it('displays membership tiers', () => {
+  it('displays payment method options', () => {
     render(<UserFailsTo />)
-    expect(screen.getByText('Basic')).toBeTruthy()
-    expect(screen.getByText('Premium')).toBeTruthy()
-    expect(screen.getByText('Elite')).toBeTruthy()
-    expect(screen.getByText('Family')).toBeTruthy()
-    expect(screen.getByText('Corporate')).toBeTruthy()
+    expect(screen.getByText('Credit Card')).toBeTruthy()
+    expect(screen.getByText('Debit Card')).toBeTruthy()
+    expect(screen.getByText('PayPal')).toBeTruthy()
+    expect(screen.getByText('Apple Pay')).toBeTruthy()
+    expect(screen.getByText('Google Pay')).toBeTruthy()
   })
 
-  it('displays form fields', () => {
+  it('displays order summary with mock items', () => {
     render(<UserFailsTo />)
-    expect(screen.getByTestId('userfailsto-firstname')).toBeTruthy()
-    expect(screen.getByTestId('userfailsto-lastname')).toBeTruthy()
-    expect(screen.getByTestId('userfailsto-email')).toBeTruthy()
+    expect(screen.getByText('Order Summary')).toBeTruthy()
+    expect(screen.getByText('Premium Gym Membership')).toBeTruthy()
+    expect(screen.getByText(/Personal Training Session/)).toBeTruthy()
   })
 
-  it('has required data-testid attributes', () => {
+  it('shows error banner when submitting without selecting payment method', () => {
     render(<UserFailsTo />)
-    
-    // Main wrapper
-    expect(screen.getByTestId('userfailsto')).toBeTruthy()
-    
-    // Form inputs
-    expect(screen.getByTestId('userfailsto-firstname')).toBeTruthy()
-    expect(screen.getByTestId('userfailsto-lastname')).toBeTruthy()
-    expect(screen.getByTestId('userfailsto-email')).toBeTruthy()
-    
-    // Buttons
-    expect(screen.getByTestId('userfailsto-submit')).toBeTruthy()
-    expect(screen.getByTestId('userfailsto-reset')).toBeTruthy()
-    expect(screen.getByTestId('userfailsto-help')).toBeTruthy()
-    
-    // List container and items
-    expect(screen.getByTestId('userfailsto-list')).toBeTruthy()
-    const items = screen.getAllByTestId('userfailsto-item')
-    expect(items.length).toBe(5) // 5 membership tiers
-  })
-
-  it('shows error when submitting without selecting membership', () => {
-    render(<UserFailsTo />)
-    
     const submitButton = screen.getByTestId('userfailsto-submit')
-    fireEvent.click(submitButton)
     
-    // Error banner should appear
-    expect(screen.getByTestId('userfailsto-error-banner')).toBeTruthy()
-    expect(screen.getByText(/Membership Selection Required/i)).toBeTruthy()
-  })
-
-  it('allows user to select a membership', () => {
-    render(<UserFailsTo />)
-    
-    const membershipItems = screen.getAllByTestId('userfailsto-item')
-    const firstMembership = membershipItems[0]
-    
-    fireEvent.click(firstMembership)
-    
-    // Check if the membership is selected (visual indication)
-    expect(firstMembership.className).toContain('border-indigo-600')
-  })
-
-  it('clears error after selecting membership', () => {
-    render(<UserFailsTo />)
-    
-    // First, submit without selection to trigger error
-    const submitButton = screen.getByTestId('userfailsto-submit')
     fireEvent.click(submitButton)
     
     expect(screen.getByTestId('userfailsto-error-banner')).toBeTruthy()
+    expect(screen.getByText('Payment Method Required')).toBeTruthy()
+  })
+
+  it('clears error when payment method is selected', () => {
+    render(<UserFailsTo />)
+    const submitButton = screen.getByTestId('userfailsto-submit')
     
-    // Then select a membership
-    const membershipItems = screen.getAllByTestId('userfailsto-item')
-    fireEvent.click(membershipItems[0])
+    // First, trigger the error
+    fireEvent.click(submitButton)
+    expect(screen.getByTestId('userfailsto-error-banner')).toBeTruthy()
+    
+    // Then select a payment method
+    const paymentItems = screen.getAllByTestId('userfailsto-item')
+    fireEvent.click(paymentItems[0])
     
     // Error should be cleared
     expect(screen.queryByTestId('userfailsto-error-banner')).toBeFalsy()
   })
 
-  it('resets form when reset button is clicked', () => {
+  it('allows user to reset the form', () => {
     render(<UserFailsTo />)
+    const resetButton = screen.getByTestId('userfailsto-reset')
+    const nameInput = screen.getByTestId('userfailsto-billingname') as HTMLInputElement
     
     // Fill in some data
-    const firstNameInput = screen.getByTestId('userfailsto-firstname') as HTMLInputElement
-    const lastNameInput = screen.getByTestId('userfailsto-lastname') as HTMLInputElement
+    fireEvent.change(nameInput, { target: { value: 'John Doe' } })
+    expect(nameInput.value).toBe('John Doe')
     
-    fireEvent.change(firstNameInput, { target: { value: 'John' } })
-    fireEvent.change(lastNameInput, { target: { value: 'Doe' } })
-    
-    expect(firstNameInput.value).toBe('John')
-    expect(lastNameInput.value).toBe('Doe')
-    
-    // Click reset
-    const resetButton = screen.getByTestId('userfailsto-reset')
+    // Reset form
     fireEvent.click(resetButton)
-    
-    // Form should be cleared
-    expect(firstNameInput.value).toBe('')
-    expect(lastNameInput.value).toBe('')
+    expect(nameInput.value).toBe('')
   })
 
-  it('displays all 5 membership tiers in the list', () => {
+  it('has required data-testid attributes', () => {
     render(<UserFailsTo />)
     
-    const items = screen.getAllByTestId('userfailsto-item')
-    expect(items.length).toBe(5)
+    // Verify main wrapper
+    expect(document.querySelector('[data-testid="userfailsto"]')).toBeTruthy()
+    
+    // Verify buttons
+    expect(document.querySelector('[data-testid="userfailsto-submit"]')).toBeTruthy()
+    expect(document.querySelector('[data-testid="userfailsto-reset"]')).toBeTruthy()
+    expect(document.querySelector('[data-testid="userfailsto-help"]')).toBeTruthy()
+    
+    // Verify inputs
+    expect(document.querySelector('[data-testid="userfailsto-billingname"]')).toBeTruthy()
+    expect(document.querySelector('[data-testid="userfailsto-billingemail"]')).toBeTruthy()
+    expect(document.querySelector('[data-testid="userfailsto-billingaddress"]')).toBeTruthy()
+    
+    // Verify list and items
+    expect(document.querySelector('[data-testid="userfailsto-list"]')).toBeTruthy()
+    const items = document.querySelectorAll('[data-testid="userfailsto-item"]')
+    expect(items.length).toBeGreaterThan(0)
   })
 
-  it('shows required field indicator for membership selection', () => {
+  it('displays form fields correctly', () => {
     render(<UserFailsTo />)
     
-    // Use getAllByText to get all matches and check the heading with asterisk
-    const headings = screen.getAllByText(/Select Your Membership/i)
-    const formHeading = headings.find(el => el.tagName === 'H2')
-    expect(formHeading).toBeTruthy()
-    // Check for asterisk in the parent element
-    expect(formHeading?.textContent).toContain('*')
+    expect(screen.getByTestId('userfailsto-billingname')).toBeTruthy()
+    expect(screen.getByTestId('userfailsto-billingemail')).toBeTruthy()
+    expect(screen.getByTestId('userfailsto-billingaddress')).toBeTruthy()
+  })
+
+  it('calculates and displays total amount', () => {
+    render(<UserFailsTo />)
+    
+    // Check that total is displayed
+    expect(screen.getByText('Total')).toBeTruthy()
+    // The total should be $244.99 (49.99 + 120.00 + 15.00 + 35.00 + 25.00)
+    expect(screen.getByText('$244.99')).toBeTruthy()
+  })
+
+  it('allows selection of payment method', () => {
+    render(<UserFailsTo />)
+    
+    const paymentItems = screen.getAllByTestId('userfailsto-item')
+    expect(paymentItems.length).toBe(5)
+    
+    // Click first payment method
+    fireEvent.click(paymentItems[0])
+    
+    // Should have selected class or styling applied
+    expect(paymentItems[0].className).toContain('border-teal-600')
   })
 })
