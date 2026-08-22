@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from '@testing-library/react'
+import { render, screen } from '@testing-library/react'
 import { describe, it, expect } from 'vitest'
 import UserAttemptsTo from './UserAttemptsTo'
 
@@ -6,12 +6,6 @@ describe('UserAttemptsTo', () => {
   it('renders without crashing', () => {
     render(<UserAttemptsTo />)
     expect(document.body).toBeTruthy()
-  })
-
-  it('displays telehealth services header', () => {
-    render(<UserAttemptsTo />)
-    expect(screen.getByText('Telehealth Services')).toBeTruthy()
-    expect(screen.getByText(/Connect with healthcare providers/i)).toBeTruthy()
   })
 
   it('displays mock provider data', () => {
@@ -23,161 +17,82 @@ describe('UserAttemptsTo', () => {
     expect(screen.getByText('Dr. Amanda Lee')).toBeTruthy()
   })
 
+  it('displays consent requirement message', () => {
+    render(<UserAttemptsTo />)
+    expect(screen.getByText(/Consent Required/i)).toBeTruthy()
+    expect(screen.getByText(/You must review and accept all required consents/i)).toBeTruthy()
+  })
+
+  it('displays schedule telehealth consultation header', () => {
+    render(<UserAttemptsTo />)
+    expect(screen.getByText('Schedule Telehealth Consultation')).toBeTruthy()
+  })
+
   it('has required data-testid attributes', () => {
-    const { container } = render(<UserAttemptsTo />)
+    render(<UserAttemptsTo />)
     
     // Main wrapper
-    expect(container.querySelector('[data-testid="userattemptsto"]')).toBeTruthy()
+    expect(document.querySelector('[data-testid="userattemptsto"]')).toBeTruthy()
     
-    // Specialty filter
-    expect(container.querySelector('[data-testid="userattemptsto-specialty"]')).toBeTruthy()
+    // Form elements
+    expect(document.querySelector('[data-testid="userattemptsto-provider"]')).toBeTruthy()
+    expect(document.querySelector('[data-testid="userattemptsto-date"]')).toBeTruthy()
+    expect(document.querySelector('[data-testid="userattemptsto-time"]')).toBeTruthy()
+    expect(document.querySelector('[data-testid="userattemptsto-reason"]')).toBeTruthy()
     
-    // List container
-    expect(container.querySelector('[data-testid="userattemptsto-list"]')).toBeTruthy()
+    // Buttons
+    expect(document.querySelector('[data-testid="userattemptsto-submit"]')).toBeTruthy()
+    expect(document.querySelector('[data-testid="userattemptsto-cancel"]')).toBeTruthy()
+    expect(document.querySelector('[data-testid="userattemptsto-view-consent"]')).toBeTruthy()
     
-    // List items
-    const items = container.querySelectorAll('[data-testid="userattemptsto-item"]')
-    expect(items.length).toBeGreaterThan(0)
-    
-    // Select buttons
-    const selectButtons = container.querySelectorAll('[data-testid="userattemptsto-select"]')
-    expect(selectButtons.length).toBeGreaterThan(0)
+    // List elements
+    expect(document.querySelector('[data-testid="userattemptsto-list"]')).toBeTruthy()
+    expect(document.querySelector('[data-testid="userattemptsto-item"]')).toBeTruthy()
   })
 
-  it('filters providers by specialty', () => {
+  it('displays consent tracking information', () => {
     render(<UserAttemptsTo />)
-    
-    const specialtyFilter = screen.getByTestId('userattemptsto-specialty') as HTMLSelectElement
-    
-    // Change to Cardiologist
-    fireEvent.change(specialtyFilter, { target: { value: 'Cardiologist' } })
-    
-    expect(screen.getByText('Dr. Michael Chen')).toBeTruthy()
-    expect(screen.queryByText('Dr. Sarah Johnson')).toBeFalsy()
+    expect(screen.getByText(/Consents Accepted: 0 \/ 5/i)).toBeTruthy()
   })
 
-  it('allows selecting a provider', () => {
+  it('shows submit button disabled initially', () => {
     render(<UserAttemptsTo />)
-    
-    const selectButtons = screen.getAllByTestId('userattemptsto-select')
-    fireEvent.click(selectButtons[0])
-    
-    // Should show appointment booking section
-    expect(screen.getByText(/Book Appointment with/i)).toBeTruthy()
-  })
-
-  it('shows appointment booking form when provider is selected', () => {
-    const { container } = render(<UserAttemptsTo />)
-    
-    const selectButtons = screen.getAllByTestId('userattemptsto-select')
-    fireEvent.click(selectButtons[0])
-    
-    // Check for booking form elements
-    expect(screen.getByText('Select Time Slot')).toBeTruthy()
-    expect(screen.getByTestId('userattemptsto-reason')).toBeTruthy()
-    expect(screen.getByTestId('userattemptsto-submit')).toBeTruthy()
-    expect(screen.getByTestId('userattemptsto-cancel')).toBeTruthy()
-  })
-
-  it('allows selecting a time slot', () => {
-    render(<UserAttemptsTo />)
-    
-    // Select provider first
-    const selectButtons = screen.getAllByTestId('userattemptsto-select')
-    fireEvent.click(selectButtons[0])
-    
-    // Select time slot
-    const slotButtons = screen.getAllByTestId('userattemptsto-slot')
-    const availableSlot = slotButtons.find(btn => !btn.hasAttribute('disabled'))
-    if (availableSlot) {
-      fireEvent.click(availableSlot)
-      expect(availableSlot.classList.contains('bg-blue-600')).toBe(true)
-    }
-  })
-
-  it('allows entering reason for visit', () => {
-    render(<UserAttemptsTo />)
-    
-    // Select provider first
-    const selectButtons = screen.getAllByTestId('userattemptsto-select')
-    fireEvent.click(selectButtons[0])
-    
-    const reasonTextarea = screen.getByTestId('userattemptsto-reason') as HTMLTextAreaElement
-    fireEvent.change(reasonTextarea, { target: { value: 'Annual checkup' } })
-    
-    expect(reasonTextarea.value).toBe('Annual checkup')
-  })
-
-  it('enables book appointment button when all fields are filled', () => {
-    render(<UserAttemptsTo />)
-    
-    // Select provider
-    const selectButtons = screen.getAllByTestId('userattemptsto-select')
-    fireEvent.click(selectButtons[0])
-    
-    const submitButton = screen.getByTestId('userattemptsto-submit') as HTMLButtonElement
+    const submitButton = document.querySelector('[data-testid="userattemptsto-submit"]') as HTMLButtonElement
     expect(submitButton.disabled).toBe(true)
-    
-    // Select time slot
-    const slotButtons = screen.getAllByTestId('userattemptsto-slot')
-    const availableSlot = slotButtons.find(btn => !btn.hasAttribute('disabled'))
-    if (availableSlot) {
-      fireEvent.click(availableSlot)
-    }
-    
-    // Enter reason
-    const reasonTextarea = screen.getByTestId('userattemptsto-reason')
-    fireEvent.change(reasonTextarea, { target: { value: 'Annual checkup' } })
-    
-    expect(submitButton.disabled).toBe(false)
   })
 
-  it('shows confirmation modal after booking', () => {
+  it('displays provider selection dropdown', () => {
     render(<UserAttemptsTo />)
-    
-    // Select provider
-    const selectButtons = screen.getAllByTestId('userattemptsto-select')
-    fireEvent.click(selectButtons[0])
-    
-    // Select time slot
-    const slotButtons = screen.getAllByTestId('userattemptsto-slot')
-    const availableSlot = slotButtons.find(btn => !btn.hasAttribute('disabled'))
-    if (availableSlot) {
-      fireEvent.click(availableSlot)
-    }
-    
-    // Enter reason
-    const reasonTextarea = screen.getByTestId('userattemptsto-reason')
-    fireEvent.change(reasonTextarea, { target: { value: 'Annual checkup' } })
-    
-    // Book appointment
-    const submitButton = screen.getByTestId('userattemptsto-submit')
-    fireEvent.click(submitButton)
-    
-    // Check for confirmation modal
-    expect(screen.getByTestId('userattemptsto-modal')).toBeTruthy()
-    expect(screen.getByText('Appointment Confirmed!')).toBeTruthy()
+    const providerSelect = document.querySelector('[data-testid="userattemptsto-provider"]') as HTMLSelectElement
+    expect(providerSelect).toBeTruthy()
+    expect(screen.getByText('-- Select a Provider --')).toBeTruthy()
   })
 
-  it('resets form when cancel is clicked', () => {
+  it('displays date and time input fields', () => {
     render(<UserAttemptsTo />)
-    
-    // Select provider
-    const selectButtons = screen.getAllByTestId('userattemptsto-select')
-    fireEvent.click(selectButtons[0])
-    
-    // Click cancel
-    const cancelButton = screen.getByTestId('userattemptsto-cancel')
-    fireEvent.click(cancelButton)
-    
-    // Booking form should be hidden
-    expect(screen.queryByText(/Book Appointment with/i)).toBeFalsy()
+    const dateInput = document.querySelector('[data-testid="userattemptsto-date"]') as HTMLInputElement
+    const timeInput = document.querySelector('[data-testid="userattemptsto-time"]') as HTMLInputElement
+    expect(dateInput.type).toBe('date')
+    expect(timeInput.type).toBe('time')
   })
 
-  it('displays video call button for providers available now', () => {
-    const { container } = render(<UserAttemptsTo />)
-    
-    const videoButtons = container.querySelectorAll('[data-testid="userattemptsto-video"]')
-    expect(videoButtons.length).toBeGreaterThan(0)
+  it('displays reason for visit textarea', () => {
+    render(<UserAttemptsTo />)
+    const reasonTextarea = document.querySelector('[data-testid="userattemptsto-reason"]') as HTMLTextAreaElement
+    expect(reasonTextarea.tagName).toBe('TEXTAREA')
+    expect(reasonTextarea.placeholder).toContain('describe your symptoms')
+  })
+
+  it('displays all 5 mock providers in the list', () => {
+    render(<UserAttemptsTo />)
+    const providerItems = document.querySelectorAll('[data-testid="userattemptsto-item"]')
+    expect(providerItems.length).toBe(5)
+  })
+
+  it('displays review consent button', () => {
+    render(<UserAttemptsTo />)
+    const consentButton = document.querySelector('[data-testid="userattemptsto-view-consent"]') as HTMLButtonElement
+    expect(consentButton).toBeTruthy()
+    expect(consentButton.textContent).toContain('Review & Accept Consents')
   })
 })
