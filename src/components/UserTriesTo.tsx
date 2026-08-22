@@ -1,139 +1,164 @@
 /**
- * UserTriesTo — Displays a prompt when user tries to access personalized insights without setting a wellness goal
+ * UserTriesTo — Displays a prompt when user tries to access advanced features without completing the educational module
  *
- * Features: Goal setup prompt, insights preview, navigation to goal setup, visual feedback, motivational messaging
+ * Features: Educational module requirement, feature preview, module completion tracking, navigation to education, progress indication
  *
- * Ticket: SCRUM-1118 | Branch: proto/SCRUM-1115
+ * Ticket: SCRUM-1122 | Branch: proto/SCRUM-1115
  */
 
 import React, { useState } from 'react'
 
-interface InsightPreview {
+interface AdvancedFeature {
   id: number
   title: string
   description: string
   icon: string
-  requiresGoal: boolean
+  requiresEducation: boolean
+  moduleRequired: string
 }
 
-const MOCK_INSIGHTS: InsightPreview[] = [
+const MOCK_FEATURES: AdvancedFeature[] = [
   {
     id: 1,
-    title: 'Sleep Quality Analysis',
-    description: 'Personalized recommendations based on your sleep patterns and wellness goals',
-    icon: '😴',
-    requiresGoal: true
+    title: 'Advanced Analytics Dashboard',
+    description: 'Deep dive into your health metrics with predictive analytics and trend forecasting',
+    icon: '📊',
+    requiresEducation: true,
+    moduleRequired: 'Data Interpretation Basics'
   },
   {
     id: 2,
-    title: 'Activity Trends',
-    description: 'Track your progress towards fitness goals with detailed activity insights',
-    icon: '🏃',
-    requiresGoal: true
+    title: 'Custom Workout Plans',
+    description: 'Create personalized exercise routines based on advanced fitness principles',
+    icon: '💪',
+    requiresEducation: true,
+    moduleRequired: 'Exercise Science Fundamentals'
   },
   {
     id: 3,
-    title: 'Nutrition Balance',
-    description: 'Custom meal suggestions aligned with your health and wellness objectives',
-    icon: '🥗',
-    requiresGoal: true
+    title: 'Medication Interaction Checker',
+    description: 'Analyze potential interactions between supplements and medications',
+    icon: '💊',
+    requiresEducation: true,
+    moduleRequired: 'Health Safety Protocols'
   },
   {
     id: 4,
-    title: 'Stress Management',
-    description: 'Mindfulness tips and stress tracking based on your wellness priorities',
-    icon: '🧘',
-    requiresGoal: true
+    title: 'Biometric Data Integration',
+    description: 'Connect and interpret data from multiple wearable devices',
+    icon: '⌚',
+    requiresEducation: true,
+    moduleRequired: 'Device Data Understanding'
   },
   {
     id: 5,
-    title: 'Health Score',
-    description: 'Comprehensive wellness score calculated from your goals and daily activities',
-    icon: '💯',
-    requiresGoal: true
+    title: 'AI Health Coach',
+    description: 'Get personalized coaching based on machine learning insights',
+    icon: '🤖',
+    requiresEducation: true,
+    moduleRequired: 'AI Insights Interpretation'
   }
 ]
 
 export default function UserTriesTo() {
-  const [selectedInsight, setSelectedInsight] = useState<number | null>(null)
+  const [selectedFeature, setSelectedFeature] = useState<number | null>(null)
   const [showModal, setShowModal] = useState(false)
+  const educationProgress = 0 // User has not completed education
 
-  const handleInsightClick = (insightId: number) => {
-    setSelectedInsight(insightId)
+  const handleFeatureClick = (featureId: number) => {
+    setSelectedFeature(featureId)
     setShowModal(true)
   }
 
-  const handleSetupGoal = () => {
-    // Navigate to goal setup page
-    console.log('Navigating to goal setup...')
+  const handleStartEducation = () => {
+    // Navigate to educational module
+    console.log('Navigating to educational module...')
   }
 
   const handleCloseModal = () => {
     setShowModal(false)
-    setSelectedInsight(null)
+    setSelectedFeature(null)
   }
 
+  const selectedFeatureData = selectedFeature 
+    ? MOCK_FEATURES.find(f => f.id === selectedFeature)
+    : null
+
   return (
-    <div data-testid="usertriesto" className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-6">
-      <div className="max-w-5xl mx-auto">
+    <div data-testid="usertriesto" className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-100 p-6">
+      <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="bg-white rounded-lg shadow-md p-6 mb-6">
           <h1 className="text-3xl font-bold text-gray-800 mb-2">
-            Personalized Health Insights
+            Advanced Health Features
           </h1>
           <p className="text-gray-600">
-            Unlock customized wellness recommendations tailored to your goals
+            Unlock powerful tools to take control of your health journey
           </p>
         </div>
 
-        {/* No Goal Set Alert */}
-        <div className="bg-yellow-50 border-l-4 border-yellow-400 p-6 mb-6 rounded-lg shadow-sm">
+        {/* Education Required Alert */}
+        <div className="bg-amber-50 border-l-4 border-amber-400 p-6 mb-6 rounded-lg shadow-sm">
           <div className="flex items-start">
-            <div className="text-4xl mr-4">⚠️</div>
+            <div className="text-4xl mr-4">📚</div>
             <div className="flex-1">
-              <h2 className="text-xl font-semibold text-yellow-800 mb-2">
-                Wellness Goal Not Set
+              <h2 className="text-xl font-semibold text-amber-800 mb-2">
+                Educational Module Required
               </h2>
-              <p className="text-yellow-700 mb-4">
-                To access personalized insights and recommendations, you need to set up your wellness goals first. 
-                This helps us tailor our suggestions to your unique health journey.
+              <p className="text-amber-700 mb-3">
+                To ensure safe and effective use of advanced features, you need to complete our educational module first. 
+                This brief course covers important concepts about health data interpretation and safe feature usage.
               </p>
+              <div className="mb-4">
+                <div className="flex justify-between text-sm text-amber-700 mb-1">
+                  <span>Education Progress</span>
+                  <span>{educationProgress}%</span>
+                </div>
+                <div className="w-full bg-amber-200 rounded-full h-3">
+                  <div 
+                    className="bg-amber-500 h-3 rounded-full transition-all duration-300"
+                    style={{ width: `${educationProgress}%` }}
+                  ></div>
+                </div>
+              </div>
               <button
-                data-testid="usertriesto-setup-goal"
-                onClick={handleSetupGoal}
-                className="bg-yellow-500 hover:bg-yellow-600 text-white font-semibold px-6 py-3 rounded-lg transition-colors duration-200 shadow-md"
+                data-testid="usertriesto-start-education"
+                onClick={handleStartEducation}
+                className="bg-amber-500 hover:bg-amber-600 text-white font-semibold px-6 py-3 rounded-lg transition-colors duration-200 shadow-md"
               >
-                Set Up Your Wellness Goal
+                Start Educational Module
               </button>
             </div>
           </div>
         </div>
 
-        {/* Insights Preview (Locked) */}
+        {/* Advanced Features Preview (Locked) */}
         <div className="mb-6">
           <h2 className="text-2xl font-bold text-gray-800 mb-4">
-            Available Insights (Requires Goal Setup)
+            Available Advanced Features (Requires Education)
           </h2>
-          <ul data-testid="usertriesto-list" className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {MOCK_INSIGHTS.map((insight) => (
+          <ul data-testid="usertriesto-list" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {MOCK_FEATURES.map((feature) => (
               <li
-                key={insight.id}
+                key={feature.id}
                 data-testid="usertriesto-item"
-                className="bg-white rounded-lg shadow-md p-6 relative overflow-hidden cursor-pointer hover:shadow-lg transition-shadow duration-200 opacity-75"
-                onClick={() => handleInsightClick(insight.id)}
+                className="bg-white rounded-lg shadow-md p-5 relative overflow-hidden cursor-pointer hover:shadow-lg transition-shadow duration-200 opacity-70"
+                onClick={() => handleFeatureClick(feature.id)}
               >
-                <div className="absolute top-2 right-2 bg-gray-800 text-white text-xs px-3 py-1 rounded-full">
-                  🔒 Locked
+                <div className="absolute top-2 right-2 bg-gray-700 text-white text-xs px-2 py-1 rounded-full flex items-center">
+                  <span className="mr-1">🔒</span>
+                  <span>Locked</span>
                 </div>
-                <div className="flex items-start space-x-4">
-                  <div className="text-5xl">{insight.icon}</div>
-                  <div className="flex-1">
-                    <h3 className="text-lg font-semibold text-gray-800 mb-2">
-                      {insight.title}
-                    </h3>
-                    <p className="text-gray-600 text-sm">
-                      {insight.description}
-                    </p>
+                <div className="text-center mb-3">
+                  <div className="text-5xl mb-2">{feature.icon}</div>
+                  <h3 className="text-lg font-semibold text-gray-800 mb-2">
+                    {feature.title}
+                  </h3>
+                  <p className="text-gray-600 text-sm mb-3">
+                    {feature.description}
+                  </p>
+                  <div className="inline-block bg-purple-100 text-purple-700 text-xs px-3 py-1 rounded-full">
+                    Requires: {feature.moduleRequired}
                   </div>
                 </div>
               </li>
@@ -144,62 +169,81 @@ export default function UserTriesTo() {
         {/* Benefits Section */}
         <div className="bg-white rounded-lg shadow-md p-6">
           <h2 className="text-2xl font-bold text-gray-800 mb-4">
-            Why Set a Wellness Goal?
+            Why Complete the Educational Module?
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="text-center p-4">
-              <div className="text-4xl mb-2">🎯</div>
-              <h3 className="font-semibold text-gray-800 mb-2">Personalized Tracking</h3>
+              <div className="text-4xl mb-2">🎓</div>
+              <h3 className="font-semibold text-gray-800 mb-2">Learn Safely</h3>
               <p className="text-sm text-gray-600">
-                Get insights specific to your health objectives
+                Understand health concepts before using advanced tools
               </p>
             </div>
             <div className="text-center p-4">
-              <div className="text-4xl mb-2">📈</div>
-              <h3 className="font-semibold text-gray-800 mb-2">Progress Monitoring</h3>
+              <div className="text-4xl mb-2">🔓</div>
+              <h3 className="font-semibold text-gray-800 mb-2">Unlock Features</h3>
               <p className="text-sm text-gray-600">
-                Track your journey with meaningful metrics
+                Gain access to powerful health management tools
               </p>
             </div>
             <div className="text-center p-4">
-              <div className="text-4xl mb-2">💡</div>
-              <h3 className="font-semibold text-gray-800 mb-2">Smart Recommendations</h3>
+              <div className="text-4xl mb-2">✅</div>
+              <h3 className="font-semibold text-gray-800 mb-2">Make Informed Decisions</h3>
               <p className="text-sm text-gray-600">
-                Receive AI-powered suggestions for your goals
+                Use data confidently with proper knowledge
+              </p>
+            </div>
+            <div className="text-center p-4">
+              <div className="text-4xl mb-2">⚡</div>
+              <h3 className="font-semibold text-gray-800 mb-2">Quick & Easy</h3>
+              <p className="text-sm text-gray-600">
+                Complete the module in just 15 minutes
               </p>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Modal for Locked Insight */}
-      {showModal && (
+      {/* Modal for Locked Feature */}
+      {showModal && selectedFeatureData && (
         <div
           data-testid="usertriesto-modal"
           className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
           onClick={handleCloseModal}
         >
           <div
-            className="bg-white rounded-lg shadow-xl p-8 max-w-md w-full"
+            className="bg-white rounded-lg shadow-xl p-8 max-w-lg w-full"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="text-center mb-6">
-              <div className="text-6xl mb-4">🔒</div>
-              <h3 className="text-2xl font-bold text-gray-800 mb-2">
-                Insight Locked
+              <div className="text-6xl mb-4">{selectedFeatureData.icon}</div>
+              <h3 className="text-2xl font-bold text-gray-800 mb-3">
+                {selectedFeatureData.title}
               </h3>
-              <p className="text-gray-600">
-                This insight requires you to set up your wellness goal first. 
-                Set your goal now to unlock personalized recommendations.
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+                <div className="flex items-center justify-center mb-2">
+                  <span className="text-2xl mr-2">🔒</span>
+                  <span className="font-semibold text-red-800">Feature Locked</span>
+                </div>
+                <p className="text-red-700 text-sm">
+                  This feature requires completing the educational module: 
+                  <strong> {selectedFeatureData.moduleRequired}</strong>
+                </p>
+              </div>
+              <p className="text-gray-600 mb-4">
+                {selectedFeatureData.description}
+              </p>
+              <p className="text-gray-500 text-sm">
+                Complete the educational module to ensure you can use this feature safely and effectively.
               </p>
             </div>
             <div className="flex space-x-3">
               <button
-                data-testid="usertriesto-modal-setup"
-                onClick={handleSetupGoal}
-                className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-6 py-3 rounded-lg transition-colors duration-200"
+                data-testid="usertriesto-modal-start"
+                onClick={handleStartEducation}
+                className="flex-1 bg-purple-600 hover:bg-purple-700 text-white font-semibold px-6 py-3 rounded-lg transition-colors duration-200"
               >
-                Set Up Goal
+                Start Education
               </button>
               <button
                 data-testid="usertriesto-modal-close"
