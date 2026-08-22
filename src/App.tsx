@@ -1,8 +1,24 @@
 import React, { useState } from 'react'
-
+import BuildHomeScreen from './components/BuildHomeScreen'
+import BuildTeamSelection from './components/BuildTeamSelection'
+import BuildLeaderboardScreen from './components/BuildLeaderboardScreen'
+import Receive from './components/Receive'
+import VerifyThe from './components/VerifyThe'
+import CreateDatabaseSchema from './components/CreateDatabaseSchema'
+import SetupAuthenticationAnd from './components/SetupAuthenticationAnd'
+import IntegratePaymentGateway from './components/IntegratePaymentGateway'
+import SetupNotification from './components/SetupNotification'
 
 const screens = [
-
+  { name: "Home Screen", component: <BuildHomeScreen /> },
+  { name: "Team Selection", component: <BuildTeamSelection /> },
+  { name: "Leaderboard", component: <BuildLeaderboardScreen /> },
+  { name: "Score Updates", component: <Receive /> },
+  { name: "Competition Duration", component: <VerifyThe /> },
+  { name: "Database Schema", component: <CreateDatabaseSchema /> },
+  { name: "Authentication", component: <SetupAuthenticationAnd /> },
+  { name: "Payment Gateway", component: <IntegratePaymentGateway /> },
+  { name: "Notifications", component: <SetupNotification /> }
 ]
 
 export default function App() {
