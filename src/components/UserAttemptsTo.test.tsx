@@ -8,20 +8,21 @@ describe('UserAttemptsTo', () => {
     expect(document.body).toBeTruthy()
   })
 
-  it('displays the booking form with title', () => {
+  it('displays the review form heading', () => {
     render(<UserAttemptsTo />)
-    expect(screen.getByText('Book Your Fishing Trip')).toBeTruthy()
-    expect(screen.getByText(/Experience the best fishing adventures/i)).toBeTruthy()
+    expect(screen.getByText('Write a Review')).toBeTruthy()
   })
 
-  it('displays mock bookings', () => {
+  it('displays account not verified warning', () => {
     render(<UserAttemptsTo />)
-    expect(screen.getByText('Recent Booking Attempts')).toBeTruthy()
-    // Check that bookings list exists and has items
-    const list = document.querySelector('[data-testid="userattemptsto-list"]')
-    expect(list).toBeTruthy()
-    const items = document.querySelectorAll('[data-testid="userattemptsto-item"]')
-    expect(items.length).toBeGreaterThan(0)
+    expect(screen.getByText(/Account Not Verified/i)).toBeTruthy()
+  })
+
+  it('displays mock businesses in the select dropdown', () => {
+    render(<UserAttemptsTo />)
+    expect(screen.getByText(/Connemara Coastal Tours/i)).toBeTruthy()
+    expect(screen.getByText(/Wild Atlantic Cafe/i)).toBeTruthy()
+    expect(screen.getByText(/Kylemore Abbey Gift Shop/i)).toBeTruthy()
   })
 
   it('has required data-testid attributes', () => {
@@ -30,42 +31,31 @@ describe('UserAttemptsTo', () => {
     // Main wrapper
     expect(document.querySelector('[data-testid="userattemptsto"]')).toBeTruthy()
     
-    // Form fields
-    expect(document.querySelector('[data-testid="userattemptsto-triptype"]')).toBeTruthy()
-    expect(document.querySelector('[data-testid="userattemptsto-date"]')).toBeTruthy()
-    expect(document.querySelector('[data-testid="userattemptsto-time"]')).toBeTruthy()
-    expect(document.querySelector('[data-testid="userattemptsto-partysize"]')).toBeTruthy()
-    expect(document.querySelector('[data-testid="userattemptsto-name"]')).toBeTruthy()
-    expect(document.querySelector('[data-testid="userattemptsto-email"]')).toBeTruthy()
-    expect(document.querySelector('[data-testid="userattemptsto-phone"]')).toBeTruthy()
+    // Form inputs
+    expect(document.querySelector('[data-testid="userattemptsto-business"]')).toBeTruthy()
+    expect(document.querySelector('[data-testid="userattemptsto-title"]')).toBeTruthy()
+    expect(document.querySelector('[data-testid="userattemptsto-review"]')).toBeTruthy()
     
-    // Submit button
+    // Star rating buttons
+    expect(document.querySelector('[data-testid="userattemptsto-star-1"]')).toBeTruthy()
+    expect(document.querySelector('[data-testid="userattemptsto-star-5"]')).toBeTruthy()
+    
+    // Action buttons
     expect(document.querySelector('[data-testid="userattemptsto-submit"]')).toBeTruthy()
-    
-    // List and items
-    expect(document.querySelector('[data-testid="userattemptsto-list"]')).toBeTruthy()
-    expect(document.querySelector('[data-testid="userattemptsto-item"]')).toBeTruthy()
+    expect(document.querySelector('[data-testid="userattemptsto-cancel"]')).toBeTruthy()
+    expect(document.querySelector('[data-testid="userattemptsto-verify-bottom"]')).toBeTruthy()
   })
 
-  it('renders all trip type options', () => {
+  it('displays verification info section', () => {
     render(<UserAttemptsTo />)
-    const select = document.querySelector('[data-testid="userattemptsto-triptype"]')
-    expect(select).toBeTruthy()
-    expect(select?.innerHTML).toContain('Deep Sea Fishing Adventure')
-    expect(select?.innerHTML).toContain('Coastal Fishing Experience')
-    expect(select?.innerHTML).toContain('Sunset Fishing Cruise')
+    expect(screen.getByText(/Why verify your account?/i)).toBeTruthy()
+    expect(screen.getByText(/Leave reviews for local businesses/i)).toBeTruthy()
   })
 
-  it('renders all time slot options', () => {
+  it('shows account status as not verified', () => {
     render(<UserAttemptsTo />)
-    const select = document.querySelector('[data-testid="userattemptsto-time"]')
-    expect(select).toBeTruthy()
-  })
-
-  it('displays booking status badges', () => {
-    render(<UserAttemptsTo />)
-    // Check for status text
-    const statusElements = document.querySelectorAll('.uppercase')
-    expect(statusElements.length).toBeGreaterThan(0)
+    expect(screen.getByText(/Account Status/i)).toBeTruthy()
+    const notVerifiedElements = screen.getAllByText(/Not Verified/i)
+    expect(notVerifiedElements.length).toBeGreaterThan(0)
   })
 })
