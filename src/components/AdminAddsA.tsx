@@ -1,7 +1,7 @@
 /**
  * AdminAddsA — Admin interface for adding new accommodations to the website
  *
- * Features: accommodation form, type selection, amenities checkboxes, price input, existing accommodations list
+ * Features: accommodation form, validation, existing listings display, add functionality, admin controls
  *
  * Ticket: SCRUM-1143 | Branch: proto/SCRUM-1140
  */
@@ -9,122 +9,109 @@
 import React, { useState } from 'react'
 
 interface Accommodation {
-  id: string
+  id: number
   name: string
   type: string
-  address: string
   description: string
-  pricePerNight: number
-  amenities: string[]
+  price: number
+  location: string
+  amenities: string
+  capacity: number
   imageUrl: string
-  status: 'active' | 'pending' | 'inactive'
 }
 
 const MOCK_ACCOMMODATIONS: Accommodation[] = [
   {
-    id: '1',
-    name: 'Cliffside B&B',
+    id: 1,
+    name: 'Seaside B&B',
     type: 'Bed & Breakfast',
-    address: '12 Ocean View Road, Clifden',
-    description: 'Charming B&B with stunning Atlantic views and traditional Irish breakfast',
-    pricePerNight: 85,
-    amenities: ['WiFi', 'Parking', 'Breakfast'],
-    imageUrl: '/images/cliffside-bnb.jpg',
-    status: 'active'
+    description: 'Charming B&B with ocean views and traditional Irish breakfast',
+    price: 85,
+    location: 'Main Street, Westport',
+    amenities: 'WiFi, Breakfast, Parking, Sea View',
+    capacity: 4,
+    imageUrl: '/images/seaside-bb.jpg'
   },
   {
-    id: '2',
-    name: 'Connemara Castle Hotel',
+    id: 2,
+    name: 'Castle View Hotel',
     type: 'Hotel',
-    address: '45 Main Street, Letterfrack',
-    description: 'Historic castle hotel offering luxury rooms and fine dining',
-    pricePerNight: 200,
-    amenities: ['WiFi', 'Parking', 'Restaurant', 'Bar', 'Gym'],
-    imageUrl: '/images/castle-hotel.jpg',
-    status: 'active'
+    description: 'Modern hotel with stunning views of historic castle ruins',
+    price: 120,
+    location: 'Castle Road, Westport',
+    amenities: 'WiFi, Restaurant, Bar, Gym, Parking',
+    capacity: 2,
+    imageUrl: '/images/castle-view.jpg'
   },
   {
-    id: '3',
-    name: 'Seaside Cottage',
-    type: 'Cottage',
-    address: '8 Harbor Lane, Roundstone',
-    description: 'Cozy cottage perfect for families, walking distance to beach',
-    pricePerNight: 120,
-    amenities: ['WiFi', 'Parking', 'Kitchen', 'Garden'],
-    imageUrl: '/images/seaside-cottage.jpg',
-    status: 'active'
+    id: 3,
+    name: 'Cozy Cottage Retreat',
+    type: 'Self-Catering',
+    description: 'Private cottage with full kitchen and garden in peaceful countryside',
+    price: 95,
+    location: 'Country Lane, Westport',
+    amenities: 'Kitchen, Garden, Fireplace, Parking, Pet Friendly',
+    capacity: 6,
+    imageUrl: '/images/cozy-cottage.jpg'
   },
   {
-    id: '4',
-    name: 'Mountain View Hostel',
-    type: 'Hostel',
-    address: '23 Galway Road, Clifden',
-    description: 'Budget-friendly hostel with dorm and private rooms',
-    pricePerNight: 35,
-    amenities: ['WiFi', 'Kitchen', 'Lounge'],
-    imageUrl: '/images/mountain-hostel.jpg',
-    status: 'active'
+    id: 4,
+    name: 'Harbor Inn',
+    type: 'Inn',
+    description: 'Traditional Irish inn overlooking the bustling harbor',
+    price: 75,
+    location: 'Harbor Way, Westport',
+    amenities: 'WiFi, Pub, Breakfast, Harbor View',
+    capacity: 3,
+    imageUrl: '/images/harbor-inn.jpg'
   },
   {
-    id: '5',
-    name: 'Harbour House Apartment',
-    type: 'Apartment',
-    address: '7 Pier Street, Westport',
-    description: 'Modern apartment with harbor views and self-catering facilities',
-    pricePerNight: 95,
-    amenities: ['WiFi', 'Parking', 'Kitchen', 'Balcony'],
-    imageUrl: '/images/harbour-apt.jpg',
-    status: 'pending'
+    id: 5,
+    name: 'Mountain Lodge',
+    type: 'Lodge',
+    description: 'Rustic lodge at the base of Croagh Patrick mountain',
+    price: 110,
+    location: 'Mountain Road, Westport',
+    amenities: 'WiFi, Restaurant, Hiking Trails, Mountain View, Sauna',
+    capacity: 8,
+    imageUrl: '/images/mountain-lodge.jpg'
   },
   {
-    id: '6',
-    name: 'Celtic Guesthouse',
+    id: 6,
+    name: 'Town Centre Guesthouse',
     type: 'Guesthouse',
-    address: '15 Church Street, Clifden',
-    description: 'Traditional guesthouse in the heart of Clifden',
-    pricePerNight: 75,
-    amenities: ['WiFi', 'Parking', 'Breakfast'],
-    imageUrl: '/images/celtic-guesthouse.jpg',
-    status: 'active'
+    description: 'Convenient guesthouse in the heart of town near shops and pubs',
+    price: 65,
+    location: 'Bridge Street, Westport',
+    amenities: 'WiFi, Breakfast, Central Location',
+    capacity: 2,
+    imageUrl: '/images/town-guesthouse.jpg'
   }
 ]
 
 const ACCOMMODATION_TYPES = [
-  'Hotel',
   'Bed & Breakfast',
-  'Cottage',
-  'Apartment',
-  'Hostel',
-  'Guesthouse'
-]
-
-const AVAILABLE_AMENITIES = [
-  'WiFi',
-  'Parking',
-  'Breakfast',
-  'Kitchen',
-  'Restaurant',
-  'Bar',
-  'Gym',
-  'Pool',
-  'Spa',
-  'Garden',
-  'Balcony',
-  'Lounge',
-  'Pet Friendly'
+  'Hotel',
+  'Self-Catering',
+  'Inn',
+  'Lodge',
+  'Guesthouse',
+  'Hostel'
 ]
 
 export default function AdminAddsA() {
-  const [accommodations] = useState<Accommodation[]>(MOCK_ACCOMMODATIONS)
+  const [accommodations, setAccommodations] = useState<Accommodation[]>(MOCK_ACCOMMODATIONS)
   const [formData, setFormData] = useState({
     name: '',
-    type: '',
-    address: '',
+    type: 'Bed & Breakfast',
     description: '',
-    pricePerNight: '',
-    amenities: [] as string[],
+    price: '',
+    location: '',
+    amenities: '',
+    capacity: '',
     imageUrl: ''
   })
+  const [message, setMessage] = useState('')
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
@@ -133,186 +120,206 @@ export default function AdminAddsA() {
     setFormData(prev => ({ ...prev, [name]: value }))
   }
 
-  const handleAmenityToggle = (amenity: string) => {
-    setFormData(prev => ({
-      ...prev,
-      amenities: prev.amenities.includes(amenity)
-        ? prev.amenities.filter(a => a !== amenity)
-        : [...prev.amenities, amenity]
-    }))
-  }
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    // In a real app, this would send data to API
-    console.log('New accommodation:', formData)
+    
+    // Validation
+    if (!formData.name || !formData.description || !formData.price || !formData.location) {
+      setMessage('Please fill in all required fields')
+      return
+    }
+
+    const newAccommodation: Accommodation = {
+      id: accommodations.length + 1,
+      name: formData.name,
+      type: formData.type,
+      description: formData.description,
+      price: parseFloat(formData.price),
+      location: formData.location,
+      amenities: formData.amenities,
+      capacity: parseInt(formData.capacity) || 2,
+      imageUrl: formData.imageUrl || '/images/default.jpg'
+    }
+
+    setAccommodations(prev => [...prev, newAccommodation])
+    setMessage(`Successfully added ${formData.name}!`)
+    
     // Reset form
     setFormData({
       name: '',
-      type: '',
-      address: '',
+      type: 'Bed & Breakfast',
       description: '',
-      pricePerNight: '',
-      amenities: [],
+      price: '',
+      location: '',
+      amenities: '',
+      capacity: '',
       imageUrl: ''
     })
+
+    setTimeout(() => setMessage(''), 3000)
   }
 
-  const handleReset = () => {
-    setFormData({
-      name: '',
-      type: '',
-      address: '',
-      description: '',
-      pricePerNight: '',
-      amenities: [],
-      imageUrl: ''
-    })
+  const handleDelete = (id: number) => {
+    setAccommodations(prev => prev.filter(acc => acc.id !== id))
+    setMessage('Accommodation removed')
+    setTimeout(() => setMessage(''), 3000)
   }
 
   return (
-    <div data-testid="adminaddsa" className="min-h-screen bg-gray-50 p-6">
+    <div data-testid="adminaddsa" className="min-h-screen bg-gray-50 p-8">
       <div className="max-w-7xl mx-auto">
         <header className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+          <h1 className="text-4xl font-bold text-gray-900 mb-2">
             Accommodation Management
           </h1>
-          <p className="text-gray-600">Add new accommodations to the website</p>
+          <p className="text-gray-600">Add and manage accommodations for West Ireland Tourist Town</p>
         </header>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Add Accommodation Form */}
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <h2 className="text-2xl font-semibold text-gray-800 mb-6">
-              Add New Accommodation
-            </h2>
+        {message && (
+          <div className="mb-6 p-4 bg-green-100 border border-green-400 text-green-700 rounded">
+            {message}
+          </div>
+        )}
 
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Add New Accommodation Form */}
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <h2 className="text-2xl font-semibold text-gray-800 mb-6">Add New Accommodation</h2>
+            
             <form onSubmit={handleSubmit} className="space-y-4">
-              {/* Name */}
               <div>
-                <label
-                  htmlFor="name"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
+                <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
                   Name *
                 </label>
                 <input
+                  data-testid="adminaddsa-name"
+                  type="text"
                   id="name"
                   name="name"
-                  type="text"
-                  data-testid="adminaddsa-name"
                   value={formData.name}
                   onChange={handleInputChange}
-                  required
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="e.g., Cliffside B&B"
+                  placeholder="e.g., Seaside B&B"
+                  required
                 />
               </div>
 
-              {/* Type */}
               <div>
-                <label
-                  htmlFor="type"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
+                <label htmlFor="type" className="block text-sm font-medium text-gray-700 mb-1">
                   Type *
                 </label>
                 <select
+                  data-testid="adminaddsa-type"
                   id="type"
                   name="type"
-                  data-testid="adminaddsa-type"
                   value={formData.type}
                   onChange={handleInputChange}
-                  required
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required
                 >
-                  <option value="">Select type...</option>
                   {ACCOMMODATION_TYPES.map(type => (
-                    <option key={type} value={type}>
-                      {type}
-                    </option>
+                    <option key={type} value={type}>{type}</option>
                   ))}
                 </select>
               </div>
 
-              {/* Address */}
               <div>
-                <label
-                  htmlFor="address"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
-                  Address *
-                </label>
-                <input
-                  id="address"
-                  name="address"
-                  type="text"
-                  data-testid="adminaddsa-address"
-                  value={formData.address}
-                  onChange={handleInputChange}
-                  required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="e.g., 12 Main Street, Clifden"
-                />
-              </div>
-
-              {/* Description */}
-              <div>
-                <label
-                  htmlFor="description"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
+                <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
                   Description *
                 </label>
                 <textarea
+                  data-testid="adminaddsa-description"
                   id="description"
                   name="description"
-                  data-testid="adminaddsa-description"
                   value={formData.description}
                   onChange={handleInputChange}
-                  required
                   rows={3}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Brief description of the accommodation"
+                  placeholder="Describe the accommodation..."
+                  required
                 />
               </div>
 
-              {/* Price */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label htmlFor="price" className="block text-sm font-medium text-gray-700 mb-1">
+                    Price per Night (€) *
+                  </label>
+                  <input
+                    data-testid="adminaddsa-price"
+                    type="number"
+                    id="price"
+                    name="price"
+                    value={formData.price}
+                    onChange={handleInputChange}
+                    min="0"
+                    step="0.01"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="85"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="capacity" className="block text-sm font-medium text-gray-700 mb-1">
+                    Guest Capacity
+                  </label>
+                  <input
+                    data-testid="adminaddsa-capacity"
+                    type="number"
+                    id="capacity"
+                    name="capacity"
+                    value={formData.capacity}
+                    onChange={handleInputChange}
+                    min="1"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="2"
+                  />
+                </div>
+              </div>
+
               <div>
-                <label
-                  htmlFor="pricePerNight"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
-                  Price per Night (€) *
+                <label htmlFor="location" className="block text-sm font-medium text-gray-700 mb-1">
+                  Location *
                 </label>
                 <input
-                  id="pricePerNight"
-                  name="pricePerNight"
-                  type="number"
-                  data-testid="adminaddsa-price"
-                  value={formData.pricePerNight}
+                  data-testid="adminaddsa-location"
+                  type="text"
+                  id="location"
+                  name="location"
+                  value={formData.location}
                   onChange={handleInputChange}
-                  required
-                  min="0"
-                  step="1"
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="e.g., 85"
+                  placeholder="Main Street, Westport"
+                  required
                 />
               </div>
 
-              {/* Image URL */}
               <div>
-                <label
-                  htmlFor="imageUrl"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
+                <label htmlFor="amenities" className="block text-sm font-medium text-gray-700 mb-1">
+                  Amenities
+                </label>
+                <input
+                  data-testid="adminaddsa-amenities"
+                  type="text"
+                  id="amenities"
+                  name="amenities"
+                  value={formData.amenities}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="WiFi, Breakfast, Parking"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="imageUrl" className="block text-sm font-medium text-gray-700 mb-1">
                   Image URL
                 </label>
                 <input
+                  data-testid="adminaddsa-imageurl"
+                  type="text"
                   id="imageUrl"
                   name="imageUrl"
-                  type="text"
-                  data-testid="adminaddsa-imageurl"
                   value={formData.imageUrl}
                   onChange={handleInputChange}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -320,123 +327,62 @@ export default function AdminAddsA() {
                 />
               </div>
 
-              {/* Amenities */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Amenities
-                </label>
-                <div className="grid grid-cols-2 gap-2">
-                  {AVAILABLE_AMENITIES.map(amenity => (
-                    <label
-                      key={amenity}
-                      className="flex items-center space-x-2 text-sm"
-                    >
-                      <input
-                        type="checkbox"
-                        data-testid={`adminaddsa-amenity-${amenity.toLowerCase().replace(' ', '-')}`}
-                        checked={formData.amenities.includes(amenity)}
-                        onChange={() => handleAmenityToggle(amenity)}
-                        className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                      />
-                      <span className="text-gray-700">{amenity}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-
-              {/* Buttons */}
-              <div className="flex gap-3 pt-4">
-                <button
-                  type="submit"
-                  data-testid="adminaddsa-submit"
-                  className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 font-medium"
-                >
-                  Add Accommodation
-                </button>
-                <button
-                  type="button"
-                  data-testid="adminaddsa-reset"
-                  onClick={handleReset}
-                  className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 font-medium"
-                >
-                  Reset
-                </button>
-              </div>
+              <button
+                data-testid="adminaddsa-submit"
+                type="submit"
+                className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition duration-200 font-medium"
+              >
+                Add Accommodation
+              </button>
             </form>
           </div>
 
           {/* Existing Accommodations List */}
           <div className="bg-white rounded-lg shadow-md p-6">
             <h2 className="text-2xl font-semibold text-gray-800 mb-6">
-              Existing Accommodations ({accommodations.length})
+              Current Accommodations ({accommodations.length})
             </h2>
-
-            <div data-testid="adminaddsa-list" className="space-y-4">
-              {accommodations.map(acc => (
+            
+            <div data-testid="adminaddsa-list" className="space-y-4 max-h-[800px] overflow-y-auto">
+              {accommodations.map(accommodation => (
                 <div
-                  key={acc.id}
+                  key={accommodation.id}
                   data-testid="adminaddsa-item"
-                  className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
+                  className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition duration-200"
                 >
                   <div className="flex justify-between items-start mb-2">
-                    <h3 className="font-semibold text-lg text-gray-900">
-                      {acc.name}
+                    <h3 className="text-lg font-semibold text-gray-900">
+                      {accommodation.name}
                     </h3>
-                    <span
-                      className={`px-2 py-1 text-xs rounded-full font-medium ${
-                        acc.status === 'active'
-                          ? 'bg-green-100 text-green-800'
-                          : acc.status === 'pending'
-                          ? 'bg-yellow-100 text-yellow-800'
-                          : 'bg-gray-100 text-gray-800'
-                      }`}
+                    <button
+                      data-testid="adminaddsa-delete"
+                      onClick={() => handleDelete(accommodation.id)}
+                      className="text-red-600 hover:text-red-800 text-sm font-medium"
                     >
-                      {acc.status}
-                    </span>
+                      Delete
+                    </button>
                   </div>
-
-                  <p className="text-sm text-gray-600 mb-1">
-                    <span className="font-medium">Type:</span> {acc.type}
-                  </p>
-                  <p className="text-sm text-gray-600 mb-1">
-                    <span className="font-medium">Address:</span> {acc.address}
-                  </p>
-                  <p className="text-sm text-gray-600 mb-2">
-                    {acc.description}
-                  </p>
-
-                  <div className="flex items-center justify-between">
-                    <p className="text-lg font-semibold text-blue-600">
-                      €{acc.pricePerNight}/night
+                  
+                  <div className="space-y-1 text-sm text-gray-600">
+                    <p>
+                      <span className="font-medium">Type:</span> {accommodation.type}
                     </p>
-                    <div className="flex gap-2">
-                      <button
-                        data-testid="adminaddsa-edit"
-                        className="text-sm text-blue-600 hover:text-blue-800 font-medium"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        data-testid="adminaddsa-delete"
-                        className="text-sm text-red-600 hover:text-red-800 font-medium"
-                      >
-                        Delete
-                      </button>
-                    </div>
+                    <p>
+                      <span className="font-medium">Location:</span> {accommodation.location}
+                    </p>
+                    <p>
+                      <span className="font-medium">Price:</span> €{accommodation.price}/night
+                    </p>
+                    <p>
+                      <span className="font-medium">Capacity:</span> {accommodation.capacity} guests
+                    </p>
+                    <p className="text-gray-700">{accommodation.description}</p>
+                    {accommodation.amenities && (
+                      <p>
+                        <span className="font-medium">Amenities:</span> {accommodation.amenities}
+                      </p>
+                    )}
                   </div>
-
-                  {acc.amenities.length > 0 && (
-                    <div className="mt-2 flex flex-wrap gap-1">
-                      {acc.amenities.map(amenity => (
-                        <span
-                          key={amenity}
-                          className="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded"
-                        >
-                          {amenity}
-                        </span>
-                      ))}
-                    </div>
-                  )}
                 </div>
               ))}
             </div>

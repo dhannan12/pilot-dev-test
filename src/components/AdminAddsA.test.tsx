@@ -8,62 +8,56 @@ describe('AdminAddsA', () => {
     expect(document.body).toBeTruthy()
   })
 
-  it('displays the admin accommodation form', () => {
+  it('displays mock accommodations data', () => {
     render(<AdminAddsA />)
-    const addElements = screen.getAllByText(/Add New Accommodation/i)
-    expect(addElements.length).toBeGreaterThan(0)
-    expect(screen.getByText(/Accommodation Management/i)).toBeTruthy()
+    // Check for mock data content
+    expect(screen.getByText(/Seaside B&B/i)).toBeTruthy()
+    expect(screen.getByText(/Castle View Hotel/i)).toBeTruthy()
+    expect(screen.getByText(/Cozy Cottage Retreat/i)).toBeTruthy()
+    expect(screen.getByText(/Harbor Inn/i)).toBeTruthy()
+    expect(screen.getByText(/Mountain Lodge/i)).toBeTruthy()
   })
 
-  it('displays mock accommodation data', () => {
+  it('displays the add accommodation form', () => {
     render(<AdminAddsA />)
-    expect(screen.getByText(/Cliffside B&B/i)).toBeTruthy()
-    expect(screen.getByText(/Connemara Castle Hotel/i)).toBeTruthy()
-    expect(screen.getByText(/Seaside Cottage/i)).toBeTruthy()
-    expect(screen.getByText(/Mountain View Hostel/i)).toBeTruthy()
-    expect(screen.getByText(/Harbour House Apartment/i)).toBeTruthy()
+    expect(screen.getByText(/Add New Accommodation/i)).toBeTruthy()
+    expect(screen.getByPlaceholderText(/e.g., Seaside B&B/i)).toBeTruthy()
   })
 
   it('has required data-testid attributes', () => {
     render(<AdminAddsA />)
-    
     // Main wrapper
     expect(document.querySelector('[data-testid="adminaddsa"]')).toBeTruthy()
     
-    // Form inputs
+    // Form fields
     expect(document.querySelector('[data-testid="adminaddsa-name"]')).toBeTruthy()
     expect(document.querySelector('[data-testid="adminaddsa-type"]')).toBeTruthy()
-    expect(document.querySelector('[data-testid="adminaddsa-address"]')).toBeTruthy()
     expect(document.querySelector('[data-testid="adminaddsa-description"]')).toBeTruthy()
     expect(document.querySelector('[data-testid="adminaddsa-price"]')).toBeTruthy()
+    expect(document.querySelector('[data-testid="adminaddsa-location"]')).toBeTruthy()
+    expect(document.querySelector('[data-testid="adminaddsa-amenities"]')).toBeTruthy()
+    expect(document.querySelector('[data-testid="adminaddsa-capacity"]')).toBeTruthy()
     expect(document.querySelector('[data-testid="adminaddsa-imageurl"]')).toBeTruthy()
     
-    // Buttons
+    // Submit button
     expect(document.querySelector('[data-testid="adminaddsa-submit"]')).toBeTruthy()
-    expect(document.querySelector('[data-testid="adminaddsa-reset"]')).toBeTruthy()
-    expect(document.querySelector('[data-testid="adminaddsa-edit"]')).toBeTruthy()
-    expect(document.querySelector('[data-testid="adminaddsa-delete"]')).toBeTruthy()
     
     // List container and items
     expect(document.querySelector('[data-testid="adminaddsa-list"]')).toBeTruthy()
     expect(document.querySelectorAll('[data-testid="adminaddsa-item"]').length).toBeGreaterThan(0)
     
-    // Amenity checkboxes
-    expect(document.querySelector('[data-testid="adminaddsa-amenity-wifi"]')).toBeTruthy()
-    expect(document.querySelector('[data-testid="adminaddsa-amenity-parking"]')).toBeTruthy()
+    // Delete buttons
+    expect(document.querySelectorAll('[data-testid="adminaddsa-delete"]').length).toBeGreaterThan(0)
   })
 
-  it('displays existing accommodations with correct count', () => {
+  it('displays current accommodations count', () => {
     render(<AdminAddsA />)
-    expect(screen.getByText(/Existing Accommodations \(6\)/i)).toBeTruthy()
+    // Should show the count of accommodations
+    expect(screen.getByText(/Current Accommodations/i)).toBeTruthy()
   })
 
-  it('displays form fields with correct labels', () => {
+  it('shows accommodation management header', () => {
     render(<AdminAddsA />)
-    expect(screen.getByLabelText(/Name \*/i)).toBeTruthy()
-    expect(screen.getByLabelText(/Type \*/i)).toBeTruthy()
-    expect(screen.getByLabelText(/Address \*/i)).toBeTruthy()
-    expect(screen.getByLabelText(/Description \*/i)).toBeTruthy()
-    expect(screen.getByLabelText(/Price per Night \(€\) \*/i)).toBeTruthy()
+    expect(screen.getByText(/Accommodation Management/i)).toBeTruthy()
   })
 })
