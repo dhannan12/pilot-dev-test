@@ -8,102 +8,110 @@ describe('UserCalculatesThe', () => {
     expect(document.body).toBeTruthy()
   })
 
-  it('displays the main title and description', () => {
+  it('displays the component title', () => {
     render(<UserCalculatesThe />)
     expect(screen.getByText('Family Activity Cost Calculator')).toBeTruthy()
-    expect(screen.getByText(/Plan your West Ireland adventure/i)).toBeTruthy()
   })
 
-  it('displays all mock activities in the list', () => {
+  it('displays mock activities in the list', () => {
     render(<UserCalculatesThe />)
-    
-    // Check that activity names are displayed
-    expect(screen.getByText('Cliffs of Moher Tour')).toBeTruthy()
-    expect(screen.getByText('Connemara Safari')).toBeTruthy()
+    expect(screen.getByText('Connemara National Park Tour')).toBeTruthy()
+    expect(screen.getByText('Cliffs of Moher Day Trip')).toBeTruthy()
+    expect(screen.getByText('Traditional Irish Music Session')).toBeTruthy()
+    expect(screen.getByText('Boat Tour of Galway Bay')).toBeTruthy()
     expect(screen.getByText('Aran Islands Ferry & Tour')).toBeTruthy()
-    expect(screen.getByText('Burren Nature Walk')).toBeTruthy()
-    expect(screen.getByText('Galway Bay Cruise')).toBeTruthy()
-    expect(screen.getByText('Kylemore Abbey Visit')).toBeTruthy()
   })
 
   it('has required data-testid attributes', () => {
     render(<UserCalculatesThe />)
     
     // Main wrapper
-    expect(document.querySelector('[data-testid="usercalculatesthe"]')).toBeTruthy()
+    expect(screen.getByTestId('usercalculatesthe')).toBeTruthy()
     
-    // Form inputs
-    expect(document.querySelector('[data-testid="usercalculatesthe-activity"]')).toBeTruthy()
-    expect(document.querySelector('[data-testid="usercalculatesthe-adults"]')).toBeTruthy()
-    expect(document.querySelector('[data-testid="usercalculatesthe-children"]')).toBeTruthy()
+    // Input fields
+    expect(screen.getByTestId('usercalculatesthe-activity')).toBeTruthy()
+    expect(screen.getByTestId('usercalculatesthe-adults')).toBeTruthy()
+    expect(screen.getByTestId('usercalculatesthe-children')).toBeTruthy()
     
     // Buttons
-    expect(document.querySelector('[data-testid="usercalculatesthe-calculate"]')).toBeTruthy()
-    expect(document.querySelector('[data-testid="usercalculatesthe-reset"]')).toBeTruthy()
+    expect(screen.getByTestId('usercalculatesthe-calculate')).toBeTruthy()
+    expect(screen.getByTestId('usercalculatesthe-reset')).toBeTruthy()
     
-    // List container and items
-    expect(document.querySelector('[data-testid="usercalculatesthe-list"]')).toBeTruthy()
-    expect(document.querySelectorAll('[data-testid="usercalculatesthe-item"]').length).toBeGreaterThan(0)
+    // List elements
+    expect(screen.getByTestId('usercalculatesthe-list')).toBeTruthy()
+    const items = screen.getAllByTestId('usercalculatesthe-item')
+    expect(items.length).toBeGreaterThan(0)
   })
 
-  it('allows selecting an activity from dropdown', () => {
+  it('calculates cost correctly for adults and children', () => {
     render(<UserCalculatesThe />)
     
-    const select = document.querySelector('[data-testid="usercalculatesthe-activity"]') as HTMLSelectElement
-    expect(select).toBeTruthy()
+    // Select an activity (Connemara National Park Tour - Adult: €15, Child: €8)
+    const activitySelect = screen.getByTestId('usercalculatesthe-activity') as HTMLSelectElement
+    fireEvent.change(activitySelect, { target: { value: '1' } })
     
-    fireEvent.change(select, { target: { value: 'cliffs-moher' } })
-    expect(select.value).toBe('cliffs-moher')
-  })
-
-  it('allows changing number of adults and children', () => {
-    render(<UserCalculatesThe />)
-    
-    const adultsInput = document.querySelector('[data-testid="usercalculatesthe-adults"]') as HTMLInputElement
-    const childrenInput = document.querySelector('[data-testid="usercalculatesthe-children"]') as HTMLInputElement
-    
-    fireEvent.change(adultsInput, { target: { value: '3' } })
-    fireEvent.change(childrenInput, { target: { value: '2' } })
-    
-    expect(adultsInput.value).toBe('3')
-    expect(childrenInput.value).toBe('2')
-  })
-
-  it('calculates and displays cost when calculate button is clicked', () => {
-    render(<UserCalculatesThe />)
-    
-    const select = document.querySelector('[data-testid="usercalculatesthe-activity"]') as HTMLSelectElement
-    const adultsInput = document.querySelector('[data-testid="usercalculatesthe-adults"]') as HTMLInputElement
-    const childrenInput = document.querySelector('[data-testid="usercalculatesthe-children"]') as HTMLInputElement
-    const calculateBtn = document.querySelector('[data-testid="usercalculatesthe-calculate"]') as HTMLButtonElement
-    
-    // Select activity and set family size
-    fireEvent.change(select, { target: { value: 'cliffs-moher' } })
+    // Enter 2 adults
+    const adultsInput = screen.getByTestId('usercalculatesthe-adults') as HTMLInputElement
     fireEvent.change(adultsInput, { target: { value: '2' } })
-    fireEvent.change(childrenInput, { target: { value: '2' } })
+    
+    // Enter 3 children
+    const childrenInput = screen.getByTestId('usercalculatesthe-children') as HTMLInputElement
+    fireEvent.change(childrenInput, { target: { value: '3' } })
     
     // Click calculate
-    fireEvent.click(calculateBtn)
+    const calculateButton = screen.getByTestId('usercalculatesthe-calculate')
+    fireEvent.click(calculateButton)
     
-    // Check that results are displayed
-    const results = document.querySelector('[data-testid="usercalculatesthe-results"]')
-    expect(results).toBeTruthy()
+    // Expected cost: 2 * 15 + 3 * 8 = 30 + 24 = 54
+    expect(screen.getByText('€54.00')).toBeTruthy()
   })
 
-  it('reset button clears the form', () => {
+  it('shows cost breakdown when calculated', () => {
     render(<UserCalculatesThe />)
     
-    const select = document.querySelector('[data-testid="usercalculatesthe-activity"]') as HTMLSelectElement
-    const resetBtn = document.querySelector('[data-testid="usercalculatesthe-reset"]') as HTMLButtonElement
+    const activitySelect = screen.getByTestId('usercalculatesthe-activity') as HTMLSelectElement
+    fireEvent.change(activitySelect, { target: { value: '2' } })
     
-    // Select an activity
-    fireEvent.change(select, { target: { value: 'cliffs-moher' } })
-    expect(select.value).toBe('cliffs-moher')
+    const adultsInput = screen.getByTestId('usercalculatesthe-adults') as HTMLInputElement
+    fireEvent.change(adultsInput, { target: { value: '1' } })
     
-    // Click reset
-    fireEvent.click(resetBtn)
+    const calculateButton = screen.getByTestId('usercalculatesthe-calculate')
+    fireEvent.click(calculateButton)
     
-    // Check that form is cleared
-    expect(select.value).toBe('')
+    expect(screen.getByTestId('usercalculatesthe-result')).toBeTruthy()
+    expect(screen.getByText('Cost Breakdown')).toBeTruthy()
+  })
+
+  it('resets the form when reset button is clicked', () => {
+    render(<UserCalculatesThe />)
+    
+    const activitySelect = screen.getByTestId('usercalculatesthe-activity') as HTMLSelectElement
+    fireEvent.change(activitySelect, { target: { value: '1' } })
+    
+    const adultsInput = screen.getByTestId('usercalculatesthe-adults') as HTMLInputElement
+    fireEvent.change(adultsInput, { target: { value: '2' } })
+    
+    const resetButton = screen.getByTestId('usercalculatesthe-reset')
+    fireEvent.click(resetButton)
+    
+    expect(activitySelect.value).toBe('')
+    expect(adultsInput.value).toBe('0')
+  })
+
+  it('disables calculate button when no activity selected', () => {
+    render(<UserCalculatesThe />)
+    
+    const calculateButton = screen.getByTestId('usercalculatesthe-calculate') as HTMLButtonElement
+    expect(calculateButton.disabled).toBe(true)
+  })
+
+  it('allows clicking on activity cards to select them', () => {
+    render(<UserCalculatesThe />)
+    
+    const activityItems = screen.getAllByTestId('usercalculatesthe-item')
+    fireEvent.click(activityItems[0])
+    
+    const activitySelect = screen.getByTestId('usercalculatesthe-activity') as HTMLSelectElement
+    expect(activitySelect.value).toBe('1')
   })
 })
