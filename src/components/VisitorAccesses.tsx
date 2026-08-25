@@ -1,175 +1,267 @@
 /**
- * VisitorAccesses — Welcome landing page for first-time visitors
+ * VisitorAccesses — Welcome landing page for first-time visitors to the coffee shop website
  *
- * Features: hero welcome section, feature highlights, call-to-action buttons, service previews, mobile-responsive layout
+ * Features: hero banner, featured drinks showcase, rewards program highlights, location info, call-to-action buttons
  *
  * Ticket: SCRUM-1155 | Branch: proto/SCRUM-1151
  */
 
 import React from 'react'
 
-interface Feature {
+interface FeaturedDrink {
+  id: number
+  name: string
+  description: string
+  price: string
+  imageColor: string
+}
+
+interface Benefit {
   id: number
   title: string
   description: string
   icon: string
-  action: string
 }
 
-const FEATURES: Feature[] = [
+interface Location {
+  id: number
+  name: string
+  address: string
+  hours: string
+}
+
+const featuredDrinks: FeaturedDrink[] = [
   {
     id: 1,
-    title: 'Explore Our Menu',
-    description: 'Browse our selection of premium coffees, teas, pastries, and seasonal specials.',
-    icon: '☕',
-    action: 'View Menu'
+    name: 'Caramel Macchiato',
+    description: 'Espresso with vanilla syrup, steamed milk, and caramel drizzle',
+    price: '$5.25',
+    imageColor: 'bg-amber-100'
   },
   {
     id: 2,
-    title: 'Join Rewards Program',
-    description: 'Earn points with every purchase and unlock exclusive perks and free drinks.',
-    icon: '⭐',
-    action: 'Sign Up'
+    name: 'Iced Mocha',
+    description: 'Rich chocolate and espresso over ice with whipped cream',
+    price: '$5.75',
+    imageColor: 'bg-amber-200'
   },
   {
     id: 3,
-    title: 'Find Locations',
-    description: 'Discover our coffee shops near you with opening hours and directions.',
-    icon: '📍',
-    action: 'Find Store'
+    name: 'Vanilla Latte',
+    description: 'Smooth espresso with steamed milk and vanilla syrup',
+    price: '$4.95',
+    imageColor: 'bg-yellow-100'
   },
   {
     id: 4,
-    title: 'Order Online',
-    description: 'Skip the line! Order ahead for pickup or delivery directly from your phone.',
-    icon: '🛒',
-    action: 'Start Order'
+    name: 'Cappuccino',
+    description: 'Classic Italian coffee with perfect foam',
+    price: '$4.50',
+    imageColor: 'bg-orange-100'
   },
   {
     id: 5,
-    title: 'Special Events',
-    description: 'Join our coffee tastings, workshops, and community events every month.',
-    icon: '🎉',
-    action: 'See Events'
+    name: 'Cold Brew',
+    description: 'Smooth, bold coffee steeped for 20 hours',
+    price: '$4.25',
+    imageColor: 'bg-stone-200'
+  }
+]
+
+const benefits: Benefit[] = [
+  {
+    id: 1,
+    title: 'Earn Rewards',
+    description: 'Get 1 point for every dollar spent',
+    icon: '⭐'
+  },
+  {
+    id: 2,
+    title: 'Free Birthday Drink',
+    description: 'Celebrate with a complimentary beverage',
+    icon: '🎂'
+  },
+  {
+    id: 3,
+    title: 'Mobile Ordering',
+    description: 'Order ahead and skip the line',
+    icon: '📱'
+  },
+  {
+    id: 4,
+    title: 'Exclusive Deals',
+    description: 'Members-only promotions and discounts',
+    icon: '🎁'
+  },
+  {
+    id: 5,
+    title: 'Free Refills',
+    description: 'Unlimited hot coffee and tea refills',
+    icon: '☕'
+  }
+]
+
+const locations: Location[] = [
+  {
+    id: 1,
+    name: 'Downtown',
+    address: '123 Main Street',
+    hours: 'Mon-Fri 6am-8pm, Sat-Sun 7am-9pm'
+  },
+  {
+    id: 2,
+    name: 'Westside',
+    address: '456 Oak Avenue',
+    hours: 'Mon-Sun 6am-10pm'
+  },
+  {
+    id: 3,
+    name: 'University District',
+    address: '789 College Way',
+    hours: 'Mon-Sun 5am-11pm'
+  },
+  {
+    id: 4,
+    name: 'Eastgate',
+    address: '321 Park Boulevard',
+    hours: 'Mon-Fri 6am-9pm, Sat-Sun 7am-10pm'
+  },
+  {
+    id: 5,
+    name: 'Airport',
+    address: 'Terminal B, Gate 15',
+    hours: 'Mon-Sun 4am-10pm'
   }
 ]
 
 export default function VisitorAccesses() {
-  const [selectedFeature, setSelectedFeature] = React.useState<number | null>(null)
-
   return (
-    <section data-testid="visitoraccesses" className="min-h-screen bg-gradient-to-br from-amber-50 to-orange-50">
+    <div data-testid="visitoraccesses" className="min-h-screen bg-gradient-to-b from-amber-50 to-white">
       {/* Hero Section */}
-      <div className="bg-gradient-to-r from-amber-900 to-orange-800 text-white py-16 px-6">
-        <div className="max-w-4xl mx-auto text-center">
-          <h1 className="text-5xl font-bold mb-4">Welcome to Our Coffee Shop! ☕</h1>
-          <p className="text-xl mb-8 text-amber-100">
-            Your journey to exceptional coffee starts here. Discover premium brews, exclusive rewards, and a community that loves coffee as much as you do.
-          </p>
+      <section className="bg-gradient-to-r from-amber-600 to-orange-600 text-white py-20 px-4">
+        <div className="max-w-6xl mx-auto text-center">
+          <h1 className="text-5xl font-bold mb-4">Welcome to Our Coffee Shop</h1>
+          <p className="text-xl mb-8">Your perfect cup of coffee awaits</p>
           <div className="flex gap-4 justify-center flex-wrap">
-            <button
-              data-testid="visitoraccesses-get-started"
-              className="bg-white text-amber-900 px-8 py-3 rounded-lg font-semibold hover:bg-amber-50 transition-colors shadow-lg"
+            <button 
+              data-testid="visitoraccesses-join"
+              className="bg-white text-amber-700 px-8 py-3 rounded-full font-semibold hover:bg-amber-50 transition-colors"
             >
-              Get Started
+              Join Rewards Program
             </button>
-            <button
-              data-testid="visitoraccesses-learn-more"
-              className="bg-amber-800 text-white px-8 py-3 rounded-lg font-semibold hover:bg-amber-700 transition-colors border-2 border-white"
+            <button 
+              data-testid="visitoraccesses-menu"
+              className="bg-transparent border-2 border-white text-white px-8 py-3 rounded-full font-semibold hover:bg-white hover:text-amber-700 transition-colors"
             >
-              Learn More
+              View Menu
             </button>
           </div>
         </div>
-      </div>
+      </section>
 
-      {/* Features Section */}
-      <div className="max-w-6xl mx-auto py-12 px-6">
-        <h2 className="text-3xl font-bold text-center mb-8 text-gray-800">
-          What You Can Do Here
-        </h2>
-        
-        <div data-testid="visitoraccesses-list" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {FEATURES.map((feature) => (
-            <div
-              key={feature.id}
-              data-testid="visitoraccesses-item"
-              className={`bg-white rounded-xl shadow-md p-6 hover:shadow-xl transition-shadow border-2 ${
-                selectedFeature === feature.id ? 'border-amber-500' : 'border-transparent'
-              }`}
-              onClick={() => setSelectedFeature(feature.id)}
-            >
-              <div className="text-5xl mb-4">{feature.icon}</div>
-              <h3 className="text-xl font-bold mb-2 text-gray-800">{feature.title}</h3>
-              <p className="text-gray-600 mb-4">{feature.description}</p>
-              <button
-                data-testid={`visitoraccesses-action-${feature.id}`}
-                className="w-full bg-amber-600 text-white py-2 px-4 rounded-lg hover:bg-amber-700 transition-colors font-medium"
+      {/* Featured Drinks Section */}
+      <section className="py-16 px-4">
+        <div className="max-w-6xl mx-auto">
+          <h2 className="text-4xl font-bold text-center text-gray-800 mb-12">Featured Drinks</h2>
+          <div data-testid="visitoraccesses-drinks-list" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {featuredDrinks.map((drink) => (
+              <div 
+                key={drink.id}
+                data-testid="visitoraccesses-drinks-item"
+                className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow"
               >
-                {feature.action}
-              </button>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Quick Stats Section */}
-      <div className="bg-white py-12 px-6 mt-8">
-        <div className="max-w-4xl mx-auto">
-          <h2 className="text-2xl font-bold text-center mb-8 text-gray-800">
-            Why Choose Us?
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
-            <div data-testid="visitoraccesses-stat-locations">
-              <div className="text-4xl font-bold text-amber-600 mb-2">50+</div>
-              <div className="text-gray-600">Locations Nationwide</div>
-            </div>
-            <div data-testid="visitoraccesses-stat-members">
-              <div className="text-4xl font-bold text-amber-600 mb-2">100K+</div>
-              <div className="text-gray-600">Rewards Members</div>
-            </div>
-            <div data-testid="visitoraccesses-stat-drinks">
-              <div className="text-4xl font-bold text-amber-600 mb-2">1M+</div>
-              <div className="text-gray-600">Drinks Served Monthly</div>
-            </div>
+                <div className={`${drink.imageColor} h-48 flex items-center justify-center`}>
+                  <span className="text-6xl">☕</span>
+                </div>
+                <div className="p-6">
+                  <div className="flex justify-between items-start mb-2">
+                    <h3 className="text-xl font-bold text-gray-800">{drink.name}</h3>
+                    <span className="text-lg font-semibold text-amber-600">{drink.price}</span>
+                  </div>
+                  <p className="text-gray-600 mb-4">{drink.description}</p>
+                  <button 
+                    data-testid="visitoraccesses-order"
+                    className="w-full bg-amber-600 text-white py-2 rounded-lg hover:bg-amber-700 transition-colors font-semibold"
+                  >
+                    Order Now
+                  </button>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
-      </div>
+      </section>
 
-      {/* Newsletter Signup */}
-      <div className="max-w-4xl mx-auto py-12 px-6">
-        <div className="bg-gradient-to-r from-amber-100 to-orange-100 rounded-2xl p-8 text-center">
-          <h2 className="text-2xl font-bold mb-4 text-gray-800">Stay Connected</h2>
-          <p className="text-gray-700 mb-6">
-            Subscribe to our newsletter for exclusive offers, new menu items, and coffee tips!
-          </p>
-          <div className="flex gap-3 max-w-md mx-auto flex-wrap justify-center">
+      {/* Benefits Section */}
+      <section className="py-16 px-4 bg-amber-50">
+        <div className="max-w-6xl mx-auto">
+          <h2 className="text-4xl font-bold text-center text-gray-800 mb-4">Join Our Rewards Program</h2>
+          <p className="text-center text-gray-600 mb-12 text-lg">Sign up today and start earning rewards with every purchase</p>
+          <div data-testid="visitoraccesses-benefits-list" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+            {benefits.map((benefit) => (
+              <div 
+                key={benefit.id}
+                data-testid="visitoraccesses-benefits-item"
+                className="bg-white p-6 rounded-xl shadow-md text-center hover:shadow-lg transition-shadow"
+              >
+                <div className="text-5xl mb-4">{benefit.icon}</div>
+                <h3 className="text-lg font-bold text-gray-800 mb-2">{benefit.title}</h3>
+                <p className="text-gray-600 text-sm">{benefit.description}</p>
+              </div>
+            ))}
+          </div>
+          <div className="text-center mt-10">
+            <button 
+              data-testid="visitoraccesses-signup"
+              className="bg-amber-600 text-white px-10 py-4 rounded-full font-bold text-lg hover:bg-amber-700 transition-colors shadow-lg"
+            >
+              Sign Up Free
+            </button>
+          </div>
+        </div>
+      </section>
+
+      {/* Locations Section */}
+      <section className="py-16 px-4">
+        <div className="max-w-6xl mx-auto">
+          <h2 className="text-4xl font-bold text-center text-gray-800 mb-12">Find Us Near You</h2>
+          <div data-testid="visitoraccesses-locations-list" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {locations.map((location) => (
+              <div 
+                key={location.id}
+                data-testid="visitoraccesses-locations-item"
+                className="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition-shadow border-l-4 border-amber-600"
+              >
+                <h3 className="text-xl font-bold text-gray-800 mb-2">{location.name}</h3>
+                <p className="text-gray-600 mb-2">📍 {location.address}</p>
+                <p className="text-gray-500 text-sm">🕒 {location.hours}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Newsletter Section */}
+      <section className="py-16 px-4 bg-gradient-to-r from-amber-600 to-orange-600 text-white">
+        <div className="max-w-2xl mx-auto text-center">
+          <h2 className="text-3xl font-bold mb-4">Stay Connected</h2>
+          <p className="mb-6">Subscribe to our newsletter for exclusive offers and updates</p>
+          <div className="flex gap-3 max-w-md mx-auto">
             <input
               type="email"
               data-testid="visitoraccesses-email"
               placeholder="Enter your email"
-              className="flex-1 min-w-[200px] px-4 py-3 rounded-lg border-2 border-amber-300 focus:outline-none focus:border-amber-500"
+              className="flex-1 px-4 py-3 rounded-full text-gray-800 focus:outline-none focus:ring-2 focus:ring-white"
             />
-            <button
+            <button 
               data-testid="visitoraccesses-subscribe"
-              className="bg-amber-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-amber-700 transition-colors"
+              className="bg-white text-amber-700 px-8 py-3 rounded-full font-semibold hover:bg-amber-50 transition-colors"
             >
               Subscribe
             </button>
           </div>
         </div>
-      </div>
-
-      {/* Footer CTA */}
-      <div className="bg-gray-800 text-white py-8 px-6 text-center">
-        <p className="text-lg mb-4">Ready to start your coffee journey?</p>
-        <button
-          data-testid="visitoraccesses-create-account"
-          className="bg-amber-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-amber-700 transition-colors"
-        >
-          Create Free Account
-        </button>
-      </div>
-    </section>
+      </section>
+    </div>
   )
 }

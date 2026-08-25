@@ -8,61 +8,77 @@ describe('VisitorAccesses', () => {
     expect(document.body).toBeTruthy()
   })
 
-  it('displays welcome message', () => {
+  it('displays welcome message and hero content', () => {
     render(<VisitorAccesses />)
     expect(screen.getByText(/Welcome to Our Coffee Shop/i)).toBeTruthy()
+    expect(screen.getByText(/Your perfect cup of coffee awaits/i)).toBeTruthy()
   })
 
-  it('displays all feature cards with mock data', () => {
+  it('displays featured drinks with mock data', () => {
     render(<VisitorAccesses />)
-    // Check that at least 5 feature cards are rendered
-    expect(screen.getByText('Explore Our Menu')).toBeTruthy()
-    expect(screen.getByText('Join Rewards Program')).toBeTruthy()
-    expect(screen.getByText('Find Locations')).toBeTruthy()
-    expect(screen.getByText('Order Online')).toBeTruthy()
-    expect(screen.getByText('Special Events')).toBeTruthy()
+    expect(screen.getByText('Caramel Macchiato')).toBeTruthy()
+    expect(screen.getByText('Iced Mocha')).toBeTruthy()
+    expect(screen.getByText('Vanilla Latte')).toBeTruthy()
+    expect(screen.getByText('Cappuccino')).toBeTruthy()
+    expect(screen.getByText('Cold Brew')).toBeTruthy()
   })
 
-  it('displays quick stats section', () => {
+  it('displays rewards program benefits', () => {
     render(<VisitorAccesses />)
-    expect(screen.getByText('50+')).toBeTruthy()
-    expect(screen.getByText('100K+')).toBeTruthy()
-    expect(screen.getByText('1M+')).toBeTruthy()
+    expect(screen.getByText('Earn Rewards')).toBeTruthy()
+    expect(screen.getByText('Free Birthday Drink')).toBeTruthy()
+    expect(screen.getByText('Mobile Ordering')).toBeTruthy()
+    expect(screen.getByText('Exclusive Deals')).toBeTruthy()
+    expect(screen.getByText('Free Refills')).toBeTruthy()
+  })
+
+  it('displays location information', () => {
+    render(<VisitorAccesses />)
+    expect(screen.getByText('Downtown')).toBeTruthy()
+    expect(screen.getByText('Westside')).toBeTruthy()
+    expect(screen.getByText('University District')).toBeTruthy()
+    expect(screen.getByText('Eastgate')).toBeTruthy()
+    expect(screen.getByText('Airport')).toBeTruthy()
   })
 
   it('has required data-testid attributes', () => {
     render(<VisitorAccesses />)
     
     // Main wrapper
-    const mainSection = document.querySelector('[data-testid="visitoraccesses"]')
-    expect(mainSection).toBeTruthy()
+    expect(document.querySelector('[data-testid="visitoraccesses"]')).toBeTruthy()
     
-    // Buttons
-    expect(document.querySelector('[data-testid="visitoraccesses-get-started"]')).toBeTruthy()
-    expect(document.querySelector('[data-testid="visitoraccesses-learn-more"]')).toBeTruthy()
+    // Primary action buttons
+    expect(document.querySelector('[data-testid="visitoraccesses-join"]')).toBeTruthy()
+    expect(document.querySelector('[data-testid="visitoraccesses-menu"]')).toBeTruthy()
+    expect(document.querySelector('[data-testid="visitoraccesses-signup"]')).toBeTruthy()
     expect(document.querySelector('[data-testid="visitoraccesses-subscribe"]')).toBeTruthy()
-    expect(document.querySelector('[data-testid="visitoraccesses-create-account"]')).toBeTruthy()
     
-    // Email input
+    // List containers
+    expect(document.querySelector('[data-testid="visitoraccesses-drinks-list"]')).toBeTruthy()
+    expect(document.querySelector('[data-testid="visitoraccesses-benefits-list"]')).toBeTruthy()
+    expect(document.querySelector('[data-testid="visitoraccesses-locations-list"]')).toBeTruthy()
+    
+    // List items
+    const drinkItems = document.querySelectorAll('[data-testid="visitoraccesses-drinks-item"]')
+    expect(drinkItems.length).toBe(5)
+    
+    const benefitItems = document.querySelectorAll('[data-testid="visitoraccesses-benefits-item"]')
+    expect(benefitItems.length).toBe(5)
+    
+    const locationItems = document.querySelectorAll('[data-testid="visitoraccesses-locations-item"]')
+    expect(locationItems.length).toBe(5)
+    
+    // Input field
     expect(document.querySelector('[data-testid="visitoraccesses-email"]')).toBeTruthy()
     
-    // List container and items
-    expect(document.querySelector('[data-testid="visitoraccesses-list"]')).toBeTruthy()
-    const items = document.querySelectorAll('[data-testid="visitoraccesses-item"]')
-    expect(items.length).toBeGreaterThanOrEqual(5)
-    
-    // Stats
-    expect(document.querySelector('[data-testid="visitoraccesses-stat-locations"]')).toBeTruthy()
-    expect(document.querySelector('[data-testid="visitoraccesses-stat-members"]')).toBeTruthy()
-    expect(document.querySelector('[data-testid="visitoraccesses-stat-drinks"]')).toBeTruthy()
+    // Order buttons within drink cards
+    const orderButtons = document.querySelectorAll('[data-testid="visitoraccesses-order"]')
+    expect(orderButtons.length).toBe(5)
   })
 
-  it('has action buttons for each feature', () => {
+  it('renders newsletter subscription section', () => {
     render(<VisitorAccesses />)
-    
-    // Check that action buttons exist for each feature (IDs 1-5)
-    for (let i = 1; i <= 5; i++) {
-      expect(document.querySelector(`[data-testid="visitoraccesses-action-${i}"]`)).toBeTruthy()
-    }
+    expect(screen.getByText(/Stay Connected/i)).toBeTruthy()
+    expect(screen.getByPlaceholderText(/Enter your email/i)).toBeTruthy()
   })
 })
