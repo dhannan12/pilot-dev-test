@@ -1,258 +1,321 @@
 /**
- * UserAttemptsTo — User attempts to leave a review without a verified account
+ * UserAttemptsTo — User attempts to purchase a ticket for museum entry
  *
- * Features: review form, account verification warning, star rating, review submission blocking, verification prompt
+ * Features: ticket type selection, visitor information form, date picker, quantity selector, price calculation
  *
- * Ticket: SCRUM-1147 | Branch: proto/SCRUM-1140
+ * Ticket: SCRUM-1128 | Branch: proto/SCRUM-1127
  */
 
 import React, { useState } from 'react'
 
-interface Business {
+interface TicketType {
   id: number
   name: string
-  category: string
+  description: string
+  price: number
 }
 
-const mockBusinesses: Business[] = [
-  { id: 1, name: 'Connemara Coastal Tours', category: 'Tour Operator' },
-  { id: 2, name: 'Wild Atlantic Cafe', category: 'Restaurant' },
-  { id: 3, name: 'Kylemore Abbey Gift Shop', category: 'Shopping' },
-  { id: 4, name: 'Clifden Bay Hotel', category: 'Accommodation' },
-  { id: 5, name: 'Sky Road Bike Rentals', category: 'Activity' },
+interface FormData {
+  firstName: string
+  lastName: string
+  email: string
+  phone: string
+  visitDate: string
+}
+
+const mockTicketTypes: TicketType[] = [
+  { id: 1, name: 'Adult', description: 'Ages 18-64', price: 12 },
+  { id: 2, name: 'Senior', description: 'Ages 65+', price: 10 },
+  { id: 3, name: 'Student', description: 'With valid student ID', price: 8 },
+  { id: 4, name: 'Child', description: 'Ages 5-17', price: 6 },
+  { id: 5, name: 'Family Pass', description: '2 Adults + 2 Children', price: 30 },
 ]
 
 export default function UserAttemptsTo() {
-  const [selectedBusiness, setSelectedBusiness] = useState<Business>(mockBusinesses[0])
-  const [rating, setRating] = useState<number>(0)
-  const [hoverRating, setHoverRating] = useState<number>(0)
-  const [reviewTitle, setReviewTitle] = useState<string>('')
-  const [reviewText, setReviewText] = useState<string>('')
-  const [showWarning, setShowWarning] = useState<boolean>(false)
+  const [selectedTicket, setSelectedTicket] = useState<TicketType>(mockTicketTypes[0])
+  const [quantity, setQuantity] = useState<number>(1)
+  const [formData, setFormData] = useState<FormData>({
+    firstName: '',
+    lastName: '',
+    email: '',
+    phone: '',
+    visitDate: '',
+  })
+  const [agreedToTerms, setAgreedToTerms] = useState<boolean>(false)
 
-  const isAccountVerified = false // Mock: user account is not verified
+  const totalPrice = selectedTicket.price * quantity
 
-  const handleSubmitAttempt = (e: React.FormEvent) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target
+    setFormData(prev => ({ ...prev, [name]: value }))
+  }
+
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    if (!isAccountVerified) {
-      setShowWarning(true)
+    if (!agreedToTerms) {
+      alert('Please agree to the terms and conditions to continue.')
+      return
     }
+    alert(`Ticket purchase initiated!\n\nTicket: ${selectedTicket.name}\nQuantity: ${quantity}\nTotal: €${totalPrice.toFixed(2)}\n\nName: ${formData.firstName} ${formData.lastName}\nEmail: ${formData.email}\nVisit Date: ${formData.visitDate}`)
   }
 
-  const handleVerifyAccount = () => {
-    alert('Redirecting to account verification page...')
-  }
+  const minDate = new Date().toISOString().split('T')[0]
 
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4" data-testid="userattemptsto">
-      <div className="max-w-2xl mx-auto">
+      <div className="max-w-4xl mx-auto">
         <div className="bg-white rounded-lg shadow-md p-6">
-          <h1 className="text-2xl font-bold text-gray-900 mb-6">
-            Write a Review
-          </h1>
-
-          {/* Account Status Warning Banner */}
-          {!isAccountVerified && (
-            <div className="mb-6 bg-yellow-50 border-l-4 border-yellow-400 p-4">
-              <div className="flex items-start">
-                <div className="flex-shrink-0">
-                  <svg className="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                  </svg>
-                </div>
-                <div className="ml-3">
-                  <p className="text-sm text-yellow-700">
-                    <strong>Account Not Verified</strong> - You need to verify your account before leaving a review.
-                  </p>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Business Selection */}
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Select Business
-            </label>
-            <select
-              data-testid="userattemptsto-business"
-              value={selectedBusiness.id}
-              onChange={(e) => {
-                const business = mockBusinesses.find(b => b.id === parseInt(e.target.value))
-                if (business) setSelectedBusiness(business)
-              }}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            >
-              {mockBusinesses.map((business) => (
-                <option key={business.id} value={business.id}>
-                  {business.name} ({business.category})
-                </option>
-              ))}
-            </select>
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">
+              Dundalk Museum - Ticket Purchase
+            </h1>
+            <p className="text-gray-600">
+              Purchase your tickets for the Dundalk Museum in Co. Louth, Ireland
+            </p>
           </div>
 
-          {/* Review Form */}
-          <form onSubmit={handleSubmitAttempt}>
-            {/* Star Rating */}
-            <div className="mb-6">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Your Rating *
-              </label>
-              <div className="flex items-center gap-1">
-                {[1, 2, 3, 4, 5].map((star) => (
+          <form onSubmit={handleSubmit}>
+            {/* Ticket Type Selection */}
+            <div className="mb-8">
+              <h2 className="text-xl font-semibold text-gray-900 mb-4">
+                1. Select Ticket Type
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" data-testid="userattemptsto-list">
+                {mockTicketTypes.map((ticket) => (
                   <button
-                    key={star}
+                    key={ticket.id}
                     type="button"
-                    data-testid={`userattemptsto-star-${star}`}
-                    onClick={() => setRating(star)}
-                    onMouseEnter={() => setHoverRating(star)}
-                    onMouseLeave={() => setHoverRating(0)}
-                    className="focus:outline-none"
+                    data-testid="userattemptsto-item"
+                    onClick={() => setSelectedTicket(ticket)}
+                    className={`p-4 border-2 rounded-lg text-left transition-all ${
+                      selectedTicket.id === ticket.id
+                        ? 'border-blue-600 bg-blue-50'
+                        : 'border-gray-200 hover:border-blue-400'
+                    }`}
                   >
-                    <svg
-                      className={`w-8 h-8 ${
-                        star <= (hoverRating || rating)
-                          ? 'text-yellow-400 fill-current'
-                          : 'text-gray-300 fill-current'
-                      }`}
-                      viewBox="0 0 20 20"
-                    >
-                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                    </svg>
+                    <div className="font-semibold text-gray-900 mb-1">{ticket.name}</div>
+                    <div className="text-sm text-gray-600 mb-2">{ticket.description}</div>
+                    <div className="text-lg font-bold text-blue-600">€{ticket.price.toFixed(2)}</div>
                   </button>
                 ))}
-                <span className="ml-2 text-sm text-gray-600">
-                  {rating > 0 ? `${rating} star${rating !== 1 ? 's' : ''}` : 'No rating selected'}
-                </span>
               </div>
             </div>
 
-            {/* Review Title */}
-            <div className="mb-6">
-              <label htmlFor="review-title" className="block text-sm font-medium text-gray-700 mb-2">
-                Review Title *
-              </label>
-              <input
-                id="review-title"
-                type="text"
-                data-testid="userattemptsto-title"
-                value={reviewTitle}
-                onChange={(e) => setReviewTitle(e.target.value)}
-                placeholder="Sum up your experience"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                maxLength={100}
-              />
+            {/* Quantity Selection */}
+            <div className="mb-8">
+              <h2 className="text-xl font-semibold text-gray-900 mb-4">
+                2. Select Quantity
+              </h2>
+              <div className="flex items-center gap-4">
+                <label className="text-gray-700 font-medium">Number of Tickets:</label>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    data-testid="userattemptsto-decrease"
+                    onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                    className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500"
+                    disabled={quantity <= 1}
+                  >
+                    -
+                  </button>
+                  <input
+                    type="number"
+                    data-testid="userattemptsto-quantity"
+                    value={quantity}
+                    onChange={(e) => setQuantity(Math.max(1, Math.min(20, parseInt(e.target.value) || 1)))}
+                    className="w-20 px-3 py-2 border border-gray-300 rounded-md text-center focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    min="1"
+                    max="20"
+                  />
+                  <button
+                    type="button"
+                    data-testid="userattemptsto-increase"
+                    onClick={() => setQuantity(Math.min(20, quantity + 1))}
+                    className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500"
+                    disabled={quantity >= 20}
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
             </div>
 
-            {/* Review Text */}
-            <div className="mb-6">
-              <label htmlFor="review-text" className="block text-sm font-medium text-gray-700 mb-2">
-                Your Review *
-              </label>
-              <textarea
-                id="review-text"
-                data-testid="userattemptsto-review"
-                value={reviewText}
-                onChange={(e) => setReviewText(e.target.value)}
-                placeholder="Share your experience with others"
-                rows={6}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              />
+            {/* Visitor Information */}
+            <div className="mb-8">
+              <h2 className="text-xl font-semibold text-gray-900 mb-4">
+                3. Visitor Information
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-2">
+                    First Name *
+                  </label>
+                  <input
+                    id="firstName"
+                    name="firstName"
+                    type="text"
+                    data-testid="userattemptsto-firstname"
+                    value={formData.firstName}
+                    onChange={handleInputChange}
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="John"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 mb-2">
+                    Last Name *
+                  </label>
+                  <input
+                    id="lastName"
+                    name="lastName"
+                    type="text"
+                    data-testid="userattemptsto-lastname"
+                    value={formData.lastName}
+                    onChange={handleInputChange}
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="Doe"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+                    Email Address *
+                  </label>
+                  <input
+                    id="email"
+                    name="email"
+                    type="email"
+                    data-testid="userattemptsto-email"
+                    value={formData.email}
+                    onChange={handleInputChange}
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="john.doe@example.com"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-2">
+                    Phone Number
+                  </label>
+                  <input
+                    id="phone"
+                    name="phone"
+                    type="tel"
+                    data-testid="userattemptsto-phone"
+                    value={formData.phone}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="+353 1 234 5678"
+                  />
+                </div>
+                <div className="md:col-span-2">
+                  <label htmlFor="visitDate" className="block text-sm font-medium text-gray-700 mb-2">
+                    Preferred Visit Date *
+                  </label>
+                  <input
+                    id="visitDate"
+                    name="visitDate"
+                    type="date"
+                    data-testid="userattemptsto-date"
+                    value={formData.visitDate}
+                    onChange={handleInputChange}
+                    required
+                    min={minDate}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+              </div>
             </div>
 
-            {/* Warning Message on Submit Attempt */}
-            {showWarning && !isAccountVerified && (
-              <div className="mb-6 bg-red-50 border border-red-200 rounded-md p-4">
-                <div className="flex items-start">
-                  <div className="flex-shrink-0">
-                    <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                    </svg>
-                  </div>
-                  <div className="ml-3 flex-1">
-                    <h3 className="text-sm font-medium text-red-800">
-                      Cannot Submit Review
-                    </h3>
-                    <p className="mt-1 text-sm text-red-700">
-                      Your account must be verified before you can leave reviews. Please verify your account to continue.
-                    </p>
-                    <div className="mt-3">
-                      <button
-                        type="button"
-                        data-testid="userattemptsto-verify"
-                        onClick={handleVerifyAccount}
-                        className="inline-flex items-center px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
-                      >
-                        Verify Account Now
-                      </button>
-                    </div>
+            {/* Terms and Conditions */}
+            <div className="mb-8">
+              <div className="flex items-start gap-3">
+                <input
+                  type="checkbox"
+                  id="terms"
+                  data-testid="userattemptsto-terms"
+                  checked={agreedToTerms}
+                  onChange={(e) => setAgreedToTerms(e.target.checked)}
+                  className="mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                />
+                <label htmlFor="terms" className="text-sm text-gray-700">
+                  I agree to the terms and conditions, including the cancellation policy. 
+                  Tickets are non-refundable but can be rescheduled up to 24 hours before the visit date.
+                </label>
+              </div>
+            </div>
+
+            {/* Order Summary */}
+            <div className="mb-8 bg-gray-50 rounded-lg p-6 border border-gray-200">
+              <h2 className="text-xl font-semibold text-gray-900 mb-4">
+                Order Summary
+              </h2>
+              <div className="space-y-2">
+                <div className="flex justify-between text-gray-700">
+                  <span>Ticket Type:</span>
+                  <span className="font-medium">{selectedTicket.name}</span>
+                </div>
+                <div className="flex justify-between text-gray-700">
+                  <span>Price per Ticket:</span>
+                  <span className="font-medium">€{selectedTicket.price.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between text-gray-700">
+                  <span>Quantity:</span>
+                  <span className="font-medium">{quantity}</span>
+                </div>
+                <div className="border-t border-gray-300 pt-2 mt-2">
+                  <div className="flex justify-between text-lg font-bold text-gray-900">
+                    <span>Total:</span>
+                    <span className="text-blue-600">€{totalPrice.toFixed(2)}</span>
                   </div>
                 </div>
               </div>
-            )}
+            </div>
 
-            {/* Submit Button */}
-            <div className="flex items-center justify-between">
-              <button
-                type="submit"
-                data-testid="userattemptsto-submit"
-                className="px-6 py-3 bg-blue-600 text-white font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Submit Review
-              </button>
+            {/* Action Buttons */}
+            <div className="flex items-center justify-between gap-4">
               <button
                 type="button"
                 data-testid="userattemptsto-cancel"
                 onClick={() => {
-                  setRating(0)
-                  setReviewTitle('')
-                  setReviewText('')
-                  setShowWarning(false)
+                  setFormData({
+                    firstName: '',
+                    lastName: '',
+                    email: '',
+                    phone: '',
+                    visitDate: '',
+                  })
+                  setQuantity(1)
+                  setSelectedTicket(mockTicketTypes[0])
+                  setAgreedToTerms(false)
                 }}
                 className="px-6 py-3 bg-gray-200 text-gray-700 font-medium rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
               >
                 Cancel
               </button>
+              <button
+                type="submit"
+                data-testid="userattemptsto-submit"
+                className="px-8 py-3 bg-blue-600 text-white font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={!agreedToTerms}
+              >
+                Purchase Tickets - €{totalPrice.toFixed(2)}
+              </button>
             </div>
           </form>
-
-          {/* Verification Status */}
-          <div className="mt-6 pt-6 border-t border-gray-200">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-700">Account Status</p>
-                <p className="text-sm text-gray-500">
-                  {isAccountVerified ? (
-                    <span className="text-green-600">✓ Verified</span>
-                  ) : (
-                    <span className="text-yellow-600">⚠ Not Verified</span>
-                  )}
-                </p>
-              </div>
-              {!isAccountVerified && (
-                <button
-                  type="button"
-                  data-testid="userattemptsto-verify-bottom"
-                  onClick={handleVerifyAccount}
-                  className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                >
-                  Verify Account
-                </button>
-              )}
-            </div>
-          </div>
         </div>
 
-        {/* Info Section */}
-        <div className="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <h2 className="text-sm font-medium text-blue-900 mb-2">Why verify your account?</h2>
-          <ul className="text-sm text-blue-700 space-y-1 list-disc list-inside">
-            <li>Leave reviews for local businesses</li>
-            <li>Build trust with the community</li>
-            <li>Get personalized recommendations</li>
-            <li>Receive updates from your favorite places</li>
-            <li>Access exclusive features and promotions</li>
-          </ul>
+        {/* Museum Information */}
+        <div className="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-6">
+          <h2 className="text-lg font-semibold text-blue-900 mb-3">Museum Information</h2>
+          <div className="text-sm text-blue-800 space-y-2">
+            <p><strong>Opening Hours:</strong> Tuesday - Sunday, 10:00 AM - 5:00 PM (Closed Mondays)</p>
+            <p><strong>Location:</strong> Jocelyn Street, Dundalk, Co. Louth, Ireland</p>
+            <p><strong>Facilities:</strong> Wheelchair accessible, gift shop, café, free WiFi</p>
+            <p><strong>Parking:</strong> Free parking available on-site</p>
+            <p><strong>Contact:</strong> +353 42 932 7056 | info@dundalkmuseum.ie</p>
+          </div>
         </div>
       </div>
     </div>

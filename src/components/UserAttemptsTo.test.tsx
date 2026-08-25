@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, fireEvent } from '@testing-library/react'
 import { describe, it, expect } from 'vitest'
 import UserAttemptsTo from './UserAttemptsTo'
 
@@ -8,21 +8,26 @@ describe('UserAttemptsTo', () => {
     expect(document.body).toBeTruthy()
   })
 
-  it('displays the review form heading', () => {
+  it('displays museum ticket purchase heading', () => {
     render(<UserAttemptsTo />)
-    expect(screen.getByText('Write a Review')).toBeTruthy()
+    expect(screen.getByText(/Dundalk Museum - Ticket Purchase/i)).toBeTruthy()
   })
 
-  it('displays account not verified warning', () => {
+  it('displays all mock ticket types', () => {
     render(<UserAttemptsTo />)
-    expect(screen.getByText(/Account Not Verified/i)).toBeTruthy()
+    expect(screen.getAllByText('Adult').length).toBeGreaterThan(0)
+    expect(screen.getByText('Senior')).toBeTruthy()
+    expect(screen.getByText('Student')).toBeTruthy()
+    expect(screen.getByText('Child')).toBeTruthy()
+    expect(screen.getByText('Family Pass')).toBeTruthy()
   })
 
-  it('displays mock businesses in the select dropdown', () => {
+  it('displays ticket prices correctly', () => {
     render(<UserAttemptsTo />)
-    expect(screen.getByText(/Connemara Coastal Tours/i)).toBeTruthy()
-    expect(screen.getByText(/Wild Atlantic Cafe/i)).toBeTruthy()
-    expect(screen.getByText(/Kylemore Abbey Gift Shop/i)).toBeTruthy()
+    // Prices appear multiple times (in ticket list and order summary)
+    expect(screen.getAllByText(/€12\.00/).length).toBeGreaterThan(0)
+    expect(screen.getAllByText(/€10\.00/).length).toBeGreaterThan(0)
+    expect(screen.getAllByText(/€8\.00/).length).toBeGreaterThan(0)
   })
 
   it('has required data-testid attributes', () => {
@@ -31,31 +36,94 @@ describe('UserAttemptsTo', () => {
     // Main wrapper
     expect(document.querySelector('[data-testid="userattemptsto"]')).toBeTruthy()
     
-    // Form inputs
-    expect(document.querySelector('[data-testid="userattemptsto-business"]')).toBeTruthy()
-    expect(document.querySelector('[data-testid="userattemptsto-title"]')).toBeTruthy()
-    expect(document.querySelector('[data-testid="userattemptsto-review"]')).toBeTruthy()
+    // List container
+    expect(document.querySelector('[data-testid="userattemptsto-list"]')).toBeTruthy()
     
-    // Star rating buttons
-    expect(document.querySelector('[data-testid="userattemptsto-star-1"]')).toBeTruthy()
-    expect(document.querySelector('[data-testid="userattemptsto-star-5"]')).toBeTruthy()
+    // List items (ticket types)
+    const items = document.querySelectorAll('[data-testid="userattemptsto-item"]')
+    expect(items.length).toBe(5)
     
-    // Action buttons
+    // Form fields
+    expect(document.querySelector('[data-testid="userattemptsto-quantity"]')).toBeTruthy()
+    expect(document.querySelector('[data-testid="userattemptsto-firstname"]')).toBeTruthy()
+    expect(document.querySelector('[data-testid="userattemptsto-lastname"]')).toBeTruthy()
+    expect(document.querySelector('[data-testid="userattemptsto-email"]')).toBeTruthy()
+    expect(document.querySelector('[data-testid="userattemptsto-phone"]')).toBeTruthy()
+    expect(document.querySelector('[data-testid="userattemptsto-date"]')).toBeTruthy()
+    expect(document.querySelector('[data-testid="userattemptsto-terms"]')).toBeTruthy()
+    
+    // Buttons
+    expect(document.querySelector('[data-testid="userattemptsto-decrease"]')).toBeTruthy()
+    expect(document.querySelector('[data-testid="userattemptsto-increase"]')).toBeTruthy()
     expect(document.querySelector('[data-testid="userattemptsto-submit"]')).toBeTruthy()
     expect(document.querySelector('[data-testid="userattemptsto-cancel"]')).toBeTruthy()
-    expect(document.querySelector('[data-testid="userattemptsto-verify-bottom"]')).toBeTruthy()
   })
 
-  it('displays verification info section', () => {
+  it('allows ticket type selection', () => {
     render(<UserAttemptsTo />)
-    expect(screen.getByText(/Why verify your account?/i)).toBeTruthy()
-    expect(screen.getByText(/Leave reviews for local businesses/i)).toBeTruthy()
+    const seniorTicket = screen.getByText('Senior').closest('button')
+    if (seniorTicket) {
+      fireEvent.click(seniorTicket)
+      expect(seniorTicket.classList.contains('border-blue-600')).toBe(true)
+    }
   })
 
-  it('shows account status as not verified', () => {
+  it('allows quantity adjustment', () => {
     render(<UserAttemptsTo />)
-    expect(screen.getByText(/Account Status/i)).toBeTruthy()
-    const notVerifiedElements = screen.getAllByText(/Not Verified/i)
-    expect(notVerifiedElements.length).toBeGreaterThan(0)
+    const increaseBtn = document.querySelector('[data-testid="userattemptsto-increase"]') as HTMLButtonElement
+    const quantityInput = document.querySelector('[data-testid="userattemptsto-quantity"]') as HTMLInputElement
+    
+    expect(quantityInput.value).toBe('1')
+    
+    if (increaseBtn) {
+      fireEvent.click(increaseBtn)
+      expect(quantityInput.value).toBe('2')
+    }
+  })
+
+  it('calculates total price correctly', () => {
+    render(<UserAttemptsTo />)
+    const increaseBtn = document.querySelector('[data-testid="userattemptsto-increase"]') as HTMLButtonElement
+    
+    // Initial price: 1 Adult ticket @ €12 (appears in ticket list, order summary, and button)
+    expect(screen.getAllByText(/€12\.00/).length).toBeGreaterThan(0)
+    
+    // Increase quantity to 2
+    if (increaseBtn) {
+      fireEvent.click(increaseBtn)
+    }
+    
+    // Should show total of €24.00
+    expect(screen.getByText(/Purchase Tickets - €24\.00/)).toBeTruthy()
+  })
+
+  it('validates form inputs', () => {
+    render(<UserAttemptsTo />)
+    const firstNameInput = document.querySelector('[data-testid="userattemptsto-firstname"]') as HTMLInputElement
+    const emailInput = document.querySelector('[data-testid="userattemptsto-email"]') as HTMLInputElement
+    
+    expect(firstNameInput.hasAttribute('required')).toBe(true)
+    expect(emailInput.hasAttribute('required')).toBe(true)
+  })
+
+  it('requires terms agreement before purchase', () => {
+    render(<UserAttemptsTo />)
+    const submitBtn = document.querySelector('[data-testid="userattemptsto-submit"]') as HTMLButtonElement
+    
+    // Submit button should be disabled initially
+    expect(submitBtn.disabled).toBe(true)
+    
+    // Check terms checkbox
+    const termsCheckbox = document.querySelector('[data-testid="userattemptsto-terms"]') as HTMLInputElement
+    fireEvent.click(termsCheckbox)
+    
+    // Submit button should now be enabled
+    expect(submitBtn.disabled).toBe(false)
+  })
+
+  it('displays museum information', () => {
+    render(<UserAttemptsTo />)
+    expect(screen.getByText(/Museum Information/i)).toBeTruthy()
+    expect(screen.getByText(/Dundalk, Co. Louth, Ireland/i)).toBeTruthy()
   })
 })
