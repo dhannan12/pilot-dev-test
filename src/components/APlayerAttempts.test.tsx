@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, fireEvent } from '@testing-library/react'
 import { describe, it, expect } from 'vitest'
 import APlayerAttempts from './APlayerAttempts'
 
@@ -8,64 +8,86 @@ describe('APlayerAttempts', () => {
     expect(document.body).toBeTruthy()
   })
 
-  it('displays the main registration form', () => {
+  it('displays mock data', () => {
     render(<APlayerAttempts />)
-    expect(screen.getByText(/Tournament Registration/i)).toBeTruthy()
-    expect(screen.getByText(/Register for upcoming table tennis tournaments/i)).toBeTruthy()
-  })
-
-  it('displays tournament information', () => {
-    render(<APlayerAttempts />)
-    expect(screen.getByText(/Tournament Details/i)).toBeTruthy()
-    expect(screen.getByText(/Registration Deadline:/i)).toBeTruthy()
-  })
-
-  it('shows deadline passed error message', () => {
-    render(<APlayerAttempts />)
-    expect(screen.getByText(/Registration Deadline Passed/i)).toBeTruthy()
-    expect(screen.getByText(/Registration is no longer available/i)).toBeTruthy()
-  })
-
-  it('displays disabled form fields when deadline passed', () => {
-    const { container } = render(<APlayerAttempts />)
-    const nameInput = container.querySelector('[data-testid="aplayerattempts-name"]') as HTMLInputElement
-    const emailInput = container.querySelector('[data-testid="aplayerattempts-email"]') as HTMLInputElement
-    const submitButton = container.querySelector('[data-testid="aplayerattempts-submit"]') as HTMLButtonElement
-
-    expect(nameInput?.disabled).toBe(true)
-    expect(emailInput?.disabled).toBe(true)
-    expect(submitButton?.disabled).toBe(true)
-  })
-
-  it('displays all tournaments in the list', () => {
-    render(<APlayerAttempts />)
-    // Each tournament name appears twice: once in dropdown, once in list
-    expect(screen.getAllByText(/Spring Championship 2026/i).length).toBeGreaterThanOrEqual(1)
-    expect(screen.getAllByText(/Summer Open Tournament/i).length).toBeGreaterThanOrEqual(1)
-    expect(screen.getAllByText(/Regional Qualifier/i).length).toBeGreaterThanOrEqual(1)
-    expect(screen.getAllByText(/Youth Division Finals/i).length).toBeGreaterThanOrEqual(1)
-    expect(screen.getAllByText(/Mixed Doubles Classic/i).length).toBeGreaterThanOrEqual(1)
+    
+    // Check for player names in the list (they appear multiple times)
+    expect(screen.getAllByText('Alex Chen').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('Sarah Johnson').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('Mike Rodriguez').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('Emily Watson').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('David Kim').length).toBeGreaterThan(0)
+    
+    // Check for seeding requirement text
+    expect(screen.getByText(/Players must complete at least 5 matches/i)).toBeTruthy()
   })
 
   it('has required data-testid attributes', () => {
-    const { container } = render(<APlayerAttempts />)
+    render(<APlayerAttempts />)
     
-    // Main wrapper
-    expect(container.querySelector('[data-testid="aplayerattempts"]')).toBeTruthy()
+    // Verify key testids exist — Playwright QA depends on these
+    const mainWrapper = document.querySelector('[data-testid="aplayerattempts"]')
+    expect(mainWrapper).toBeTruthy()
     
-    // Form fields
-    expect(container.querySelector('[data-testid="aplayerattempts-tournament"]')).toBeTruthy()
-    expect(container.querySelector('[data-testid="aplayerattempts-name"]')).toBeTruthy()
-    expect(container.querySelector('[data-testid="aplayerattempts-email"]')).toBeTruthy()
+    const playerSelect = document.querySelector('[data-testid="aplayerattempts-player-select"]')
+    expect(playerSelect).toBeTruthy()
     
-    // Submit button
-    expect(container.querySelector('[data-testid="aplayerattempts-submit"]')).toBeTruthy()
+    const submitButton = document.querySelector('[data-testid="aplayerattempts-submit"]')
+    expect(submitButton).toBeTruthy()
     
-    // Error message
-    expect(container.querySelector('[data-testid="aplayerattempts-error"]')).toBeTruthy()
+    const list = document.querySelector('[data-testid="aplayerattempts-list"]')
+    expect(list).toBeTruthy()
     
-    // Tournament list
-    expect(container.querySelector('[data-testid="aplayerattempts-list"]')).toBeTruthy()
-    expect(container.querySelectorAll('[data-testid="aplayerattempts-item"]').length).toBeGreaterThan(0)
+    const items = document.querySelectorAll('[data-testid="aplayerattempts-item"]')
+    expect(items.length).toBeGreaterThan(0)
+  })
+
+  it('shows error message when player has insufficient matches', () => {
+    render(<APlayerAttempts />)
+    
+    // Default player (Alex Chen) has 3 matches, needs 5
+    const submitButton = screen.getByTestId('aplayerattempts-submit')
+    fireEvent.click(submitButton)
+    
+    // Check for error message
+    const message = screen.getByTestId('aplayerattempts-message')
+    expect(message).toBeTruthy()
+    expect(message.textContent).toContain('Cannot seed')
+    expect(message.textContent).toContain('Insufficient matches played')
+  })
+
+  it('displays player statistics correctly', () => {
+    render(<APlayerAttempts />)
+    
+    // Check for statistics labels
+    expect(screen.getByText('Player Statistics')).toBeTruthy()
+    expect(screen.getByText('Name')).toBeTruthy()
+    expect(screen.getByText('Matches Played')).toBeTruthy()
+    expect(screen.getByText('Wins')).toBeTruthy()
+    expect(screen.getByText('Losses')).toBeTruthy()
+  })
+
+  it('shows eligibility status badge', () => {
+    render(<APlayerAttempts />)
+    
+    // Default player has insufficient matches, should show "Ineligible"
+    expect(screen.getByText('Ineligible')).toBeTruthy()
+  })
+
+  it('displays all players in the list', () => {
+    render(<APlayerAttempts />)
+    
+    const items = document.querySelectorAll('[data-testid="aplayerattempts-item"]')
+    expect(items.length).toBe(5) // 5 mock players
+  })
+
+  it('shows reset button after attempting seeding', () => {
+    render(<APlayerAttempts />)
+    
+    const submitButton = screen.getByTestId('aplayerattempts-submit')
+    fireEvent.click(submitButton)
+    
+    const resetButton = screen.getByTestId('aplayerattempts-reset')
+    expect(resetButton).toBeTruthy()
   })
 })

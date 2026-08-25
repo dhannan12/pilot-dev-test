@@ -1,261 +1,319 @@
 /**
- * APlayerAttempts — Registration form showing a player attempting to register after the deadline
+ * APlayerAttempts — Displays a player attempting to get seeded with insufficient matches
  *
- * Features: deadline validation, disabled form state, error messaging, tournament info display, late registration handling
+ * Features: match count tracking, seeding eligibility check, error messaging, player stats display, attempt validation
  *
- * Ticket: SCRUM-1105 | Branch: proto/SCRUM-1103
+ * Ticket: SCRUM-1108 | Branch: proto/SCRUM-1103
  */
 
 import React, { useState } from 'react'
 
-interface Tournament {
-  id: string
+interface Player {
+  id: number
   name: string
-  deadline: string
-  date: string
-  location: string
-  registrationOpen: boolean
+  matchesPlayed: number
+  wins: number
+  losses: number
+  rank: number | null
 }
 
-const mockTournaments: Tournament[] = [
+const mockPlayers: Player[] = [
   {
-    id: 'T001',
-    name: 'Spring Championship 2026',
-    deadline: '2026-08-20',
-    date: '2026-08-30',
-    location: 'City Sports Center',
-    registrationOpen: false,
+    id: 1,
+    name: 'Alex Chen',
+    matchesPlayed: 3,
+    wins: 2,
+    losses: 1,
+    rank: null,
   },
   {
-    id: 'T002',
-    name: 'Summer Open Tournament',
-    deadline: '2026-08-15',
-    date: '2026-08-28',
-    location: 'Downtown Arena',
-    registrationOpen: false,
+    id: 2,
+    name: 'Sarah Johnson',
+    matchesPlayed: 2,
+    wins: 1,
+    losses: 1,
+    rank: null,
   },
   {
-    id: 'T003',
-    name: 'Regional Qualifier',
-    deadline: '2026-08-18',
-    date: '2026-09-01',
-    location: 'Recreation Complex',
-    registrationOpen: false,
+    id: 3,
+    name: 'Mike Rodriguez',
+    matchesPlayed: 4,
+    wins: 3,
+    losses: 1,
+    rank: null,
   },
   {
-    id: 'T004',
-    name: 'Youth Division Finals',
-    deadline: '2026-08-22',
-    date: '2026-09-05',
-    location: 'University Gym',
-    registrationOpen: false,
+    id: 4,
+    name: 'Emily Watson',
+    matchesPlayed: 1,
+    wins: 0,
+    losses: 1,
+    rank: null,
   },
   {
-    id: 'T005',
-    name: 'Mixed Doubles Classic',
-    deadline: '2026-08-19',
-    date: '2026-08-29',
-    location: 'Metro Sports Hall',
-    registrationOpen: false,
+    id: 5,
+    name: 'David Kim',
+    matchesPlayed: 0,
+    wins: 0,
+    losses: 0,
+    rank: null,
   },
 ]
 
+const MINIMUM_MATCHES_REQUIRED = 5
+
 export default function APlayerAttempts() {
-  const [selectedTournament, setSelectedTournament] = useState<string>(mockTournaments[0].id)
-  const [playerName, setPlayerName] = useState('')
-  const [email, setEmail] = useState('')
-  const [showError, setShowError] = useState(false)
+  const [selectedPlayerId, setSelectedPlayerId] = useState<number>(mockPlayers[0].id)
+  const [attemptMessage, setAttemptMessage] = useState<string>('')
+  const [messageType, setMessageType] = useState<'error' | 'success' | ''>('')
 
-  const currentTournament = mockTournaments.find(t => t.id === selectedTournament)
-  const today = new Date('2026-08-25')
-  const deadline = currentTournament ? new Date(currentTournament.deadline) : new Date()
-  const isPastDeadline = today > deadline
+  const selectedPlayer = mockPlayers.find((p) => p.id === selectedPlayerId)
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (isPastDeadline) {
-      setShowError(true)
+  const handleSeedingAttempt = () => {
+    if (!selectedPlayer) return
+
+    if (selectedPlayer.matchesPlayed < MINIMUM_MATCHES_REQUIRED) {
+      const remaining = MINIMUM_MATCHES_REQUIRED - selectedPlayer.matchesPlayed
+      setAttemptMessage(
+        `Cannot seed ${selectedPlayer.name}. Insufficient matches played. ` +
+        `${selectedPlayer.matchesPlayed}/${MINIMUM_MATCHES_REQUIRED} matches completed. ` +
+        `${remaining} more match${remaining === 1 ? '' : 'es'} required.`
+      )
+      setMessageType('error')
+    } else {
+      setAttemptMessage(
+        `${selectedPlayer.name} is eligible for seeding with ${selectedPlayer.matchesPlayed} matches played.`
+      )
+      setMessageType('success')
     }
   }
 
-  const daysOverdue = Math.floor((today.getTime() - deadline.getTime()) / (1000 * 60 * 60 * 24))
+  const handleReset = () => {
+    setAttemptMessage('')
+    setMessageType('')
+  }
 
   return (
-    <div data-testid="aplayerattempts" className="min-h-screen bg-gray-50 py-8 px-4">
-      <div className="max-w-2xl mx-auto">
-        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Tournament Registration</h1>
-          <p className="text-gray-600 mb-6">Register for upcoming table tennis tournaments</p>
+    <div data-testid="aplayerattempts" className="min-h-screen bg-gray-50 p-8">
+      <div className="max-w-4xl mx-auto">
+        <div className="bg-white rounded-lg shadow-md p-6">
+          <h1 className="text-3xl font-bold text-gray-800 mb-2">
+            Tournament Seeding Request
+          </h1>
+          <p className="text-gray-600 mb-6">
+            Players must complete at least {MINIMUM_MATCHES_REQUIRED} matches to be eligible for seeding
+          </p>
 
-          {/* Tournament Selection */}
           <div className="mb-6">
-            <label htmlFor="tournament-select" className="block text-sm font-medium text-gray-700 mb-2">
-              Select Tournament
+            <label
+              htmlFor="player-select"
+              className="block text-sm font-medium text-gray-700 mb-2"
+            >
+              Select Player
             </label>
             <select
-              id="tournament-select"
-              data-testid="aplayerattempts-tournament"
-              value={selectedTournament}
+              id="player-select"
+              data-testid="aplayerattempts-player-select"
+              value={selectedPlayerId}
               onChange={(e) => {
-                setSelectedTournament(e.target.value)
-                setShowError(false)
+                setSelectedPlayerId(Number(e.target.value))
+                handleReset()
               }}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             >
-              {mockTournaments.map((tournament) => (
-                <option key={tournament.id} value={tournament.id}>
-                  {tournament.name}
+              {mockPlayers.map((player) => (
+                <option key={player.id} value={player.id}>
+                  {player.name}
                 </option>
               ))}
             </select>
           </div>
 
-          {/* Tournament Details */}
-          {currentTournament && (
-            <div data-testid="aplayerattempts-tournament-info" className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-              <h2 className="font-semibold text-blue-900 mb-3">Tournament Details</h2>
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Tournament Date:</span>
-                  <span className="font-medium text-gray-900">{currentTournament.date}</span>
+          {selectedPlayer && (
+            <div className="bg-gray-50 rounded-lg p-4 mb-6">
+              <h2 className="text-xl font-semibold text-gray-800 mb-4">
+                Player Statistics
+              </h2>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm text-gray-600">Name</p>
+                  <p className="text-lg font-medium text-gray-900">
+                    {selectedPlayer.name}
+                  </p>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Location:</span>
-                  <span className="font-medium text-gray-900">{currentTournament.location}</span>
+                <div>
+                  <p className="text-sm text-gray-600">Matches Played</p>
+                  <p className="text-lg font-medium text-gray-900">
+                    {selectedPlayer.matchesPlayed}
+                  </p>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Registration Deadline:</span>
-                  <span className={`font-medium ${isPastDeadline ? 'text-red-600' : 'text-gray-900'}`}>
-                    {currentTournament.deadline}
+                <div>
+                  <p className="text-sm text-gray-600">Wins</p>
+                  <p className="text-lg font-medium text-green-600">
+                    {selectedPlayer.wins}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600">Losses</p>
+                  <p className="text-lg font-medium text-red-600">
+                    {selectedPlayer.losses}
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-4 pt-4 border-t border-gray-200">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-gray-700">
+                    Seeding Eligibility
+                  </span>
+                  <span
+                    className={`px-3 py-1 rounded-full text-sm font-medium ${
+                      selectedPlayer.matchesPlayed >= MINIMUM_MATCHES_REQUIRED
+                        ? 'bg-green-100 text-green-800'
+                        : 'bg-red-100 text-red-800'
+                    }`}
+                  >
+                    {selectedPlayer.matchesPlayed >= MINIMUM_MATCHES_REQUIRED
+                      ? 'Eligible'
+                      : 'Ineligible'}
                   </span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Status:</span>
-                  <span className={`font-semibold ${isPastDeadline ? 'text-red-600' : 'text-green-600'}`}>
-                    {isPastDeadline ? 'Registration Closed' : 'Registration Open'}
-                  </span>
+                <div className="mt-2">
+                  <div className="flex items-center justify-between text-xs text-gray-600 mb-1">
+                    <span>Progress</span>
+                    <span>
+                      {selectedPlayer.matchesPlayed}/{MINIMUM_MATCHES_REQUIRED}
+                    </span>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-2">
+                    <div
+                      className={`h-2 rounded-full transition-all ${
+                        selectedPlayer.matchesPlayed >= MINIMUM_MATCHES_REQUIRED
+                          ? 'bg-green-500'
+                          : 'bg-red-500'
+                      }`}
+                      style={{
+                        width: `${Math.min(
+                          (selectedPlayer.matchesPlayed / MINIMUM_MATCHES_REQUIRED) * 100,
+                          100
+                        )}%`,
+                      }}
+                    ></div>
+                  </div>
                 </div>
               </div>
             </div>
           )}
 
-          {/* Deadline Passed Error */}
-          {isPastDeadline && (
-            <div data-testid="aplayerattempts-error" className="bg-red-50 border border-red-300 rounded-lg p-4 mb-6">
-              <div className="flex items-start">
-                <svg className="w-5 h-5 text-red-600 mt-0.5 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                </svg>
-                <div>
-                  <h3 className="text-sm font-semibold text-red-800 mb-1">Registration Deadline Passed</h3>
-                  <p className="text-sm text-red-700">
-                    The registration deadline for this tournament was {currentTournament?.deadline}.
-                    The deadline passed {daysOverdue} {daysOverdue === 1 ? 'day' : 'days'} ago.
-                    Registration is no longer available.
+          <div className="flex gap-4">
+            <button
+              data-testid="aplayerattempts-submit"
+              onClick={handleSeedingAttempt}
+              className="flex-1 bg-blue-600 text-white px-6 py-3 rounded-md font-medium hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+            >
+              Request Seeding
+            </button>
+            {attemptMessage && (
+              <button
+                data-testid="aplayerattempts-reset"
+                onClick={handleReset}
+                className="px-6 py-3 border border-gray-300 rounded-md font-medium text-gray-700 hover:bg-gray-50 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
+              >
+                Reset
+              </button>
+            )}
+          </div>
+
+          {attemptMessage && (
+            <div
+              data-testid="aplayerattempts-message"
+              className={`mt-6 p-4 rounded-md ${
+                messageType === 'error'
+                  ? 'bg-red-50 border border-red-200'
+                  : 'bg-green-50 border border-green-200'
+              }`}
+            >
+              <div className="flex">
+                <div className="flex-shrink-0">
+                  {messageType === 'error' ? (
+                    <svg
+                      className="h-5 w-5 text-red-400"
+                      viewBox="0 0 20 20"
+                      fill="currentColor"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                  ) : (
+                    <svg
+                      className="h-5 w-5 text-green-400"
+                      viewBox="0 0 20 20"
+                      fill="currentColor"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                  )}
+                </div>
+                <div className="ml-3">
+                  <p
+                    className={`text-sm font-medium ${
+                      messageType === 'error' ? 'text-red-800' : 'text-green-800'
+                    }`}
+                  >
+                    {attemptMessage}
                   </p>
                 </div>
               </div>
             </div>
           )}
 
-          {/* Registration Attempt Error (shown after submit attempt) */}
-          {showError && (
-            <div data-testid="aplayerattempts-submit-error" className="bg-orange-50 border border-orange-300 rounded-lg p-4 mb-6">
-              <p className="text-sm font-medium text-orange-800">
-                ⚠ Unable to process registration. The tournament registration period has ended.
-              </p>
-            </div>
-          )}
-
-          {/* Registration Form */}
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label htmlFor="player-name" className="block text-sm font-medium text-gray-700 mb-2">
-                Player Name
-              </label>
-              <input
-                id="player-name"
-                type="text"
-                data-testid="aplayerattempts-name"
-                value={playerName}
-                onChange={(e) => setPlayerName(e.target.value)}
-                disabled={isPastDeadline}
-                className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                  isPastDeadline ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : 'border-gray-300'
-                }`}
-                placeholder="Enter your full name"
-              />
-            </div>
-
-            <div>
-              <label htmlFor="player-email" className="block text-sm font-medium text-gray-700 mb-2">
-                Email Address
-              </label>
-              <input
-                id="player-email"
-                type="email"
-                data-testid="aplayerattempts-email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                disabled={isPastDeadline}
-                className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                  isPastDeadline ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : 'border-gray-300'
-                }`}
-                placeholder="your.email@example.com"
-              />
-            </div>
-
-            <button
-              type="submit"
-              data-testid="aplayerattempts-submit"
-              disabled={isPastDeadline}
-              className={`w-full py-3 px-4 rounded-lg font-semibold transition-colors ${
-                isPastDeadline
-                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                  : 'bg-blue-600 text-white hover:bg-blue-700'
-              }`}
-            >
-              {isPastDeadline ? 'Registration Closed' : 'Register for Tournament'}
-            </button>
-          </form>
-        </div>
-
-        {/* All Tournaments List */}
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <h2 className="text-xl font-bold text-gray-900 mb-4">All Tournaments</h2>
-          <div data-testid="aplayerattempts-list" className="space-y-3">
-            {mockTournaments.map((tournament) => {
-              const tournamentDeadline = new Date(tournament.deadline)
-              const isDeadlinePassed = today > tournamentDeadline
-              
-              return (
+          <div className="mt-8 pt-6 border-t border-gray-200">
+            <h3 className="text-lg font-semibold text-gray-800 mb-4">
+              All Players
+            </h3>
+            <div data-testid="aplayerattempts-list" className="space-y-2">
+              {mockPlayers.map((player) => (
                 <div
-                  key={tournament.id}
+                  key={player.id}
                   data-testid="aplayerattempts-item"
-                  className="border border-gray-200 rounded-lg p-4 hover:border-blue-300 transition-colors"
+                  className={`flex items-center justify-between p-3 rounded-md border ${
+                    player.id === selectedPlayerId
+                      ? 'border-blue-300 bg-blue-50'
+                      : 'border-gray-200 bg-white'
+                  }`}
                 >
-                  <div className="flex justify-between items-start mb-2">
-                    <h3 className="font-semibold text-gray-900">{tournament.name}</h3>
-                    <span
-                      className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                        isDeadlinePassed
-                          ? 'bg-red-100 text-red-700'
-                          : 'bg-green-100 text-green-700'
+                  <div className="flex-1">
+                    <p className="font-medium text-gray-900">{player.name}</p>
+                    <p className="text-sm text-gray-600">
+                      {player.wins}W - {player.losses}L
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm font-medium text-gray-900">
+                      {player.matchesPlayed} matches
+                    </p>
+                    <p
+                      className={`text-xs ${
+                        player.matchesPlayed >= MINIMUM_MATCHES_REQUIRED
+                          ? 'text-green-600'
+                          : 'text-red-600'
                       }`}
                     >
-                      {isDeadlinePassed ? 'Closed' : 'Open'}
-                    </span>
-                  </div>
-                  <div className="text-sm text-gray-600 space-y-1">
-                    <p>📍 {tournament.location}</p>
-                    <p>📅 Tournament: {tournament.date}</p>
-                    <p className={isDeadlinePassed ? 'text-red-600 font-medium' : ''}>
-                      ⏰ Deadline: {tournament.deadline}
+                      {player.matchesPlayed >= MINIMUM_MATCHES_REQUIRED
+                        ? 'Eligible'
+                        : `${MINIMUM_MATCHES_REQUIRED - player.matchesPlayed} needed`}
                     </p>
                   </div>
                 </div>
-              )
-            })}
+              ))}
+            </div>
           </div>
         </div>
       </div>
