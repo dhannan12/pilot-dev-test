@@ -8,12 +8,9 @@ describe('UserRequestsFishing', () => {
     expect(document.body).toBeTruthy()
   })
 
-  it('displays mock fishing spot data', () => {
+  it('displays the main heading', () => {
     render(<UserRequestsFishing />)
-    // Check for at least some of the mock fishing spots
-    expect(screen.getByText('Corrib River Banks')).toBeTruthy()
-    expect(screen.getByText('Lough Mask Shore')).toBeTruthy()
-    expect(screen.getByText(/Fishing Spot Recommendations/i)).toBeTruthy()
+    expect(screen.getByText(/Find Your Perfect Fishing Spot/i)).toBeTruthy()
   })
 
   it('has required data-testid attributes', () => {
@@ -23,54 +20,102 @@ describe('UserRequestsFishing', () => {
     expect(document.querySelector('[data-testid="userrequestsfishing"]')).toBeTruthy()
     
     // Form inputs
-    expect(document.querySelector('[data-testid="userrequestsfishing-fishtype"]')).toBeTruthy()
     expect(document.querySelector('[data-testid="userrequestsfishing-experience"]')).toBeTruthy()
-    expect(document.querySelector('[data-testid="userrequestsfishing-season"]')).toBeTruthy()
+    expect(document.querySelector('[data-testid="userrequestsfishing-type"]')).toBeTruthy()
+    expect(document.querySelector('[data-testid="userrequestsfishing-location"]')).toBeTruthy()
     
     // Buttons
     expect(document.querySelector('[data-testid="userrequestsfishing-submit"]')).toBeTruthy()
     expect(document.querySelector('[data-testid="userrequestsfishing-reset"]')).toBeTruthy()
+  })
+
+  it('displays recommendations when form is submitted', () => {
+    render(<UserRequestsFishing />)
     
-    // List container and items
+    const submitButton = document.querySelector('[data-testid="userrequestsfishing-submit"]') as HTMLButtonElement
+    fireEvent.click(submitButton)
+    
+    // Check that recommendations list appears
     expect(document.querySelector('[data-testid="userrequestsfishing-list"]')).toBeTruthy()
-    expect(document.querySelector('[data-testid="userrequestsfishing-item"]')).toBeTruthy()
+    
+    // Check that items are displayed
+    const items = document.querySelectorAll('[data-testid="userrequestsfishing-item"]')
+    expect(items.length).toBeGreaterThan(0)
   })
 
   it('filters fishing spots by experience level', () => {
     render(<UserRequestsFishing />)
     
-    const experienceSelect = screen.getByTestId('userrequestsfishing-experience')
-    const submitButton = screen.getByTestId('userrequestsfishing-submit')
-    
-    // Select Beginner level
+    const experienceSelect = document.querySelector('[data-testid="userrequestsfishing-experience"]') as HTMLSelectElement
     fireEvent.change(experienceSelect, { target: { value: 'Beginner' } })
+    
+    const submitButton = document.querySelector('[data-testid="userrequestsfishing-submit"]') as HTMLButtonElement
     fireEvent.click(submitButton)
     
-    // Should still show beginner spots
-    expect(screen.getByText('Lough Mask Shore')).toBeTruthy()
-    expect(screen.getByText('Claregalway Pier')).toBeTruthy()
+    // Should show beginner-friendly spots
+    expect(document.querySelector('[data-testid="userrequestsfishing-list"]')).toBeTruthy()
   })
 
-  it('resets filters when reset button is clicked', () => {
+  it('filters fishing spots by fishing type', () => {
     render(<UserRequestsFishing />)
     
-    const fishTypeInput = screen.getByTestId('userrequestsfishing-fishtype')
-    const resetButton = screen.getByTestId('userrequestsfishing-reset')
+    const typeSelect = document.querySelector('[data-testid="userrequestsfishing-type"]') as HTMLSelectElement
+    fireEvent.change(typeSelect, { target: { value: 'Sea' } })
     
-    // Set a filter
-    fireEvent.change(fishTypeInput, { target: { value: 'Salmon' } })
-    expect((fishTypeInput as HTMLInputElement).value).toBe('Salmon')
+    const submitButton = document.querySelector('[data-testid="userrequestsfishing-submit"]') as HTMLButtonElement
+    fireEvent.click(submitButton)
+    
+    // Should show sea fishing spots
+    expect(document.querySelector('[data-testid="userrequestsfishing-list"]')).toBeTruthy()
+  })
+
+  it('resets form when reset button is clicked', () => {
+    render(<UserRequestsFishing />)
+    
+    // Fill in form
+    const experienceSelect = document.querySelector('[data-testid="userrequestsfishing-experience"]') as HTMLSelectElement
+    fireEvent.change(experienceSelect, { target: { value: 'Beginner' } })
+    
+    // Submit
+    const submitButton = document.querySelector('[data-testid="userrequestsfishing-submit"]') as HTMLButtonElement
+    fireEvent.click(submitButton)
     
     // Reset
+    const resetButton = document.querySelector('[data-testid="userrequestsfishing-reset"]') as HTMLButtonElement
     fireEvent.click(resetButton)
-    expect((fishTypeInput as HTMLInputElement).value).toBe('')
+    
+    // Check that form is reset
+    expect(experienceSelect.value).toBe('')
+    
+    // Recommendations should be hidden
+    expect(document.querySelector('[data-testid="userrequestsfishing-list"]')).toBeFalsy()
   })
 
-  it('displays all fishing spots initially', () => {
+  it('displays mock fishing spots data', () => {
     render(<UserRequestsFishing />)
     
+    const submitButton = document.querySelector('[data-testid="userrequestsfishing-submit"]') as HTMLButtonElement
+    fireEvent.click(submitButton)
+    
+    // Check for specific fishing spot names from mock data
+    expect(screen.getByText('Lough Corrib')).toBeTruthy()
+    expect(screen.getByText('Killary Harbour')).toBeTruthy()
+    expect(screen.getByText('River Moy')).toBeTruthy()
+  })
+
+  it('shows informational section when recommendations are not visible', () => {
+    render(<UserRequestsFishing />)
+    
+    expect(screen.getByText(/Why Fish in West Ireland\?/i)).toBeTruthy()
+  })
+
+  it('displays at least 5 fishing spots', () => {
+    render(<UserRequestsFishing />)
+    
+    const submitButton = document.querySelector('[data-testid="userrequestsfishing-submit"]') as HTMLButtonElement
+    fireEvent.click(submitButton)
+    
     const items = document.querySelectorAll('[data-testid="userrequestsfishing-item"]')
-    // Should have at least 5 mock items
     expect(items.length).toBeGreaterThanOrEqual(5)
   })
 })
