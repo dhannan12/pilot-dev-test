@@ -8,20 +8,21 @@ describe('UserWithLow', () => {
     expect(document.body).toBeTruthy()
   })
 
-  it('displays main heading and instructions', () => {
+  it('displays the header and instructions', () => {
     render(<UserWithLow />)
-    expect(screen.getByText('Coffee Origin Information')).toBeTruthy()
-    expect(screen.getByText('Learn where our coffees come from')).toBeTruthy()
+    expect(screen.getByText('Coffee Origins')).toBeTruthy()
+    expect(screen.getByText('Learn where your coffee comes from')).toBeTruthy()
+    expect(screen.getByText('Click on any coffee to learn more about it')).toBeTruthy()
   })
 
-  it('displays mock coffee data', () => {
+  it('displays mock coffee origin data', () => {
     render(<UserWithLow />)
-    expect(screen.getByText('Morning Blend')).toBeTruthy()
-    expect(screen.getByText('Dark Roast Supreme')).toBeTruthy()
-    expect(screen.getByText('Smooth Sunrise')).toBeTruthy()
-    expect(screen.getByText('Island Paradise')).toBeTruthy()
-    expect(screen.getByText('Classic Medium')).toBeTruthy()
-    expect(screen.getByText('Espresso Special')).toBeTruthy()
+    expect(screen.getByText('Ethiopian Yirgacheffe')).toBeTruthy()
+    expect(screen.getByText('Colombian Supremo')).toBeTruthy()
+    expect(screen.getByText('Brazilian Santos')).toBeTruthy()
+    expect(screen.getByText('Guatemalan Antigua')).toBeTruthy()
+    expect(screen.getByText('Kenyan AA')).toBeTruthy()
+    expect(screen.getByText('Sumatran Mandheling')).toBeTruthy()
   })
 
   it('has required data-testid attributes', () => {
@@ -31,61 +32,67 @@ describe('UserWithLow', () => {
     // List container
     expect(document.querySelector('[data-testid="userwithlow-list"]')).toBeTruthy()
     // List items
-    expect(document.querySelectorAll('[data-testid="userwithlow-item"]').length).toBe(6)
-    // Buttons
-    expect(document.querySelector('[data-testid="userwithlow-help-toggle"]')).toBeTruthy()
-    expect(document.querySelectorAll('[data-testid="userwithlow-view-details"]').length).toBe(6)
+    const items = document.querySelectorAll('[data-testid="userwithlow-item"]')
+    expect(items.length).toBeGreaterThan(0)
   })
 
-  it('shows help panel when help button is clicked', () => {
+  it('allows user to select a coffee and view details', () => {
     render(<UserWithLow />)
-    const helpButton = screen.getByTestId('userwithlow-help-toggle')
     
-    // Initially help should not be visible
-    expect(screen.queryByTestId('userwithlow-help-panel')).toBeFalsy()
+    // Click on first coffee item
+    const coffeeItems = screen.getAllByTestId('userwithlow-item')
+    fireEvent.click(coffeeItems[0])
     
-    // Click to show help
-    fireEvent.click(helpButton)
-    expect(screen.getByTestId('userwithlow-help-panel')).toBeTruthy()
-    expect(screen.getByText('How to Use This Page')).toBeTruthy()
+    // Check if detail view is displayed
+    expect(screen.getByText('About This Coffee')).toBeTruthy()
+    expect(screen.getByText('Flavor Notes')).toBeTruthy()
+    expect(screen.getByText('Roast Level')).toBeTruthy()
+    expect(screen.getByText('Growing Altitude')).toBeTruthy()
   })
 
-  it('shows coffee details when view details button is clicked', () => {
+  it('shows back button in detail view', () => {
     render(<UserWithLow />)
-    const viewButtons = screen.getAllByTestId('userwithlow-view-details')
     
-    // Click first coffee's view details button
-    fireEvent.click(viewButtons[0])
+    // Click on first coffee item
+    const coffeeItems = screen.getAllByTestId('userwithlow-item')
+    fireEvent.click(coffeeItems[0])
     
-    // Detail panel should appear
-    const detailPanel = screen.getByTestId('userwithlow-detail-panel')
-    expect(detailPanel).toBeTruthy()
-    expect(screen.getByTestId('userwithlow-close-detail')).toBeTruthy()
-    // Check for unique detail content
-    expect(screen.getByText('Yirgacheffe')).toBeTruthy()
-    expect(screen.getByText('Smooth and bright coffee from the birthplace of coffee.')).toBeTruthy()
+    // Check for back button with correct testid
+    const backButton = screen.getByTestId('userwithlow-back')
+    expect(backButton).toBeTruthy()
+    expect(backButton.textContent).toContain('Back to All Coffees')
   })
 
-  it('closes detail panel when close button is clicked', () => {
+  it('returns to list view when back button is clicked', () => {
     render(<UserWithLow />)
-    const viewButtons = screen.getAllByTestId('userwithlow-view-details')
     
-    // Open details
-    fireEvent.click(viewButtons[0])
-    expect(screen.getByTestId('userwithlow-detail-panel')).toBeTruthy()
+    // Click on first coffee item
+    const coffeeItems = screen.getAllByTestId('userwithlow-item')
+    fireEvent.click(coffeeItems[0])
     
-    // Close details
-    const closeButton = screen.getByTestId('userwithlow-close-detail')
-    fireEvent.click(closeButton)
-    expect(screen.queryByTestId('userwithlow-detail-panel')).toBeFalsy()
+    // Verify detail view is shown
+    expect(screen.getByText('About This Coffee')).toBeTruthy()
+    
+    // Click back button
+    const backButton = screen.getByTestId('userwithlow-back')
+    fireEvent.click(backButton)
+    
+    // Verify list view is shown again
+    expect(screen.getByText('Click on any coffee to learn more about it')).toBeTruthy()
+    expect(screen.getByTestId('userwithlow-list')).toBeTruthy()
   })
 
-  it('displays all coffee origin information', () => {
+  it('displays flavor notes for each coffee', () => {
     render(<UserWithLow />)
-    expect(screen.getByText(/Ethiopian Highlands/)).toBeTruthy()
-    expect(screen.getByText(/Colombian Mountains/)).toBeTruthy()
-    expect(screen.getByText(/Brazilian Valleys/)).toBeTruthy()
-    expect(screen.getByText(/Hawaiian Slopes/)).toBeTruthy()
-    expect(screen.getByText(/Costa Rican Hills/)).toBeTruthy()
+    
+    // Click on first coffee
+    const coffeeItems = screen.getAllByTestId('userwithlow-item')
+    fireEvent.click(coffeeItems[0])
+    
+    // Check that flavor notes are displayed (Ethiopian Yirgacheffe has Lemon, Bergamot, Floral, Black Tea)
+    expect(screen.getByText('Lemon')).toBeTruthy()
+    expect(screen.getByText('Bergamot')).toBeTruthy()
+    expect(screen.getByText('Floral')).toBeTruthy()
+    expect(screen.getByText('Black Tea')).toBeTruthy()
   })
 })
