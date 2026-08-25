@@ -1,7 +1,7 @@
 /**
- * AdminUpdatesSeasonal — Admin interface for managing seasonal coffee shop offerings
+ * AdminUpdatesSeasonal — Admin panel for managing seasonal coffee shop offerings
  *
- * Features: add/edit seasonal items, toggle availability, delete offerings, season-based categorization, price management
+ * Features: view seasonal items, add/edit offerings, set availability dates, toggle active status, delete items
  *
  * Ticket: SCRUM-1156 | Branch: proto/SCRUM-1151
  */
@@ -11,112 +11,129 @@ import React, { useState } from 'react'
 interface SeasonalOffering {
   id: number
   name: string
-  season: string
-  price: number
   description: string
-  available: boolean
+  price: number
+  season: string
+  startDate: string
+  endDate: string
+  isActive: boolean
 }
 
-const mockSeasonalOfferings: SeasonalOffering[] = [
+const MOCK_SEASONAL_OFFERINGS: SeasonalOffering[] = [
   {
     id: 1,
     name: 'Pumpkin Spice Latte',
+    description: 'Classic fall favorite with pumpkin, cinnamon, and nutmeg',
+    price: 5.95,
     season: 'Fall',
-    price: 5.99,
-    description: 'Classic fall favorite with pumpkin and warm spices',
-    available: true
+    startDate: '2026-09-01',
+    endDate: '2026-11-30',
+    isActive: true,
   },
   {
     id: 2,
     name: 'Peppermint Mocha',
+    description: 'Holiday blend of chocolate and peppermint',
+    price: 6.25,
     season: 'Winter',
-    price: 6.49,
-    description: 'Rich chocolate and refreshing peppermint',
-    available: true
+    startDate: '2026-11-15',
+    endDate: '2027-01-15',
+    isActive: true,
   },
   {
     id: 3,
-    name: 'Iced Caramel Macchiato',
-    season: 'Summer',
-    price: 5.49,
-    description: 'Refreshing iced coffee with sweet caramel',
-    available: true
+    name: 'Iced Lavender Honey Latte',
+    description: 'Refreshing spring drink with lavender and honey',
+    price: 5.75,
+    season: 'Spring',
+    startDate: '2027-03-01',
+    endDate: '2027-05-31',
+    isActive: false,
   },
   {
     id: 4,
-    name: 'Cherry Blossom Tea',
-    season: 'Spring',
-    price: 4.99,
-    description: 'Delicate floral tea celebrating spring',
-    available: false
+    name: 'Strawberry Açaí Refresher',
+    description: 'Light and fruity summer beverage',
+    price: 4.95,
+    season: 'Summer',
+    startDate: '2027-06-01',
+    endDate: '2027-08-31',
+    isActive: false,
   },
   {
     id: 5,
+    name: 'Maple Pecan Latte',
+    description: 'Warm autumn flavors of maple syrup and toasted pecans',
+    price: 6.50,
+    season: 'Fall',
+    startDate: '2026-09-15',
+    endDate: '2026-11-15',
+    isActive: true,
+  },
+  {
+    id: 6,
     name: 'Gingerbread Latte',
+    description: 'Holiday spice blend with ginger and molasses',
+    price: 5.95,
     season: 'Winter',
-    price: 6.29,
-    description: 'Warm ginger and molasses with espresso',
-    available: true
-  }
+    startDate: '2026-12-01',
+    endDate: '2027-01-31',
+    isActive: true,
+  },
 ]
 
 export default function AdminUpdatesSeasonal() {
-  const [offerings, setOfferings] = useState<SeasonalOffering[]>(mockSeasonalOfferings)
+  const [offerings, setOfferings] = useState<SeasonalOffering[]>(MOCK_SEASONAL_OFFERINGS)
   const [editingId, setEditingId] = useState<number | null>(null)
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<Partial<SeasonalOffering>>({
     name: '',
-    season: 'Spring',
-    price: '',
     description: '',
-    available: true
+    price: 0,
+    season: 'Fall',
+    startDate: '',
+    endDate: '',
+    isActive: true,
   })
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const { name, value, type } = e.target
     setFormData(prev => ({
       ...prev,
-      [name]: value
+      [name]: type === 'number' ? parseFloat(value) : value,
     }))
   }
 
-  const handleAvailableChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData(prev => ({
       ...prev,
-      available: e.target.checked
+      isActive: e.target.checked,
     }))
   }
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     
-    if (!formData.name || !formData.price || !formData.description) {
-      return
-    }
-
     if (editingId !== null) {
       // Update existing offering
-      setOfferings(prev => prev.map(offering => 
-        offering.id === editingId
-          ? {
-              ...offering,
-              name: formData.name,
-              season: formData.season,
-              price: parseFloat(formData.price),
-              description: formData.description,
-              available: formData.available
-            }
-          : offering
-      ))
+      setOfferings(prev =>
+        prev.map(item =>
+          item.id === editingId
+            ? { ...item, ...formData } as SeasonalOffering
+            : item
+        )
+      )
       setEditingId(null)
     } else {
       // Add new offering
       const newOffering: SeasonalOffering = {
         id: Math.max(...offerings.map(o => o.id), 0) + 1,
-        name: formData.name,
-        season: formData.season,
-        price: parseFloat(formData.price),
-        description: formData.description,
-        available: formData.available
+        name: formData.name || '',
+        description: formData.description || '',
+        price: formData.price || 0,
+        season: formData.season || 'Fall',
+        startDate: formData.startDate || '',
+        endDate: formData.endDate || '',
+        isActive: formData.isActive ?? true,
       }
       setOfferings(prev => [...prev, newOffering])
     }
@@ -124,108 +141,82 @@ export default function AdminUpdatesSeasonal() {
     // Reset form
     setFormData({
       name: '',
-      season: 'Spring',
-      price: '',
       description: '',
-      available: true
+      price: 0,
+      season: 'Fall',
+      startDate: '',
+      endDate: '',
+      isActive: true,
     })
   }
 
   const handleEdit = (offering: SeasonalOffering) => {
     setEditingId(offering.id)
-    setFormData({
-      name: offering.name,
-      season: offering.season,
-      price: offering.price.toString(),
-      description: offering.description,
-      available: offering.available
-    })
+    setFormData(offering)
   }
 
   const handleDelete = (id: number) => {
-    setOfferings(prev => prev.filter(offering => offering.id !== id))
+    setOfferings(prev => prev.filter(item => item.id !== id))
+    if (editingId === id) {
+      setEditingId(null)
+      setFormData({
+        name: '',
+        description: '',
+        price: 0,
+        season: 'Fall',
+        startDate: '',
+        endDate: '',
+        isActive: true,
+      })
+    }
   }
 
-  const handleCancelEdit = () => {
+  const handleCancel = () => {
     setEditingId(null)
     setFormData({
       name: '',
-      season: 'Spring',
-      price: '',
       description: '',
-      available: true
+      price: 0,
+      season: 'Fall',
+      startDate: '',
+      endDate: '',
+      isActive: true,
     })
   }
 
-  const toggleAvailability = (id: number) => {
-    setOfferings(prev => prev.map(offering =>
-      offering.id === id
-        ? { ...offering, available: !offering.available }
-        : offering
-    ))
+  const toggleActive = (id: number) => {
+    setOfferings(prev =>
+      prev.map(item =>
+        item.id === id ? { ...item, isActive: !item.isActive } : item
+      )
+    )
   }
 
   return (
     <div data-testid="adminupdatesseasonal" className="min-h-screen bg-gray-50 p-8">
-      <div className="max-w-6xl mx-auto">
+      <div className="max-w-7xl mx-auto">
         <h1 className="text-3xl font-bold text-gray-900 mb-8">Manage Seasonal Offerings</h1>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Form Section */}
-          <div className="bg-white rounded-lg shadow-md p-6">
+          <div className="bg-white rounded-lg shadow p-6">
             <h2 className="text-xl font-semibold text-gray-800 mb-4">
               {editingId !== null ? 'Edit Offering' : 'Add New Offering'}
             </h2>
+            
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
-                  Item Name
+                  Name
                 </label>
                 <input
-                  type="text"
                   id="name"
                   name="name"
+                  type="text"
                   data-testid="adminupdatesseasonal-name"
-                  value={formData.name}
+                  value={formData.name || ''}
                   onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500"
-                  required
-                />
-              </div>
-
-              <div>
-                <label htmlFor="season" className="block text-sm font-medium text-gray-700 mb-1">
-                  Season
-                </label>
-                <select
-                  id="season"
-                  name="season"
-                  data-testid="adminupdatesseasonal-season"
-                  value={formData.season}
-                  onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500"
-                >
-                  <option value="Spring">Spring</option>
-                  <option value="Summer">Summer</option>
-                  <option value="Fall">Fall</option>
-                  <option value="Winter">Winter</option>
-                </select>
-              </div>
-
-              <div>
-                <label htmlFor="price" className="block text-sm font-medium text-gray-700 mb-1">
-                  Price ($)
-                </label>
-                <input
-                  type="number"
-                  id="price"
-                  name="price"
-                  data-testid="adminupdatesseasonal-price"
-                  value={formData.price}
-                  onChange={handleInputChange}
-                  step="0.01"
-                  min="0"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   required
                 />
               </div>
@@ -238,43 +229,115 @@ export default function AdminUpdatesSeasonal() {
                   id="description"
                   name="description"
                   data-testid="adminupdatesseasonal-description"
-                  value={formData.description}
+                  value={formData.description || ''}
                   onChange={handleInputChange}
                   rows={3}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   required
                 />
               </div>
 
+              <div>
+                <label htmlFor="price" className="block text-sm font-medium text-gray-700 mb-1">
+                  Price ($)
+                </label>
+                <input
+                  id="price"
+                  name="price"
+                  type="number"
+                  step="0.01"
+                  data-testid="adminupdatesseasonal-price"
+                  value={formData.price || ''}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required
+                />
+              </div>
+
+              <div>
+                <label htmlFor="season" className="block text-sm font-medium text-gray-700 mb-1">
+                  Season
+                </label>
+                <select
+                  id="season"
+                  name="season"
+                  data-testid="adminupdatesseasonal-season"
+                  value={formData.season || 'Fall'}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required
+                >
+                  <option value="Spring">Spring</option>
+                  <option value="Summer">Summer</option>
+                  <option value="Fall">Fall</option>
+                  <option value="Winter">Winter</option>
+                </select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label htmlFor="startDate" className="block text-sm font-medium text-gray-700 mb-1">
+                    Start Date
+                  </label>
+                  <input
+                    id="startDate"
+                    name="startDate"
+                    type="date"
+                    data-testid="adminupdatesseasonal-startdate"
+                    value={formData.startDate || ''}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="endDate" className="block text-sm font-medium text-gray-700 mb-1">
+                    End Date
+                  </label>
+                  <input
+                    id="endDate"
+                    name="endDate"
+                    type="date"
+                    data-testid="adminupdatesseasonal-enddate"
+                    value={formData.endDate || ''}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    required
+                  />
+                </div>
+              </div>
+
               <div className="flex items-center">
                 <input
+                  id="isActive"
+                  name="isActive"
                   type="checkbox"
-                  id="available"
-                  name="available"
-                  data-testid="adminupdatesseasonal-available"
-                  checked={formData.available}
-                  onChange={handleAvailableChange}
-                  className="w-4 h-4 text-amber-600 border-gray-300 rounded focus:ring-amber-500"
+                  data-testid="adminupdatesseasonal-isactive"
+                  checked={formData.isActive ?? true}
+                  onChange={handleCheckboxChange}
+                  className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                 />
-                <label htmlFor="available" className="ml-2 text-sm font-medium text-gray-700">
-                  Available Now
+                <label htmlFor="isActive" className="ml-2 block text-sm text-gray-700">
+                  Active
                 </label>
               </div>
 
-              <div className="flex gap-2 pt-2">
+              <div className="flex gap-3 pt-2">
                 <button
                   type="submit"
                   data-testid="adminupdatesseasonal-submit"
-                  className="flex-1 bg-amber-600 text-white px-4 py-2 rounded-md hover:bg-amber-700 focus:outline-none focus:ring-2 focus:ring-amber-500 font-medium"
+                  className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors font-medium"
                 >
                   {editingId !== null ? 'Update Offering' : 'Add Offering'}
                 </button>
+                
                 {editingId !== null && (
                   <button
                     type="button"
                     data-testid="adminupdatesseasonal-cancel"
-                    onClick={handleCancelEdit}
-                    className="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500 font-medium"
+                    onClick={handleCancel}
+                    className="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors font-medium"
                   >
                     Cancel
                   </button>
@@ -284,9 +347,10 @@ export default function AdminUpdatesSeasonal() {
           </div>
 
           {/* List Section */}
-          <div className="bg-white rounded-lg shadow-md p-6">
+          <div className="bg-white rounded-lg shadow p-6">
             <h2 className="text-xl font-semibold text-gray-800 mb-4">Current Offerings</h2>
-            <div data-testid="adminupdatesseasonal-list" className="space-y-3">
+            
+            <div data-testid="adminupdatesseasonal-list" className="space-y-4 max-h-[600px] overflow-y-auto">
               {offerings.length === 0 ? (
                 <p className="text-gray-500 text-center py-8">No seasonal offerings yet</p>
               ) : (
@@ -294,50 +358,62 @@ export default function AdminUpdatesSeasonal() {
                   <div
                     key={offering.id}
                     data-testid="adminupdatesseasonal-item"
-                    className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
+                    className={`border rounded-lg p-4 ${
+                      editingId === offering.id ? 'border-blue-500 bg-blue-50' : 'border-gray-200'
+                    }`}
                   >
                     <div className="flex justify-between items-start mb-2">
                       <div className="flex-1">
-                        <h3 className="font-semibold text-gray-900">{offering.name}</h3>
-                        <div className="flex gap-2 items-center mt-1">
-                          <span className="inline-block px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded">
-                            {offering.season}
-                          </span>
-                          <span className="text-sm font-medium text-gray-900">
-                            ${offering.price.toFixed(2)}
-                          </span>
+                        <h3 className="font-semibold text-gray-900 flex items-center gap-2">
+                          {offering.name}
                           <span
-                            className={`inline-block px-2 py-1 text-xs font-medium rounded ${
-                              offering.available
+                            className={`text-xs px-2 py-0.5 rounded-full ${
+                              offering.isActive
                                 ? 'bg-green-100 text-green-800'
-                                : 'bg-red-100 text-red-800'
+                                : 'bg-gray-100 text-gray-800'
                             }`}
                           >
-                            {offering.available ? 'Available' : 'Unavailable'}
+                            {offering.isActive ? 'Active' : 'Inactive'}
                           </span>
-                        </div>
+                        </h3>
+                        <p className="text-sm text-gray-600 mt-1">{offering.description}</p>
                       </div>
                     </div>
-                    <p className="text-sm text-gray-600 mb-3">{offering.description}</p>
-                    <div className="flex gap-2">
+
+                    <div className="grid grid-cols-2 gap-2 text-sm text-gray-700 mt-3">
+                      <div>
+                        <span className="font-medium">Price:</span> ${offering.price.toFixed(2)}
+                      </div>
+                      <div>
+                        <span className="font-medium">Season:</span> {offering.season}
+                      </div>
+                      <div>
+                        <span className="font-medium">Start:</span> {offering.startDate}
+                      </div>
+                      <div>
+                        <span className="font-medium">End:</span> {offering.endDate}
+                      </div>
+                    </div>
+
+                    <div className="flex gap-2 mt-4">
                       <button
                         data-testid="adminupdatesseasonal-edit"
                         onClick={() => handleEdit(offering)}
-                        className="flex-1 bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="flex-1 bg-blue-600 text-white text-sm px-3 py-1.5 rounded hover:bg-blue-700 transition-colors"
                       >
                         Edit
                       </button>
                       <button
                         data-testid="adminupdatesseasonal-toggle"
-                        onClick={() => toggleAvailability(offering.id)}
-                        className="flex-1 bg-yellow-600 text-white px-3 py-1 rounded text-sm hover:bg-yellow-700 focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                        onClick={() => toggleActive(offering.id)}
+                        className="flex-1 bg-yellow-500 text-white text-sm px-3 py-1.5 rounded hover:bg-yellow-600 transition-colors"
                       >
-                        Toggle
+                        {offering.isActive ? 'Deactivate' : 'Activate'}
                       </button>
                       <button
                         data-testid="adminupdatesseasonal-delete"
                         onClick={() => handleDelete(offering.id)}
-                        className="flex-1 bg-red-600 text-white px-3 py-1 rounded text-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500"
+                        className="flex-1 bg-red-600 text-white text-sm px-3 py-1.5 rounded hover:bg-red-700 transition-colors"
                       >
                         Delete
                       </button>
