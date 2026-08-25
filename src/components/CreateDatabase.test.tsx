@@ -8,41 +8,57 @@ describe('CreateDatabase', () => {
     expect(document.body).toBeTruthy()
   })
 
-  it('displays mock database tables', () => {
+  it('displays database schema title', () => {
     render(<CreateDatabase />)
-    expect(screen.getByText(/Tourist Platform Database Schema/i)).toBeTruthy()
-    expect(screen.getByText(/Stores tourist visitor information and profiles/i)).toBeTruthy()
-    expect(screen.getByText(/Hotels, B&Bs, and lodging options/i)).toBeTruthy()
-    expect(screen.getByText(/Tourist booking records/i)).toBeTruthy()
-    expect(screen.getByText(/Tours, events, and activities/i)).toBeTruthy()
+    expect(screen.getByText(/Database Schema/i)).toBeTruthy()
+    expect(screen.getByText(/West Ireland Tourist Platform/i)).toBeTruthy()
+  })
+
+  it('displays mock table data', () => {
+    render(<CreateDatabase />)
+    expect(screen.getByText('attractions')).toBeTruthy()
+    expect(screen.getByText('accommodations')).toBeTruthy()
+    expect(screen.getByText('restaurants')).toBeTruthy()
+    expect(screen.getByText('events')).toBeTruthy()
+    expect(screen.getByText('reviews')).toBeTruthy()
+  })
+
+  it('shows statistics for tables and fields', () => {
+    render(<CreateDatabase />)
+    expect(screen.getByText('Total Tables')).toBeTruthy()
+    expect(screen.getByText('Total Fields')).toBeTruthy()
+    expect(screen.getByText('PostgreSQL')).toBeTruthy()
   })
 
   it('has required data-testid attributes', () => {
     render(<CreateDatabase />)
-    // Verify key testids exist — Playwright QA depends on these
+    
+    // Main wrapper
     expect(document.querySelector('[data-testid="createdatabase"]')).toBeTruthy()
-    expect(document.querySelector('[data-testid="createdatabase-search"]')).toBeTruthy()
+    
+    // View mode buttons
+    expect(document.querySelector('[data-testid="createdatabase-view-list"]')).toBeTruthy()
+    expect(document.querySelector('[data-testid="createdatabase-view-visual"]')).toBeTruthy()
+    
+    // Table list
     expect(document.querySelector('[data-testid="createdatabase-list"]')).toBeTruthy()
-    expect(document.querySelector('[data-testid="createdatabase-item"]')).toBeTruthy()
-    expect(document.querySelector('[data-testid="createdatabase-view"]')).toBeTruthy()
-  })
-
-  it('displays table count and total records', () => {
-    render(<CreateDatabase />)
-    expect(screen.getByText(/6 Tables/i)).toBeTruthy()
-    expect(screen.getByText(/Total Records/i)).toBeTruthy()
-  })
-
-  it('shows all mock tables in the list', () => {
-    render(<CreateDatabase />)
+    
+    // Table items
     const items = document.querySelectorAll('[data-testid="createdatabase-item"]')
-    expect(items.length).toBeGreaterThanOrEqual(5)
+    expect(items.length).toBeGreaterThan(0)
+    
+    // Action buttons
+    expect(document.querySelector('[data-testid="createdatabase-export"]')).toBeTruthy()
+    expect(document.querySelector('[data-testid="createdatabase-migrate"]')).toBeTruthy()
+    expect(document.querySelector('[data-testid="createdatabase-validate"]')).toBeTruthy()
+    expect(document.querySelector('[data-testid="createdatabase-reset"]')).toBeTruthy()
   })
 
-  it('has search input field', () => {
+  it('displays action buttons for schema operations', () => {
     render(<CreateDatabase />)
-    const searchInput = document.querySelector('[data-testid="createdatabase-search"]')
-    expect(searchInput).toBeTruthy()
-    expect(searchInput?.getAttribute('placeholder')).toContain('Search')
+    expect(screen.getByText('Export SQL')).toBeTruthy()
+    expect(screen.getByText('Run Migrations')).toBeTruthy()
+    expect(screen.getByText('Validate Schema')).toBeTruthy()
+    expect(screen.getByText('Reset Database')).toBeTruthy()
   })
 })

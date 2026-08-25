@@ -1,306 +1,378 @@
 /**
- * CreateDatabase — Database schema viewer and management for tourist platform
+ * CreateDatabase — Database schema management interface for tourist platform
  *
- * Features: schema visualization, table structure display, column details, data type overview, relationship mapping
+ * Features: schema visualization, table definitions, field types, relationships, data modeling
  *
  * Ticket: SCRUM-1148 | Branch: proto/SCRUM-1140
  */
 
 import React, { useState } from 'react'
 
-interface Column {
+interface Field {
+  id: string
   name: string
   type: string
   nullable: boolean
   primaryKey: boolean
-  foreignKey?: string
 }
 
-interface DatabaseTable {
+interface Table {
   id: string
   name: string
   description: string
-  columns: Column[]
-  recordCount: number
+  fields: Field[]
 }
 
-const MOCK_TABLES: DatabaseTable[] = [
+const mockTables: Table[] = [
   {
-    id: 'tbl-1',
-    name: 'tourists',
-    description: 'Stores tourist visitor information and profiles',
-    recordCount: 1250,
-    columns: [
-      { name: 'id', type: 'UUID', nullable: false, primaryKey: true },
-      { name: 'name', type: 'VARCHAR(255)', nullable: false, primaryKey: false },
-      { name: 'email', type: 'VARCHAR(255)', nullable: false, primaryKey: false },
-      { name: 'country', type: 'VARCHAR(100)', nullable: true, primaryKey: false },
-      { name: 'created_at', type: 'TIMESTAMP', nullable: false, primaryKey: false },
+    id: '1',
+    name: 'attractions',
+    description: 'Tourist attractions and points of interest',
+    fields: [
+      { id: 'f1', name: 'id', type: 'UUID', nullable: false, primaryKey: true },
+      { id: 'f2', name: 'name', type: 'VARCHAR(255)', nullable: false, primaryKey: false },
+      { id: 'f3', name: 'description', type: 'TEXT', nullable: true, primaryKey: false },
+      { id: 'f4', name: 'category', type: 'VARCHAR(100)', nullable: false, primaryKey: false },
+      { id: 'f5', name: 'latitude', type: 'DECIMAL(10,8)', nullable: false, primaryKey: false },
+      { id: 'f6', name: 'longitude', type: 'DECIMAL(11,8)', nullable: false, primaryKey: false },
+      { id: 'f7', name: 'rating', type: 'DECIMAL(3,2)', nullable: true, primaryKey: false },
+      { id: 'f8', name: 'created_at', type: 'TIMESTAMP', nullable: false, primaryKey: false },
     ],
   },
   {
-    id: 'tbl-2',
+    id: '2',
     name: 'accommodations',
-    description: 'Hotels, B&Bs, and lodging options available in the area',
-    recordCount: 87,
-    columns: [
-      { name: 'id', type: 'UUID', nullable: false, primaryKey: true },
-      { name: 'name', type: 'VARCHAR(255)', nullable: false, primaryKey: false },
-      { name: 'type', type: 'VARCHAR(50)', nullable: false, primaryKey: false },
-      { name: 'price_per_night', type: 'DECIMAL(10,2)', nullable: false, primaryKey: false },
-      { name: 'capacity', type: 'INTEGER', nullable: false, primaryKey: false },
-      { name: 'address', type: 'TEXT', nullable: false, primaryKey: false },
+    description: 'Hotels, B&Bs, and vacation rentals',
+    fields: [
+      { id: 'f9', name: 'id', type: 'UUID', nullable: false, primaryKey: true },
+      { id: 'f10', name: 'name', type: 'VARCHAR(255)', nullable: false, primaryKey: false },
+      { id: 'f11', name: 'type', type: 'VARCHAR(50)', nullable: false, primaryKey: false },
+      { id: 'f12', name: 'address', type: 'TEXT', nullable: false, primaryKey: false },
+      { id: 'f13', name: 'price_per_night', type: 'DECIMAL(10,2)', nullable: false, primaryKey: false },
+      { id: 'f14', name: 'capacity', type: 'INTEGER', nullable: false, primaryKey: false },
+      { id: 'f15', name: 'amenities', type: 'JSONB', nullable: true, primaryKey: false },
+      { id: 'f16', name: 'created_at', type: 'TIMESTAMP', nullable: false, primaryKey: false },
     ],
   },
   {
-    id: 'tbl-3',
-    name: 'bookings',
-    description: 'Tourist booking records for accommodations and activities',
-    recordCount: 3420,
-    columns: [
-      { name: 'id', type: 'UUID', nullable: false, primaryKey: true },
-      { name: 'tourist_id', type: 'UUID', nullable: false, primaryKey: false, foreignKey: 'tourists.id' },
-      { name: 'accommodation_id', type: 'UUID', nullable: true, primaryKey: false, foreignKey: 'accommodations.id' },
-      { name: 'check_in', type: 'DATE', nullable: false, primaryKey: false },
-      { name: 'check_out', type: 'DATE', nullable: false, primaryKey: false },
-      { name: 'total_price', type: 'DECIMAL(10,2)', nullable: false, primaryKey: false },
-      { name: 'status', type: 'VARCHAR(50)', nullable: false, primaryKey: false },
+    id: '3',
+    name: 'restaurants',
+    description: 'Dining establishments and cafes',
+    fields: [
+      { id: 'f17', name: 'id', type: 'UUID', nullable: false, primaryKey: true },
+      { id: 'f18', name: 'name', type: 'VARCHAR(255)', nullable: false, primaryKey: false },
+      { id: 'f19', name: 'cuisine_type', type: 'VARCHAR(100)', nullable: false, primaryKey: false },
+      { id: 'f20', name: 'price_range', type: 'VARCHAR(20)', nullable: false, primaryKey: false },
+      { id: 'f21', name: 'phone', type: 'VARCHAR(20)', nullable: true, primaryKey: false },
+      { id: 'f22', name: 'opening_hours', type: 'JSONB', nullable: true, primaryKey: false },
+      { id: 'f23', name: 'rating', type: 'DECIMAL(3,2)', nullable: true, primaryKey: false },
+      { id: 'f24', name: 'created_at', type: 'TIMESTAMP', nullable: false, primaryKey: false },
     ],
   },
   {
-    id: 'tbl-4',
-    name: 'activities',
-    description: 'Tours, events, and activities available for tourists',
-    recordCount: 156,
-    columns: [
-      { name: 'id', type: 'UUID', nullable: false, primaryKey: true },
-      { name: 'title', type: 'VARCHAR(255)', nullable: false, primaryKey: false },
-      { name: 'description', type: 'TEXT', nullable: false, primaryKey: false },
-      { name: 'category', type: 'VARCHAR(100)', nullable: false, primaryKey: false },
-      { name: 'duration_hours', type: 'DECIMAL(4,2)', nullable: false, primaryKey: false },
-      { name: 'price', type: 'DECIMAL(10,2)', nullable: false, primaryKey: false },
+    id: '4',
+    name: 'events',
+    description: 'Local events and festivals',
+    fields: [
+      { id: 'f25', name: 'id', type: 'UUID', nullable: false, primaryKey: true },
+      { id: 'f26', name: 'title', type: 'VARCHAR(255)', nullable: false, primaryKey: false },
+      { id: 'f27', name: 'description', type: 'TEXT', nullable: true, primaryKey: false },
+      { id: 'f28', name: 'start_date', type: 'TIMESTAMP', nullable: false, primaryKey: false },
+      { id: 'f29', name: 'end_date', type: 'TIMESTAMP', nullable: false, primaryKey: false },
+      { id: 'f30', name: 'location', type: 'VARCHAR(255)', nullable: false, primaryKey: false },
+      { id: 'f31', name: 'ticket_price', type: 'DECIMAL(10,2)', nullable: true, primaryKey: false },
+      { id: 'f32', name: 'created_at', type: 'TIMESTAMP', nullable: false, primaryKey: false },
     ],
   },
   {
-    id: 'tbl-5',
+    id: '5',
     name: 'reviews',
-    description: 'Tourist reviews and ratings for accommodations and activities',
-    recordCount: 2890,
-    columns: [
-      { name: 'id', type: 'UUID', nullable: false, primaryKey: true },
-      { name: 'tourist_id', type: 'UUID', nullable: false, primaryKey: false, foreignKey: 'tourists.id' },
-      { name: 'entity_type', type: 'VARCHAR(50)', nullable: false, primaryKey: false },
-      { name: 'entity_id', type: 'UUID', nullable: false, primaryKey: false },
-      { name: 'rating', type: 'INTEGER', nullable: false, primaryKey: false },
-      { name: 'comment', type: 'TEXT', nullable: true, primaryKey: false },
-      { name: 'created_at', type: 'TIMESTAMP', nullable: false, primaryKey: false },
-    ],
-  },
-  {
-    id: 'tbl-6',
-    name: 'locations',
-    description: 'Points of interest and geographic locations in West Ireland',
-    recordCount: 234,
-    columns: [
-      { name: 'id', type: 'UUID', nullable: false, primaryKey: true },
-      { name: 'name', type: 'VARCHAR(255)', nullable: false, primaryKey: false },
-      { name: 'latitude', type: 'DECIMAL(10,8)', nullable: false, primaryKey: false },
-      { name: 'longitude', type: 'DECIMAL(11,8)', nullable: false, primaryKey: false },
-      { name: 'category', type: 'VARCHAR(100)', nullable: false, primaryKey: false },
-      { name: 'description', type: 'TEXT', nullable: true, primaryKey: false },
+    description: 'User reviews and ratings',
+    fields: [
+      { id: 'f33', name: 'id', type: 'UUID', nullable: false, primaryKey: true },
+      { id: 'f34', name: 'user_id', type: 'UUID', nullable: false, primaryKey: false },
+      { id: 'f35', name: 'entity_type', type: 'VARCHAR(50)', nullable: false, primaryKey: false },
+      { id: 'f36', name: 'entity_id', type: 'UUID', nullable: false, primaryKey: false },
+      { id: 'f37', name: 'rating', type: 'INTEGER', nullable: false, primaryKey: false },
+      { id: 'f38', name: 'comment', type: 'TEXT', nullable: true, primaryKey: false },
+      { id: 'f39', name: 'created_at', type: 'TIMESTAMP', nullable: false, primaryKey: false },
     ],
   },
 ]
 
 export default function CreateDatabase() {
-  const [selectedTable, setSelectedTable] = useState<DatabaseTable | null>(null)
-  const [searchQuery, setSearchQuery] = useState('')
+  const [selectedTable, setSelectedTable] = useState<string | null>(null)
+  const [viewMode, setViewMode] = useState<'list' | 'visual'>('list')
 
-  const filteredTables = MOCK_TABLES.filter(
-    (table) =>
-      table.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      table.description.toLowerCase().includes(searchQuery.toLowerCase())
-  )
-
-  const totalRecords = MOCK_TABLES.reduce((sum, table) => sum + table.recordCount, 0)
+  const currentTable = selectedTable
+    ? mockTables.find((t) => t.id === selectedTable)
+    : null
 
   return (
-    <div data-testid="createdatabase" className="min-h-screen bg-gray-50 p-6">
+    <div data-testid="createdatabase" className="min-h-screen bg-gray-50 p-8">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="mb-8">
+        <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Tourist Platform Database Schema
+            Database Schema
           </h1>
           <p className="text-gray-600">
-            Database structure overview for West Ireland tourist platform
+            West Ireland Tourist Platform - Database Architecture
           </p>
-          <div className="mt-4 flex gap-4">
-            <div className="bg-blue-100 px-4 py-2 rounded-lg">
-              <span className="text-sm text-blue-800 font-semibold">
-                {MOCK_TABLES.length} Tables
-              </span>
-            </div>
-            <div className="bg-green-100 px-4 py-2 rounded-lg">
-              <span className="text-sm text-green-800 font-semibold">
-                {totalRecords.toLocaleString()} Total Records
-              </span>
-            </div>
+          <div className="mt-4 flex gap-3">
+            <button
+              data-testid="createdatabase-view-list"
+              onClick={() => setViewMode('list')}
+              className={`px-4 py-2 rounded-md font-medium transition-colors ${
+                viewMode === 'list'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+              }`}
+            >
+              List View
+            </button>
+            <button
+              data-testid="createdatabase-view-visual"
+              onClick={() => setViewMode('visual')}
+              className={`px-4 py-2 rounded-md font-medium transition-colors ${
+                viewMode === 'visual'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+              }`}
+            >
+              Visual Diagram
+            </button>
           </div>
         </div>
 
-        {/* Search */}
-        <div className="mb-6">
-          <input
-            type="text"
-            data-testid="createdatabase-search"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search tables..."
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
+        {/* Schema Statistics */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <div className="bg-white rounded-lg shadow-sm p-6">
+            <div className="text-2xl font-bold text-blue-600">
+              {mockTables.length}
+            </div>
+            <div className="text-sm text-gray-600 mt-1">Total Tables</div>
+          </div>
+          <div className="bg-white rounded-lg shadow-sm p-6">
+            <div className="text-2xl font-bold text-green-600">
+              {mockTables.reduce((acc, t) => acc + t.fields.length, 0)}
+            </div>
+            <div className="text-sm text-gray-600 mt-1">Total Fields</div>
+          </div>
+          <div className="bg-white rounded-lg shadow-sm p-6">
+            <div className="text-2xl font-bold text-purple-600">PostgreSQL</div>
+            <div className="text-sm text-gray-600 mt-1">Database Engine</div>
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Tables List */}
-          <div>
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Database Tables</h2>
-            <div data-testid="createdatabase-list" className="space-y-3">
-              {filteredTables.map((table) => (
+        {viewMode === 'list' ? (
+          /* List View */
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Tables List */}
+            <div>
+              <h2 className="text-xl font-semibold text-gray-900 mb-4">
+                Tables
+              </h2>
+              <div data-testid="createdatabase-list" className="space-y-3">
+                {mockTables.map((table) => (
+                  <div
+                    key={table.id}
+                    data-testid="createdatabase-item"
+                    onClick={() => setSelectedTable(table.id)}
+                    className={`bg-white rounded-lg shadow-sm p-4 cursor-pointer transition-all hover:shadow-md ${
+                      selectedTable === table.id
+                        ? 'ring-2 ring-blue-500'
+                        : ''
+                    }`}
+                  >
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <h3 className="font-mono font-semibold text-gray-900">
+                          {table.name}
+                        </h3>
+                        <p className="text-sm text-gray-600 mt-1">
+                          {table.description}
+                        </p>
+                        <div className="flex gap-3 mt-2 text-xs text-gray-500">
+                          <span>{table.fields.length} fields</span>
+                          <span>•</span>
+                          <span>
+                            {table.fields.filter((f) => f.primaryKey).length} PK
+                          </span>
+                        </div>
+                      </div>
+                      <button
+                        data-testid="createdatabase-select"
+                        className="text-blue-600 hover:text-blue-700 text-sm font-medium"
+                      >
+                        View
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Table Detail */}
+            <div>
+              {currentTable ? (
+                <>
+                  <h2 className="text-xl font-semibold text-gray-900 mb-4">
+                    Table: {currentTable.name}
+                  </h2>
+                  <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+                    <div className="bg-gray-800 text-white px-4 py-3">
+                      <h3 className="font-mono font-semibold">
+                        {currentTable.name}
+                      </h3>
+                      <p className="text-sm text-gray-300 mt-1">
+                        {currentTable.description}
+                      </p>
+                    </div>
+                    <div className="divide-y divide-gray-200">
+                      {currentTable.fields.map((field) => (
+                        <div
+                          key={field.id}
+                          className="px-4 py-3 hover:bg-gray-50"
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              {field.primaryKey && (
+                                <span className="px-2 py-0.5 bg-yellow-100 text-yellow-800 text-xs font-medium rounded">
+                                  PK
+                                </span>
+                              )}
+                              <span className="font-mono font-medium text-gray-900">
+                                {field.name}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm text-gray-600 font-mono">
+                                {field.type}
+                              </span>
+                              {field.nullable ? (
+                                <span className="text-xs text-gray-400">
+                                  NULL
+                                </span>
+                              ) : (
+                                <span className="text-xs text-red-600 font-medium">
+                                  NOT NULL
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  <button
+                    data-testid="createdatabase-close"
+                    onClick={() => setSelectedTable(null)}
+                    className="mt-4 w-full px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors"
+                  >
+                    Close Detail
+                  </button>
+                </>
+              ) : (
+                <div className="bg-white rounded-lg shadow-sm p-12 text-center">
+                  <div className="text-gray-400 text-lg">
+                    Select a table to view its schema
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        ) : (
+          /* Visual Diagram View */
+          <div className="bg-white rounded-lg shadow-sm p-8">
+            <h2 className="text-xl font-semibold text-gray-900 mb-6">
+              Entity Relationship Diagram
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {mockTables.map((table) => (
                 <div
                   key={table.id}
-                  data-testid="createdatabase-item"
-                  className={`p-4 bg-white rounded-lg shadow cursor-pointer transition-all hover:shadow-md ${
-                    selectedTable?.id === table.id ? 'ring-2 ring-blue-500' : ''
-                  }`}
-                  onClick={() => setSelectedTable(table)}
+                  data-testid="createdatabase-card"
+                  className="border-2 border-gray-300 rounded-lg overflow-hidden hover:border-blue-500 transition-colors"
                 >
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <h3 className="text-lg font-semibold text-gray-900 mb-1">
-                        {table.name}
-                      </h3>
-                      <p className="text-sm text-gray-600 mb-2">{table.description}</p>
-                      <div className="flex gap-3 text-xs text-gray-500">
-                        <span>{table.columns.length} columns</span>
-                        <span>•</span>
-                        <span>{table.recordCount.toLocaleString()} records</span>
+                  <div className="bg-gray-800 text-white px-4 py-3">
+                    <h3 className="font-mono font-bold text-sm">
+                      {table.name}
+                    </h3>
+                  </div>
+                  <div className="divide-y divide-gray-200">
+                    {table.fields.slice(0, 5).map((field) => (
+                      <div key={field.id} className="px-4 py-2 bg-white">
+                        <div className="flex items-center gap-2 text-xs">
+                          {field.primaryKey && (
+                            <span className="text-yellow-600 font-bold">
+                              🔑
+                            </span>
+                          )}
+                          <span className="font-mono text-gray-900">
+                            {field.name}
+                          </span>
+                          <span className="text-gray-500">:</span>
+                          <span className="text-gray-600">{field.type}</span>
+                        </div>
                       </div>
-                    </div>
-                    <button
-                      data-testid="createdatabase-view"
-                      className="text-blue-600 hover:text-blue-800 text-sm font-medium"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        setSelectedTable(table)
-                      }}
-                    >
-                      View
-                    </button>
+                    ))}
+                    {table.fields.length > 5 && (
+                      <div className="px-4 py-2 bg-gray-50 text-xs text-gray-500 text-center">
+                        +{table.fields.length - 5} more fields
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}
             </div>
+            <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <h4 className="font-semibold text-blue-900 mb-2">
+                Relationships:
+              </h4>
+              <ul className="text-sm text-blue-800 space-y-1">
+                <li>• reviews.user_id → users.id (Foreign Key)</li>
+                <li>
+                  • reviews.entity_id → attractions/restaurants/accommodations
+                  (Polymorphic)
+                </li>
+                <li>• All tables indexed on created_at for performance</li>
+                <li>• JSONB fields for flexible schema extensions</li>
+              </ul>
+            </div>
           </div>
+        )}
 
-          {/* Schema Details */}
-          <div>
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Schema Details</h2>
-            {selectedTable ? (
-              <div data-testid="createdatabase-details" className="bg-white rounded-lg shadow p-6">
-                <div className="mb-6">
-                  <h3 className="text-2xl font-bold text-gray-900 mb-2">
-                    {selectedTable.name}
-                  </h3>
-                  <p className="text-gray-600 mb-4">{selectedTable.description}</p>
-                  <div className="flex gap-2">
-                    <span className="px-3 py-1 bg-blue-100 text-blue-800 text-sm rounded-full">
-                      {selectedTable.columns.length} columns
-                    </span>
-                    <span className="px-3 py-1 bg-green-100 text-green-800 text-sm rounded-full">
-                      {selectedTable.recordCount.toLocaleString()} records
-                    </span>
-                  </div>
-                </div>
-
-                <div className="border-t pt-4">
-                  <h4 className="font-semibold text-gray-900 mb-3">Columns</h4>
-                  <div className="space-y-3">
-                    {selectedTable.columns.map((column, idx) => (
-                      <div
-                        key={idx}
-                        data-testid="createdatabase-column"
-                        className="p-3 bg-gray-50 rounded-lg"
-                      >
-                        <div className="flex items-start justify-between mb-1">
-                          <span className="font-mono text-sm font-semibold text-gray-900">
-                            {column.name}
-                          </span>
-                          <div className="flex gap-1">
-                            {column.primaryKey && (
-                              <span className="px-2 py-0.5 bg-yellow-100 text-yellow-800 text-xs rounded">
-                                PK
-                              </span>
-                            )}
-                            {column.foreignKey && (
-                              <span className="px-2 py-0.5 bg-purple-100 text-purple-800 text-xs rounded">
-                                FK
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                        <div className="text-xs text-gray-600">
-                          <span className="font-mono">{column.type}</span>
-                          {!column.nullable && (
-                            <span className="ml-2 text-red-600 font-semibold">NOT NULL</span>
-                          )}
-                        </div>
-                        {column.foreignKey && (
-                          <div className="text-xs text-purple-600 mt-1">
-                            → References {column.foreignKey}
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="mt-6 flex gap-2">
-                  <button
-                    data-testid="createdatabase-export"
-                    className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                  >
-                    Export Schema
-                  </button>
-                  <button
-                    data-testid="createdatabase-close"
-                    className="flex-1 px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors"
-                    onClick={() => setSelectedTable(null)}
-                  >
-                    Close
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <div className="bg-white rounded-lg shadow p-12 text-center">
-                <div className="text-gray-400 mb-3">
-                  <svg
-                    className="mx-auto h-12 w-12"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4"
-                    />
-                  </svg>
-                </div>
-                <p className="text-gray-600">Select a table to view its schema details</p>
-              </div>
-            )}
+        {/* Actions */}
+        <div className="mt-6 bg-white rounded-lg shadow-sm p-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">
+            Schema Actions
+          </h3>
+          <div className="flex flex-wrap gap-3">
+            <button
+              data-testid="createdatabase-export"
+              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors font-medium"
+            >
+              Export SQL
+            </button>
+            <button
+              data-testid="createdatabase-migrate"
+              className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors font-medium"
+            >
+              Run Migrations
+            </button>
+            <button
+              data-testid="createdatabase-validate"
+              className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors font-medium"
+            >
+              Validate Schema
+            </button>
+            <button
+              data-testid="createdatabase-reset"
+              className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors font-medium"
+            >
+              Reset Database
+            </button>
           </div>
         </div>
       </div>
