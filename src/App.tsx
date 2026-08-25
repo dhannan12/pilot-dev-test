@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 
 
-const screens = [
+const screens: Array<{name: string; component: React.ReactNode}> = [
 
 ]
 
