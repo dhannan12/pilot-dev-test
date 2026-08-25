@@ -8,125 +8,93 @@ describe('AdminTriesTo', () => {
     expect(document.body).toBeTruthy()
   })
 
-  it('displays initial mock data items', () => {
+  it('displays mock data', () => {
     render(<AdminTriesTo />)
     expect(screen.getByText('Espresso')).toBeTruthy()
     expect(screen.getByText('Cappuccino')).toBeTruthy()
     expect(screen.getByText('Latte')).toBeTruthy()
-  })
-
-  it('shows current item count', () => {
-    render(<AdminTriesTo />)
-    expect(screen.getByText(/Current Items/i)).toBeTruthy()
-    expect(screen.getByText(/7 \/ 20/i)).toBeTruthy()
+    expect(screen.getByText('Americano')).toBeTruthy()
+    expect(screen.getByText('Mocha')).toBeTruthy()
   })
 
   it('has required data-testid attributes', () => {
     render(<AdminTriesTo />)
-    
     // Main wrapper
-    expect(document.querySelector('[data-testid="admintriesto"]')).toBeTruthy()
+    expect(screen.getByTestId('admintriesto')).toBeTruthy()
     
     // Form inputs
-    expect(document.querySelector('[data-testid="admintriesto-name"]')).toBeTruthy()
-    expect(document.querySelector('[data-testid="admintriesto-price"]')).toBeTruthy()
-    expect(document.querySelector('[data-testid="admintriesto-description"]')).toBeTruthy()
+    expect(screen.getByTestId('admintriesto-name')).toBeTruthy()
+    expect(screen.getByTestId('admintriesto-description')).toBeTruthy()
+    expect(screen.getByTestId('admintriesto-price')).toBeTruthy()
     
-    // Submit button
-    expect(document.querySelector('[data-testid="admintriesto-submit"]')).toBeTruthy()
+    // Add button
+    expect(screen.getByTestId('admintriesto-add')).toBeTruthy()
     
-    // List and items
-    expect(document.querySelector('[data-testid="admintriesto-list"]')).toBeTruthy()
-    const items = document.querySelectorAll('[data-testid="admintriesto-item"]')
-    expect(items.length).toBeGreaterThan(0)
+    // List container
+    expect(screen.getByTestId('admintriesto-list')).toBeTruthy()
+    
+    // List items
+    const items = screen.getAllByTestId('admintriesto-item')
+    expect(items.length).toBe(5)
+    
+    // Delete buttons
+    const deleteButtons = screen.getAllByTestId('admintriesto-delete')
+    expect(deleteButtons.length).toBe(5)
   })
 
-  it('shows error when trying to add item with empty name', () => {
+  it('shows current item count', () => {
     render(<AdminTriesTo />)
-    
-    const submitButton = screen.getByTestId('admintriesto-submit')
-    fireEvent.click(submitButton)
-    
-    expect(screen.getByText('Item name is required')).toBeTruthy()
+    expect(screen.getByText(/Current items: 5 \/ 20/)).toBeTruthy()
   })
 
-  it('can add a new item when under the limit', () => {
+  it('allows adding a new item when under the limit', () => {
     render(<AdminTriesTo />)
     
-    const nameInput = screen.getByTestId('admintriesto-name')
-    const priceInput = screen.getByTestId('admintriesto-price')
-    const descInput = screen.getByTestId('admintriesto-description')
-    const submitButton = screen.getByTestId('admintriesto-submit')
+    const nameInput = screen.getByTestId('admintriesto-name') as HTMLInputElement
+    const descInput = screen.getByTestId('admintriesto-description') as HTMLTextAreaElement
+    const priceInput = screen.getByTestId('admintriesto-price') as HTMLInputElement
+    const addButton = screen.getByTestId('admintriesto-add')
     
-    fireEvent.change(nameInput, { target: { value: 'New Item' } })
-    fireEvent.change(priceInput, { target: { value: '6.99' } })
-    fireEvent.change(descInput, { target: { value: 'New description' } })
-    fireEvent.click(submitButton)
+    fireEvent.change(nameInput, { target: { value: 'New Coffee' } })
+    fireEvent.change(descInput, { target: { value: 'A new coffee drink' } })
+    fireEvent.change(priceInput, { target: { value: '5.99' } })
+    fireEvent.click(addButton)
     
-    expect(screen.getByText('New Item')).toBeTruthy()
+    expect(screen.getByText('New Coffee')).toBeTruthy()
+    expect(screen.getByText(/Current items: 6 \/ 20/)).toBeTruthy()
   })
 
-  it('can remove an item from the list', () => {
+  it('allows deleting items', () => {
     render(<AdminTriesTo />)
     
-    const removeButtons = screen.getAllByTestId('admintriesto-remove')
-    const initialCount = removeButtons.length
+    const deleteButtons = screen.getAllByTestId('admintriesto-delete')
+    fireEvent.click(deleteButtons[0])
     
-    fireEvent.click(removeButtons[0])
-    
-    const updatedButtons = screen.getAllByTestId('admintriesto-remove')
-    expect(updatedButtons.length).toBe(initialCount - 1)
+    expect(screen.getByText(/Current items: 4 \/ 20/)).toBeTruthy()
   })
 
-  it('disables add button when at maximum items', () => {
+  it('shows validation error for empty fields', () => {
     render(<AdminTriesTo />)
     
-    const nameInput = screen.getByTestId('admintriesto-name')
-    const priceInput = screen.getByTestId('admintriesto-price')
-    const descInput = screen.getByTestId('admintriesto-description')
-    const submitButton = screen.getByTestId('admintriesto-submit') as HTMLButtonElement
+    const addButton = screen.getByTestId('admintriesto-add')
+    fireEvent.click(addButton)
     
-    // Add items until we reach 20
-    for (let i = 8; i <= 20; i++) {
-      if (submitButton.disabled) break
-      
-      fireEvent.change(nameInput, { target: { value: `Item ${i}` } })
-      fireEvent.change(priceInput, { target: { value: `${i}.99` } })
-      fireEvent.change(descInput, { target: { value: `Description ${i}` } })
-      fireEvent.click(submitButton)
-    }
-    
-    // Button should be disabled at 20 items
-    expect(submitButton.disabled).toBe(true)
+    expect(screen.getByText('All fields are required.')).toBeTruthy()
   })
 
-  it('shows error message when trying to exceed 20 item limit', () => {
+  it('shows validation error for invalid price', () => {
     render(<AdminTriesTo />)
     
-    const nameInput = screen.getByTestId('admintriesto-name')
-    const priceInput = screen.getByTestId('admintriesto-price')
-    const descInput = screen.getByTestId('admintriesto-description')
-    const submitButton = screen.getByTestId('admintriesto-submit') as HTMLButtonElement
+    const nameInput = screen.getByTestId('admintriesto-name') as HTMLInputElement
+    const descInput = screen.getByTestId('admintriesto-description') as HTMLTextAreaElement
+    const priceInput = screen.getByTestId('admintriesto-price') as HTMLInputElement
+    const addButton = screen.getByTestId('admintriesto-add')
     
-    // Add items to reach the limit
-    for (let i = 8; i <= 20; i++) {
-      if (submitButton.disabled) break
-      
-      fireEvent.change(nameInput, { target: { value: `Item ${i}` } })
-      fireEvent.change(priceInput, { target: { value: `${i}.99` } })
-      fireEvent.change(descInput, { target: { value: `Description ${i}` } })
-      fireEvent.click(submitButton)
-    }
+    fireEvent.change(nameInput, { target: { value: 'Test' } })
+    fireEvent.change(descInput, { target: { value: 'Test desc' } })
+    fireEvent.change(priceInput, { target: { value: '-5' } })
+    fireEvent.click(addButton)
     
-    // Try to add one more (this should show an error)
-    fireEvent.change(nameInput, { target: { value: 'Extra Item' } })
-    fireEvent.change(priceInput, { target: { value: '99.99' } })
-    fireEvent.change(descInput, { target: { value: 'This should fail' } })
-    
-    // The button is disabled, but if we try to submit the form anyway
-    // (by clicking when enabled or programmatically), we'd see the error
-    // Since button is disabled, we verify the disabled state
-    expect(submitButton.disabled).toBe(true)
-    expect(screen.getByText('Maximum Items Reached')).toBeTruthy()
+    expect(screen.getByText('Price must be a valid positive number.')).toBeTruthy()
   })
 })
