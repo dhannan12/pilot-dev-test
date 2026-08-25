@@ -8,108 +8,79 @@ describe('AdminTriesTo', () => {
     expect(document.body).toBeTruthy()
   })
 
-  it('displays mock restaurant data', () => {
+  it('displays the admin restaurant listing form', () => {
     render(<AdminTriesTo />)
-    expect(screen.getByText("O'Malley's Seafood House")).toBeInTheDocument()
-    expect(screen.getByText("The Clew Bay Bistro")).toBeInTheDocument()
-    expect(screen.getByText("Croagh Patrick Inn")).toBeInTheDocument()
-    expect(screen.getByText("The Atlantic Grill")).toBeInTheDocument()
-    expect(screen.getByText("Mayo Mediterranean")).toBeInTheDocument()
+    expect(screen.getByText(/Admin Restaurant Listing/i)).toBeTruthy()
+    expect(screen.getByText(/Add a new restaurant to the West Ireland directory/i)).toBeTruthy()
+  })
+
+  it('displays mock data of failed listing attempts', () => {
+    render(<AdminTriesTo />)
+    expect(screen.getByText(/The Galway Grill/i)).toBeTruthy()
+    expect(screen.getByText(/Seafood Shack/i)).toBeTruthy()
+    expect(screen.getByText(/West Coast Bistro/i)).toBeTruthy()
+    expect(screen.getByText(/Cannot list restaurant: Dietary information is required/i)).toBeTruthy()
   })
 
   it('has required data-testid attributes', () => {
     render(<AdminTriesTo />)
     
     // Main wrapper
-    expect(screen.getByTestId('admintriesto')).toBeInTheDocument()
+    expect(document.querySelector('[data-testid="admintriesto"]')).toBeTruthy()
     
     // Form inputs
-    expect(screen.getByTestId('admintriesto-name')).toBeInTheDocument()
-    expect(screen.getByTestId('admintriesto-address')).toBeInTheDocument()
-    expect(screen.getByTestId('admintriesto-cuisine')).toBeInTheDocument()
-    expect(screen.getByTestId('admintriesto-phone')).toBeInTheDocument()
-    expect(screen.getByTestId('admintriesto-dietaryinfo')).toBeInTheDocument()
+    expect(document.querySelector('[data-testid="admintriesto-restaurantname"]')).toBeTruthy()
+    expect(document.querySelector('[data-testid="admintriesto-phone"]')).toBeTruthy()
+    expect(document.querySelector('[data-testid="admintriesto-address"]')).toBeTruthy()
+    expect(document.querySelector('[data-testid="admintriesto-cuisine"]')).toBeTruthy()
+    expect(document.querySelector('[data-testid="admintriesto-dietaryinfo"]')).toBeTruthy()
     
-    // Submit button
-    expect(screen.getByTestId('admintriesto-submit')).toBeInTheDocument()
+    // Buttons
+    expect(document.querySelector('[data-testid="admintriesto-submit"]')).toBeTruthy()
+    expect(document.querySelector('[data-testid="admintriesto-clear"]')).toBeTruthy()
     
-    // List
-    expect(screen.getByTestId('admintriesto-list')).toBeInTheDocument()
-    
-    // List items (should have 5 initially)
-    const items = screen.getAllByTestId('admintriesto-item')
-    expect(items.length).toBe(5)
+    // List container and items
+    expect(document.querySelector('[data-testid="admintriesto-list"]')).toBeTruthy()
+    const items = document.querySelectorAll('[data-testid="admintriesto-item"]')
+    expect(items.length).toBeGreaterThan(0)
   })
 
   it('shows error when submitting without dietary information', () => {
     render(<AdminTriesTo />)
     
-    const nameInput = screen.getByTestId('admintriesto-name')
-    const addressInput = screen.getByTestId('admintriesto-address')
-    const cuisineInput = screen.getByTestId('admintriesto-cuisine')
-    const phoneInput = screen.getByTestId('admintriesto-phone')
-    const dietaryInfoInput = screen.getByTestId('admintriesto-dietaryinfo')
-    const submitButton = screen.getByTestId('admintriesto-submit')
+    const restaurantNameInput = document.querySelector('[data-testid="admintriesto-restaurantname"]') as HTMLInputElement
+    const addressInput = document.querySelector('[data-testid="admintriesto-address"]') as HTMLInputElement
+    const phoneInput = document.querySelector('[data-testid="admintriesto-phone"]') as HTMLInputElement
+    const cuisineSelect = document.querySelector('[data-testid="admintriesto-cuisine"]') as HTMLSelectElement
+    const submitButton = document.querySelector('[data-testid="admintriesto-submit"]') as HTMLButtonElement
     
-    // Fill all fields except dietary info
-    fireEvent.change(nameInput, { target: { value: 'Test Restaurant' } })
-    fireEvent.change(addressInput, { target: { value: '123 Test St' } })
-    fireEvent.change(cuisineInput, { target: { value: 'Test Cuisine' } })
-    fireEvent.change(phoneInput, { target: { value: '+353 12 3456' } })
-    fireEvent.change(dietaryInfoInput, { target: { value: '' } })
+    fireEvent.change(restaurantNameInput, { target: { value: 'Test Restaurant' } })
+    fireEvent.change(addressInput, { target: { value: 'Test Address' } })
+    fireEvent.change(phoneInput, { target: { value: '+353 91 123 456' } })
+    fireEvent.change(cuisineSelect, { target: { value: 'Irish' } })
     
-    // Submit form
     fireEvent.click(submitButton)
     
-    // Error should be displayed
-    expect(screen.getByTestId('admintriesto-error')).toBeInTheDocument()
-    expect(screen.getByText(/dietary information is required/i)).toBeInTheDocument()
+    // Check for the specific error message near the dietary info field
+    expect(screen.getByText(/⚠ Dietary information is required. Please specify available dietary options./i)).toBeTruthy()
   })
 
-  it('successfully adds restaurant when all fields including dietary info are provided', () => {
+  it('clears form when clear button is clicked', () => {
     render(<AdminTriesTo />)
     
-    const nameInput = screen.getByTestId('admintriesto-name')
-    const addressInput = screen.getByTestId('admintriesto-address')
-    const cuisineInput = screen.getByTestId('admintriesto-cuisine')
-    const phoneInput = screen.getByTestId('admintriesto-phone')
-    const dietaryInfoInput = screen.getByTestId('admintriesto-dietaryinfo')
-    const submitButton = screen.getByTestId('admintriesto-submit')
+    const restaurantNameInput = document.querySelector('[data-testid="admintriesto-restaurantname"]') as HTMLInputElement
+    const clearButton = document.querySelector('[data-testid="admintriesto-clear"]') as HTMLButtonElement
     
-    // Fill all fields including dietary info
-    fireEvent.change(nameInput, { target: { value: 'New Restaurant' } })
-    fireEvent.change(addressInput, { target: { value: '456 New St' } })
-    fireEvent.change(cuisineInput, { target: { value: 'Italian' } })
-    fireEvent.change(phoneInput, { target: { value: '+353 98 99999' } })
-    fireEvent.change(dietaryInfoInput, { target: { value: 'Vegetarian, Vegan options' } })
+    fireEvent.change(restaurantNameInput, { target: { value: 'Test Restaurant' } })
+    expect(restaurantNameInput.value).toBe('Test Restaurant')
     
-    // Submit form
-    fireEvent.click(submitButton)
-    
-    // New restaurant should be in the list
-    expect(screen.getByText('New Restaurant')).toBeInTheDocument()
-    
-    // Should now have 6 restaurants
-    const items = screen.getAllByTestId('admintriesto-item')
-    expect(items.length).toBe(6)
+    fireEvent.click(clearButton)
+    expect(restaurantNameInput.value).toBe('')
   })
 
-  it('clears error when user starts typing in dietary info field', () => {
+  it('displays retry buttons for failed attempts', () => {
     render(<AdminTriesTo />)
-    
-    const dietaryInfoInput = screen.getByTestId('admintriesto-dietaryinfo')
-    const submitButton = screen.getByTestId('admintriesto-submit')
-    
-    // Submit without dietary info to trigger error
-    fireEvent.click(submitButton)
-    
-    // Error should be displayed
-    expect(screen.getByTestId('admintriesto-error')).toBeInTheDocument()
-    
-    // Start typing in dietary info
-    fireEvent.change(dietaryInfoInput, { target: { value: 'Vegan' } })
-    
-    // Error should be cleared
-    expect(screen.queryByTestId('admintriesto-error')).not.toBeInTheDocument()
+    const retryButtons = document.querySelectorAll('[data-testid="admintriesto-retry"]')
+    expect(retryButtons.length).toBeGreaterThan(0)
   })
 })

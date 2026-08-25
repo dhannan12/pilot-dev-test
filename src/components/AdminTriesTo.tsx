@@ -1,249 +1,291 @@
 /**
- * AdminTriesTo — Admin form for listing a restaurant with dietary information validation
+ * AdminTriesTo — Admin form for listing a restaurant without dietary information
  *
- * Features: restaurant form, dietary info validation, error messaging, restaurant list display, form state management
+ * Features: restaurant form, dietary info validation, error states, admin interface, validation feedback
  *
  * Ticket: SCRUM-1145 | Branch: proto/SCRUM-1140
  */
 
 import React, { useState } from 'react'
 
-interface Restaurant {
-  id: number
-  name: string
+interface RestaurantAttempt {
+  id: string
+  restaurantName: string
   address: string
+  phone: string
   cuisine: string
   dietaryInfo: string
-  phone: string
+  status: 'pending' | 'failed' | 'incomplete'
+  errorMessage: string
 }
 
-const MOCK_RESTAURANTS: Restaurant[] = [
+const MOCK_ATTEMPTS: RestaurantAttempt[] = [
   {
-    id: 1,
-    name: "O'Malley's Seafood House",
-    address: "12 Quay Street, Westport",
-    cuisine: "Irish Seafood",
-    dietaryInfo: "Vegetarian, Vegan, Gluten-free options available",
-    phone: "+353 98 12345"
+    id: '1',
+    restaurantName: 'The Galway Grill',
+    address: '12 Shop Street, Galway',
+    phone: '+353 91 123 456',
+    cuisine: 'Irish',
+    dietaryInfo: '',
+    status: 'failed',
+    errorMessage: 'Cannot list restaurant: Dietary information is required'
   },
   {
-    id: 2,
-    name: "The Clew Bay Bistro",
-    address: "45 Bridge Street, Westport",
-    cuisine: "Modern Irish",
-    dietaryInfo: "Vegetarian, Gluten-free, Dairy-free menu available",
-    phone: "+353 98 23456"
+    id: '2',
+    restaurantName: 'Seafood Shack',
+    address: '45 Quay Road, Clifden',
+    phone: '+353 95 234 567',
+    cuisine: 'Seafood',
+    dietaryInfo: '',
+    status: 'incomplete',
+    errorMessage: 'Missing required field: Dietary information'
   },
   {
-    id: 3,
-    name: "Croagh Patrick Inn",
-    address: "8 Main Road, Murrisk",
-    cuisine: "Traditional Irish",
-    dietaryInfo: "Vegetarian options, coeliac-friendly meals",
-    phone: "+353 98 34567"
+    id: '3',
+    restaurantName: 'West Coast Bistro',
+    address: '8 Main Street, Westport',
+    phone: '+353 98 345 678',
+    cuisine: 'International',
+    dietaryInfo: '',
+    status: 'failed',
+    errorMessage: 'Dietary information must be provided before publishing'
   },
   {
-    id: 4,
-    name: "The Atlantic Grill",
-    address: "23 Harbour View, Westport",
-    cuisine: "Steakhouse",
-    dietaryInfo: "Vegetarian, Vegan, Nut-free options",
-    phone: "+353 98 45678"
+    id: '4',
+    restaurantName: "O'Malley's Tavern",
+    address: '22 Bridge Street, Galway',
+    phone: '+353 91 456 789',
+    cuisine: 'Pub Food',
+    dietaryInfo: '',
+    status: 'pending',
+    errorMessage: 'Please add dietary options (vegetarian, vegan, gluten-free, etc.)'
   },
   {
-    id: 5,
-    name: "Mayo Mediterranean",
-    address: "67 Shop Street, Westport",
-    cuisine: "Mediterranean",
-    dietaryInfo: "Vegetarian, Vegan, Gluten-free, Halal available",
-    phone: "+353 98 56789"
+    id: '5',
+    restaurantName: 'The Connemara Kitchen',
+    address: '15 Market Square, Clifden',
+    phone: '+353 95 567 890',
+    cuisine: 'Traditional Irish',
+    dietaryInfo: '',
+    status: 'failed',
+    errorMessage: 'Validation error: Dietary information field cannot be empty'
   }
 ]
 
 export default function AdminTriesTo() {
-  const [restaurants, setRestaurants] = useState<Restaurant[]>(MOCK_RESTAURANTS)
   const [formData, setFormData] = useState({
-    name: '',
+    restaurantName: '',
     address: '',
+    phone: '',
     cuisine: '',
-    dietaryInfo: '',
-    phone: ''
+    dietaryInfo: ''
   })
-  const [error, setError] = useState<string>('')
-  const [attemptedSubmit, setAttemptedSubmit] = useState(false)
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target
-    setFormData(prev => ({ ...prev, [name]: value }))
-    // Clear error when user starts typing in dietary info
-    if (name === 'dietaryInfo' && value.trim() !== '') {
-      setError('')
-    }
-  }
+  const [showError, setShowError] = useState(false)
+  const [attempts] = useState<RestaurantAttempt[]>(MOCK_ATTEMPTS)
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    setAttemptedSubmit(true)
-
-    // Validate dietary information
+    
     if (!formData.dietaryInfo.trim()) {
-      setError('Dietary information is required. Please specify available dietary options (e.g., Vegetarian, Vegan, Gluten-free).')
+      setShowError(true)
       return
     }
+    
+    setShowError(false)
+    alert('Restaurant listed successfully!')
+  }
 
-    // All fields required
-    if (!formData.name.trim() || !formData.address.trim() || !formData.cuisine.trim() || !formData.phone.trim()) {
-      setError('All fields are required.')
-      return
+  const handleInputChange = (field: string, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }))
+    if (field === 'dietaryInfo' && value.trim()) {
+      setShowError(false)
     }
-
-    // Success - add restaurant
-    const newRestaurant: Restaurant = {
-      id: restaurants.length + 1,
-      ...formData
-    }
-    setRestaurants([newRestaurant, ...restaurants])
-    setFormData({ name: '', address: '', cuisine: '', dietaryInfo: '', phone: '' })
-    setError('')
-    setAttemptedSubmit(false)
   }
 
   return (
-    <div data-testid="admintriesto" className="min-h-screen bg-gray-50 p-6">
+    <div data-testid="admintriesto" className="min-h-screen bg-gray-50 py-8 px-4">
       <div className="max-w-6xl mx-auto">
-        <h1 className="text-3xl font-bold text-gray-900 mb-8">Restaurant Listing Admin</h1>
-        
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Form Section */}
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <h2 className="text-2xl font-semibold text-gray-800 mb-6">Add New Restaurant</h2>
-            
-            <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="bg-white rounded-lg shadow-md p-6 mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+            Admin Restaurant Listing
+          </h1>
+          <p className="text-gray-600 mb-6">
+            Add a new restaurant to the West Ireland directory
+          </p>
+
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="grid md:grid-cols-2 gap-6">
               <div>
-                <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
                   Restaurant Name *
                 </label>
                 <input
-                  id="name"
-                  name="name"
+                  data-testid="admintriesto-restaurantname"
                   type="text"
-                  data-testid="admintriesto-name"
-                  value={formData.name}
-                  onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  value={formData.restaurantName}
+                  onChange={(e) => handleInputChange('restaurantName', e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="Enter restaurant name"
+                  required
                 />
               </div>
 
               <div>
-                <label htmlFor="address" className="block text-sm font-medium text-gray-700 mb-1">
-                  Address *
-                </label>
-                <input
-                  id="address"
-                  name="address"
-                  type="text"
-                  data-testid="admintriesto-address"
-                  value={formData.address}
-                  onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Enter full address"
-                />
-              </div>
-
-              <div>
-                <label htmlFor="cuisine" className="block text-sm font-medium text-gray-700 mb-1">
-                  Cuisine Type *
-                </label>
-                <input
-                  id="cuisine"
-                  name="cuisine"
-                  type="text"
-                  data-testid="admintriesto-cuisine"
-                  value={formData.cuisine}
-                  onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="e.g., Irish, Italian, Asian"
-                />
-              </div>
-
-              <div>
-                <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
                   Phone Number *
                 </label>
                 <input
-                  id="phone"
-                  name="phone"
-                  type="tel"
                   data-testid="admintriesto-phone"
+                  type="tel"
                   value={formData.phone}
-                  onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="+353 XX XXXXX"
+                  onChange={(e) => handleInputChange('phone', e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="+353 XX XXX XXXX"
+                  required
                 />
               </div>
-
-              <div>
-                <label htmlFor="dietaryInfo" className="block text-sm font-medium text-gray-700 mb-1">
-                  Dietary Information *
-                </label>
-                <textarea
-                  id="dietaryInfo"
-                  name="dietaryInfo"
-                  data-testid="admintriesto-dietaryinfo"
-                  value={formData.dietaryInfo}
-                  onChange={handleInputChange}
-                  rows={3}
-                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                    attemptedSubmit && !formData.dietaryInfo.trim() ? 'border-red-500' : 'border-gray-300'
-                  }`}
-                  placeholder="Specify dietary options: Vegetarian, Vegan, Gluten-free, etc."
-                />
-                {attemptedSubmit && !formData.dietaryInfo.trim() && (
-                  <p className="text-sm text-red-600 mt-1">⚠ This field is required</p>
-                )}
-              </div>
-
-              {error && (
-                <div data-testid="admintriesto-error" className="bg-red-50 border border-red-200 rounded-md p-4">
-                  <p className="text-sm text-red-700 font-medium">{error}</p>
-                </div>
-              )}
-
-              <button
-                type="submit"
-                data-testid="admintriesto-submit"
-                className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors font-medium"
-              >
-                Add Restaurant
-              </button>
-            </form>
-          </div>
-
-          {/* Restaurant List Section */}
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <h2 className="text-2xl font-semibold text-gray-800 mb-6">Listed Restaurants</h2>
-            
-            <div data-testid="admintriesto-list" className="space-y-4">
-              {restaurants.map((restaurant) => (
-                <div
-                  key={restaurant.id}
-                  data-testid="admintriesto-item"
-                  className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
-                >
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">{restaurant.name}</h3>
-                  <div className="space-y-1 text-sm text-gray-600">
-                    <p><span className="font-medium">Address:</span> {restaurant.address}</p>
-                    <p><span className="font-medium">Cuisine:</span> {restaurant.cuisine}</p>
-                    <p><span className="font-medium">Phone:</span> {restaurant.phone}</p>
-                    <p className="pt-2 border-t border-gray-100">
-                      <span className="font-medium text-green-700">Dietary Options:</span>{' '}
-                      <span className="text-green-600">{restaurant.dietaryInfo}</span>
-                    </p>
-                  </div>
-                </div>
-              ))}
             </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Address *
+              </label>
+              <input
+                data-testid="admintriesto-address"
+                type="text"
+                value={formData.address}
+                onChange={(e) => handleInputChange('address', e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="Street address, Town"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Cuisine Type *
+              </label>
+              <select
+                data-testid="admintriesto-cuisine"
+                value={formData.cuisine}
+                onChange={(e) => handleInputChange('cuisine', e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                required
+              >
+                <option value="">Select cuisine type</option>
+                <option value="Irish">Irish</option>
+                <option value="Seafood">Seafood</option>
+                <option value="International">International</option>
+                <option value="Pub Food">Pub Food</option>
+                <option value="Italian">Italian</option>
+                <option value="Asian">Asian</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Dietary Information *
+                <span className="text-red-600 ml-1">(Required)</span>
+              </label>
+              <textarea
+                data-testid="admintriesto-dietaryinfo"
+                value={formData.dietaryInfo}
+                onChange={(e) => handleInputChange('dietaryInfo', e.target.value)}
+                className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                  showError ? 'border-red-500 bg-red-50' : 'border-gray-300'
+                }`}
+                placeholder="e.g., Vegetarian options, Vegan menu available, Gluten-free options, Dairy-free available"
+                rows={4}
+              />
+              {showError && (
+                <p className="mt-2 text-sm text-red-600">
+                  ⚠ Dietary information is required. Please specify available dietary options.
+                </p>
+              )}
+              <p className="mt-1 text-xs text-gray-500">
+                List dietary accommodations (vegetarian, vegan, gluten-free, etc.)
+              </p>
+            </div>
+
+            <div className="flex gap-4">
+              <button
+                data-testid="admintriesto-submit"
+                type="submit"
+                className="px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                List Restaurant
+              </button>
+              <button
+                data-testid="admintriesto-clear"
+                type="button"
+                onClick={() => {
+                  setFormData({
+                    restaurantName: '',
+                    address: '',
+                    phone: '',
+                    cuisine: '',
+                    dietaryInfo: ''
+                  })
+                  setShowError(false)
+                }}
+                className="px-6 py-3 bg-gray-200 text-gray-700 font-semibold rounded-lg hover:bg-gray-300 transition-colors"
+              >
+                Clear Form
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <div className="bg-white rounded-lg shadow-md p-6">
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">
+            Failed Listing Attempts
+          </h2>
+          <p className="text-gray-600 mb-6">
+            Restaurants that couldn't be listed due to missing dietary information
+          </p>
+
+          <div data-testid="admintriesto-list" className="space-y-4">
+            {attempts.map((attempt) => (
+              <div
+                key={attempt.id}
+                data-testid="admintriesto-item"
+                className="border border-red-200 bg-red-50 rounded-lg p-4"
+              >
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <h3 className="text-lg font-semibold text-gray-900">
+                      {attempt.restaurantName}
+                    </h3>
+                    <p className="text-sm text-gray-600 mt-1">
+                      {attempt.address}
+                    </p>
+                    <p className="text-sm text-gray-600">
+                      {attempt.phone} • {attempt.cuisine}
+                    </p>
+                    <div className="mt-3 flex items-center gap-2">
+                      <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                        attempt.status === 'failed' 
+                          ? 'bg-red-100 text-red-800'
+                          : attempt.status === 'incomplete'
+                          ? 'bg-yellow-100 text-yellow-800'
+                          : 'bg-orange-100 text-orange-800'
+                      }`}>
+                        {attempt.status.toUpperCase()}
+                      </span>
+                      <p className="text-sm text-red-700">
+                        {attempt.errorMessage}
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    data-testid="admintriesto-retry"
+                    className="ml-4 px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition-colors"
+                  >
+                    Retry
+                  </button>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </div>
