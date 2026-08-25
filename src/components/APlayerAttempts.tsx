@@ -1,9 +1,9 @@
 /**
- * APlayerAttempts — Player tournament registration form for table tennis events
+ * APlayerAttempts — Registration form showing a player attempting to register after the deadline
  *
- * Features: tournament selection, skill level picker, player info capture, registration validation, status feedback
+ * Features: deadline validation, disabled form state, error messaging, tournament info display, late registration handling
  *
- * Ticket: SCRUM-1104 | Branch: proto/SCRUM-1103
+ * Ticket: SCRUM-1105 | Branch: proto/SCRUM-1103
  */
 
 import React, { useState } from 'react'
@@ -11,239 +11,252 @@ import React, { useState } from 'react'
 interface Tournament {
   id: string
   name: string
+  deadline: string
   date: string
   location: string
-  maxPlayers: number
-  registeredPlayers: number
+  registrationOpen: boolean
 }
 
 const mockTournaments: Tournament[] = [
   {
-    id: '1',
+    id: 'T001',
     name: 'Spring Championship 2026',
-    date: '2026-09-15',
-    location: 'Downtown Sports Center',
-    maxPlayers: 32,
-    registeredPlayers: 18
+    deadline: '2026-08-20',
+    date: '2026-08-30',
+    location: 'City Sports Center',
+    registrationOpen: false,
   },
   {
-    id: '2',
-    name: 'City Open Series',
-    date: '2026-10-01',
-    location: 'Metro Recreation Hall',
-    maxPlayers: 64,
-    registeredPlayers: 45
+    id: 'T002',
+    name: 'Summer Open Tournament',
+    deadline: '2026-08-15',
+    date: '2026-08-28',
+    location: 'Downtown Arena',
+    registrationOpen: false,
   },
   {
-    id: '3',
-    name: 'Autumn Invitational',
-    date: '2026-10-20',
-    location: 'University Sports Complex',
-    maxPlayers: 24,
-    registeredPlayers: 24
+    id: 'T003',
+    name: 'Regional Qualifier',
+    deadline: '2026-08-18',
+    date: '2026-09-01',
+    location: 'Recreation Complex',
+    registrationOpen: false,
   },
   {
-    id: '4',
-    name: 'Regional Masters Cup',
-    date: '2026-11-05',
-    location: 'State Athletic Arena',
-    maxPlayers: 48,
-    registeredPlayers: 12
+    id: 'T004',
+    name: 'Youth Division Finals',
+    deadline: '2026-08-22',
+    date: '2026-09-05',
+    location: 'University Gym',
+    registrationOpen: false,
   },
   {
-    id: '5',
-    name: 'Winter Classic Tournament',
-    date: '2026-12-10',
-    location: 'Community Sports Hub',
-    maxPlayers: 40,
-    registeredPlayers: 5
-  }
+    id: 'T005',
+    name: 'Mixed Doubles Classic',
+    deadline: '2026-08-19',
+    date: '2026-08-29',
+    location: 'Metro Sports Hall',
+    registrationOpen: false,
+  },
 ]
 
 export default function APlayerAttempts() {
+  const [selectedTournament, setSelectedTournament] = useState<string>(mockTournaments[0].id)
   const [playerName, setPlayerName] = useState('')
   const [email, setEmail] = useState('')
-  const [skillLevel, setSkillLevel] = useState('')
-  const [selectedTournament, setSelectedTournament] = useState('')
-  const [registrationStatus, setRegistrationStatus] = useState<'idle' | 'success' | 'full' | 'error'>('idle')
+  const [showError, setShowError] = useState(false)
+
+  const currentTournament = mockTournaments.find(t => t.id === selectedTournament)
+  const today = new Date('2026-08-25')
+  const deadline = currentTournament ? new Date(currentTournament.deadline) : new Date()
+  const isPastDeadline = today > deadline
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    
-    if (!playerName || !email || !skillLevel || !selectedTournament) {
-      setRegistrationStatus('error')
-      return
+    if (isPastDeadline) {
+      setShowError(true)
     }
-
-    const tournament = mockTournaments.find(t => t.id === selectedTournament)
-    if (tournament && tournament.registeredPlayers >= tournament.maxPlayers) {
-      setRegistrationStatus('full')
-      return
-    }
-
-    setRegistrationStatus('success')
-    
-    // Reset form after successful registration
-    setTimeout(() => {
-      setPlayerName('')
-      setEmail('')
-      setSkillLevel('')
-      setSelectedTournament('')
-      setRegistrationStatus('idle')
-    }, 3000)
   }
 
-  return (
-    <div data-testid="aplayerattempts" className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-12 px-4">
-      <div className="max-w-2xl mx-auto">
-        <div className="bg-white rounded-lg shadow-xl p-8">
-          <h1 className="text-3xl font-bold text-gray-800 mb-2">Tournament Registration</h1>
-          <p className="text-gray-600 mb-6">Register for an upcoming table tennis tournament</p>
+  const daysOverdue = Math.floor((today.getTime() - deadline.getTime()) / (1000 * 60 * 60 * 24))
 
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Player Name */}
+  return (
+    <div data-testid="aplayerattempts" className="min-h-screen bg-gray-50 py-8 px-4">
+      <div className="max-w-2xl mx-auto">
+        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Tournament Registration</h1>
+          <p className="text-gray-600 mb-6">Register for upcoming table tennis tournaments</p>
+
+          {/* Tournament Selection */}
+          <div className="mb-6">
+            <label htmlFor="tournament-select" className="block text-sm font-medium text-gray-700 mb-2">
+              Select Tournament
+            </label>
+            <select
+              id="tournament-select"
+              data-testid="aplayerattempts-tournament"
+              value={selectedTournament}
+              onChange={(e) => {
+                setSelectedTournament(e.target.value)
+                setShowError(false)
+              }}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            >
+              {mockTournaments.map((tournament) => (
+                <option key={tournament.id} value={tournament.id}>
+                  {tournament.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Tournament Details */}
+          {currentTournament && (
+            <div data-testid="aplayerattempts-tournament-info" className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+              <h2 className="font-semibold text-blue-900 mb-3">Tournament Details</h2>
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Tournament Date:</span>
+                  <span className="font-medium text-gray-900">{currentTournament.date}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Location:</span>
+                  <span className="font-medium text-gray-900">{currentTournament.location}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Registration Deadline:</span>
+                  <span className={`font-medium ${isPastDeadline ? 'text-red-600' : 'text-gray-900'}`}>
+                    {currentTournament.deadline}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Status:</span>
+                  <span className={`font-semibold ${isPastDeadline ? 'text-red-600' : 'text-green-600'}`}>
+                    {isPastDeadline ? 'Registration Closed' : 'Registration Open'}
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Deadline Passed Error */}
+          {isPastDeadline && (
+            <div data-testid="aplayerattempts-error" className="bg-red-50 border border-red-300 rounded-lg p-4 mb-6">
+              <div className="flex items-start">
+                <svg className="w-5 h-5 text-red-600 mt-0.5 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                </svg>
+                <div>
+                  <h3 className="text-sm font-semibold text-red-800 mb-1">Registration Deadline Passed</h3>
+                  <p className="text-sm text-red-700">
+                    The registration deadline for this tournament was {currentTournament?.deadline}.
+                    The deadline passed {daysOverdue} {daysOverdue === 1 ? 'day' : 'days'} ago.
+                    Registration is no longer available.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Registration Attempt Error (shown after submit attempt) */}
+          {showError && (
+            <div data-testid="aplayerattempts-submit-error" className="bg-orange-50 border border-orange-300 rounded-lg p-4 mb-6">
+              <p className="text-sm font-medium text-orange-800">
+                ⚠ Unable to process registration. The tournament registration period has ended.
+              </p>
+            </div>
+          )}
+
+          {/* Registration Form */}
+          <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label htmlFor="playerName" className="block text-sm font-medium text-gray-700 mb-2">
-                Player Name *
+              <label htmlFor="player-name" className="block text-sm font-medium text-gray-700 mb-2">
+                Player Name
               </label>
               <input
-                id="playerName"
+                id="player-name"
                 type="text"
                 data-testid="aplayerattempts-name"
                 value={playerName}
                 onChange={(e) => setPlayerName(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                disabled={isPastDeadline}
+                className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                  isPastDeadline ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : 'border-gray-300'
+                }`}
                 placeholder="Enter your full name"
               />
             </div>
 
-            {/* Email */}
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-                Email Address *
+              <label htmlFor="player-email" className="block text-sm font-medium text-gray-700 mb-2">
+                Email Address
               </label>
               <input
-                id="email"
+                id="player-email"
                 type="email"
                 data-testid="aplayerattempts-email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                disabled={isPastDeadline}
+                className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                  isPastDeadline ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : 'border-gray-300'
+                }`}
                 placeholder="your.email@example.com"
               />
             </div>
 
-            {/* Skill Level */}
-            <div>
-              <label htmlFor="skillLevel" className="block text-sm font-medium text-gray-700 mb-2">
-                Skill Level *
-              </label>
-              <select
-                id="skillLevel"
-                data-testid="aplayerattempts-skilllevel"
-                value={skillLevel}
-                onChange={(e) => setSkillLevel(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-              >
-                <option value="">Select your skill level</option>
-                <option value="beginner">Beginner</option>
-                <option value="intermediate">Intermediate</option>
-                <option value="advanced">Advanced</option>
-                <option value="expert">Expert</option>
-              </select>
-            </div>
-
-            {/* Tournament Selection */}
-            <div>
-              <label htmlFor="tournament" className="block text-sm font-medium text-gray-700 mb-2">
-                Select Tournament *
-              </label>
-              <div data-testid="aplayerattempts-list" className="space-y-3">
-                {mockTournaments.map((tournament) => {
-                  const isFull = tournament.registeredPlayers >= tournament.maxPlayers
-                  const spotsLeft = tournament.maxPlayers - tournament.registeredPlayers
-                  
-                  return (
-                    <div
-                      key={tournament.id}
-                      data-testid="aplayerattempts-item"
-                      className={`border rounded-lg p-4 cursor-pointer transition-all ${
-                        selectedTournament === tournament.id
-                          ? 'border-indigo-600 bg-indigo-50'
-                          : 'border-gray-300 hover:border-indigo-400'
-                      } ${isFull ? 'opacity-50 cursor-not-allowed' : ''}`}
-                      onClick={() => !isFull && setSelectedTournament(tournament.id)}
-                    >
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <h3 className="font-semibold text-gray-800">{tournament.name}</h3>
-                          <p className="text-sm text-gray-600 mt-1">
-                            {tournament.date} • {tournament.location}
-                          </p>
-                          <div className="mt-2">
-                            {isFull ? (
-                              <span className="inline-block px-2 py-1 text-xs font-medium bg-red-100 text-red-800 rounded">
-                                FULL
-                              </span>
-                            ) : (
-                              <span className="inline-block px-2 py-1 text-xs font-medium bg-green-100 text-green-800 rounded">
-                                {spotsLeft} spots left
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                        <div className="ml-4">
-                          <input
-                            type="radio"
-                            name="tournament"
-                            value={tournament.id}
-                            checked={selectedTournament === tournament.id}
-                            onChange={() => !isFull && setSelectedTournament(tournament.id)}
-                            disabled={isFull}
-                            className="w-5 h-5 text-indigo-600"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            </div>
-
-            {/* Status Messages */}
-            {registrationStatus === 'success' && (
-              <div className="p-4 bg-green-50 border border-green-200 rounded-md">
-                <p className="text-green-800 font-medium">
-                  Registration successful! You'll receive a confirmation email shortly.
-                </p>
-              </div>
-            )}
-
-            {registrationStatus === 'full' && (
-              <div className="p-4 bg-red-50 border border-red-200 rounded-md">
-                <p className="text-red-800 font-medium">
-                  Sorry, this tournament is full. Please select another tournament.
-                </p>
-              </div>
-            )}
-
-            {registrationStatus === 'error' && (
-              <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-md">
-                <p className="text-yellow-800 font-medium">
-                  Please fill in all required fields.
-                </p>
-              </div>
-            )}
-
-            {/* Submit Button */}
             <button
               type="submit"
               data-testid="aplayerattempts-submit"
-              className="w-full bg-indigo-600 text-white py-3 px-6 rounded-md font-semibold hover:bg-indigo-700 transition-colors focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+              disabled={isPastDeadline}
+              className={`w-full py-3 px-4 rounded-lg font-semibold transition-colors ${
+                isPastDeadline
+                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                  : 'bg-blue-600 text-white hover:bg-blue-700'
+              }`}
             >
-              Register for Tournament
+              {isPastDeadline ? 'Registration Closed' : 'Register for Tournament'}
             </button>
           </form>
+        </div>
+
+        {/* All Tournaments List */}
+        <div className="bg-white rounded-lg shadow-md p-6">
+          <h2 className="text-xl font-bold text-gray-900 mb-4">All Tournaments</h2>
+          <div data-testid="aplayerattempts-list" className="space-y-3">
+            {mockTournaments.map((tournament) => {
+              const tournamentDeadline = new Date(tournament.deadline)
+              const isDeadlinePassed = today > tournamentDeadline
+              
+              return (
+                <div
+                  key={tournament.id}
+                  data-testid="aplayerattempts-item"
+                  className="border border-gray-200 rounded-lg p-4 hover:border-blue-300 transition-colors"
+                >
+                  <div className="flex justify-between items-start mb-2">
+                    <h3 className="font-semibold text-gray-900">{tournament.name}</h3>
+                    <span
+                      className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                        isDeadlinePassed
+                          ? 'bg-red-100 text-red-700'
+                          : 'bg-green-100 text-green-700'
+                      }`}
+                    >
+                      {isDeadlinePassed ? 'Closed' : 'Open'}
+                    </span>
+                  </div>
+                  <div className="text-sm text-gray-600 space-y-1">
+                    <p>📍 {tournament.location}</p>
+                    <p>📅 Tournament: {tournament.date}</p>
+                    <p className={isDeadlinePassed ? 'text-red-600 font-medium' : ''}>
+                      ⏰ Deadline: {tournament.deadline}
+                    </p>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
         </div>
       </div>
     </div>
