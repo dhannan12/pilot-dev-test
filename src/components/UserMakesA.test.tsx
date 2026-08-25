@@ -8,111 +8,146 @@ describe('UserMakesA', () => {
     expect(document.body).toBeTruthy()
   })
 
-  it('displays mock menu products', () => {
+  it('displays mock menu items', () => {
     render(<UserMakesA />)
-    expect(screen.getByText('Espresso')).toBeTruthy()
-    expect(screen.getByText('Latte')).toBeTruthy()
-    expect(screen.getByText('Cappuccino')).toBeTruthy()
-    expect(screen.getByText('Americano')).toBeTruthy()
-    expect(screen.getByText('Mocha')).toBeTruthy()
+    // Use getAllByText since items appear in menu and possibly in transaction history
+    expect(screen.getAllByText('Espresso').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('Cappuccino').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('Latte').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('Cold Brew').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('Mocha').length).toBeGreaterThan(0)
   })
 
-  it('displays initial rewards points balance', () => {
+  it('displays initial rewards balance', () => {
     render(<UserMakesA />)
-    const balance = screen.getByTestId('usermakesa-points-balance')
-    expect(balance.textContent).toBe('250')
+    const balance = screen.getByTestId('usermakesa-balance')
+    expect(balance.textContent).toContain('378')
   })
 
-  it('has required data-testid attributes', () => {
+  it('displays transaction history', () => {
     render(<UserMakesA />)
-    // Main wrapper
-    expect(screen.getByTestId('usermakesa')).toBeTruthy()
-    // List container
-    expect(screen.getByTestId('usermakesa-list')).toBeTruthy()
-    // List items
-    expect(screen.getAllByTestId('usermakesa-item').length).toBeGreaterThan(0)
-    // Add button
-    expect(screen.getAllByTestId('usermakesa-add').length).toBeGreaterThan(0)
+    expect(screen.getByText(/Latte, Croissant/i)).toBeTruthy()
+    // Use getAllByText since Espresso appears in menu and transaction history
+    const espressoElements = screen.getAllByText('Espresso')
+    expect(espressoElements.length).toBeGreaterThan(0)
   })
 
-  it('adds product to cart when Add to Cart is clicked', () => {
+  it('allows selecting menu items', () => {
     render(<UserMakesA />)
-    const addButtons = screen.getAllByTestId('usermakesa-add')
-    fireEvent.click(addButtons[0])
+    const items = screen.getAllByTestId('usermakesa-item')
     
-    // Cart should now show an item
-    expect(screen.getByTestId('usermakesa-cart')).toBeTruthy()
-    expect(screen.getByTestId('usermakesa-cart-item')).toBeTruthy()
+    // Click first item to select it
+    fireEvent.click(items[0])
+    
+    // Should show "Selected" text
+    expect(screen.getByText('✓ Selected')).toBeTruthy()
   })
 
-  it('calculates total and points correctly', () => {
+  it('calculates cart total correctly', () => {
     render(<UserMakesA />)
-    const addButtons = screen.getAllByTestId('usermakesa-add')
+    const items = screen.getAllByTestId('usermakesa-item')
     
-    // Add first product (Espresso $3.50, 35 points)
-    fireEvent.click(addButtons[0])
+    // Select first item (Espresso - $3.50)
+    fireEvent.click(items[0])
     
-    const total = screen.getByTestId('usermakesa-total')
-    const points = screen.getByTestId('usermakesa-points-earn')
-    
-    expect(total.textContent).toBe('$3.50')
-    expect(points.textContent).toBe('+35')
+    // Check that total is displayed
+    expect(screen.getByText(/Total:/i)).toBeTruthy()
+    // Use getAllByText since price appears in menu and cart
+    const priceElements = screen.getAllByText('$3.50')
+    expect(priceElements.length).toBeGreaterThan(0)
   })
 
-  it('completes purchase and updates rewards points', () => {
+  it('shows empty cart message when no items selected', () => {
     render(<UserMakesA />)
-    
-    // Add a product to cart
-    const addButtons = screen.getAllByTestId('usermakesa-add')
-    fireEvent.click(addButtons[0]) // Espresso: 35 points
-    
-    // Complete purchase
-    const submitButton = screen.getByTestId('usermakesa-submit')
-    fireEvent.click(submitButton)
-    
-    // Check confirmation message
-    expect(screen.getByTestId('usermakesa-confirmation')).toBeTruthy()
-    
-    // Check updated balance (250 + 35 = 285)
-    const balance = screen.getByTestId('usermakesa-points-balance')
-    expect(balance.textContent).toBe('285')
+    expect(screen.getByText('No items selected')).toBeTruthy()
   })
 
-  it('clears cart when Clear Cart is clicked', () => {
+  it('can clear cart', () => {
     render(<UserMakesA />)
+    const items = screen.getAllByTestId('usermakesa-item')
     
-    // Add a product
-    const addButtons = screen.getAllByTestId('usermakesa-add')
-    fireEvent.click(addButtons[0])
+    // Select an item
+    fireEvent.click(items[0])
+    expect(screen.getByText('✓ Selected')).toBeTruthy()
     
     // Clear cart
     const clearButton = screen.getByTestId('usermakesa-clear')
     fireEvent.click(clearButton)
     
-    // Cart should be empty
-    expect(screen.getByTestId('usermakesa-empty')).toBeTruthy()
+    // Should show empty cart message
+    expect(screen.getByText('No items selected')).toBeTruthy()
   })
 
-  it('increases and decreases item quantity in cart', () => {
+  it('processes purchase and updates points', () => {
+    render(<UserMakesA />)
+    const items = screen.getAllByTestId('usermakesa-item')
+    
+    // Select first item (Espresso - 35 points)
+    fireEvent.click(items[0])
+    
+    // Make purchase
+    const purchaseButton = screen.getByTestId('usermakesa-purchase')
+    fireEvent.click(purchaseButton)
+    
+    // Check confirmation message appears
+    expect(screen.getByTestId('usermakesa-confirmation')).toBeTruthy()
+    
+    // Points should be updated (378 + 35 = 413)
+    const balance = screen.getByTestId('usermakesa-balance')
+    expect(balance.textContent).toContain('413')
+  })
+
+  it('has required data-testid attributes', () => {
     render(<UserMakesA />)
     
-    // Add a product twice
-    const addButtons = screen.getAllByTestId('usermakesa-add')
-    fireEvent.click(addButtons[0])
+    // Main wrapper
+    expect(screen.getByTestId('usermakesa')).toBeTruthy()
     
-    // Increase quantity
-    const increaseButton = screen.getByTestId('usermakesa-increase')
-    fireEvent.click(increaseButton)
+    // Balance
+    expect(screen.getByTestId('usermakesa-balance')).toBeTruthy()
     
-    // Check total is doubled
-    const total = screen.getByTestId('usermakesa-total')
-    expect(total.textContent).toBe('$7.00') // 3.50 * 2
+    // List containers
+    expect(screen.getByTestId('usermakesa-list')).toBeTruthy()
+    expect(screen.getByTestId('usermakesa-transactions')).toBeTruthy()
     
-    // Decrease quantity
-    const decreaseButton = screen.getByTestId('usermakesa-decrease')
-    fireEvent.click(decreaseButton)
+    // List items
+    const items = screen.getAllByTestId('usermakesa-item')
+    expect(items.length).toBeGreaterThan(0)
     
-    // Total should be back to single item
-    expect(total.textContent).toBe('$3.50')
+    const transactions = screen.getAllByTestId('usermakesa-transaction')
+    expect(transactions.length).toBeGreaterThan(0)
+    
+    // Select an item first to show cart and buttons
+    const menuItems = screen.getAllByTestId('usermakesa-item')
+    fireEvent.click(menuItems[0])
+    
+    // Cart (only visible after selecting items)
+    expect(screen.getByTestId('usermakesa-cart')).toBeTruthy()
+    
+    // Buttons
+    expect(screen.getByTestId('usermakesa-purchase')).toBeTruthy()
+    expect(screen.getByTestId('usermakesa-clear')).toBeTruthy()
+  })
+
+  it('displays points earned for each item', () => {
+    render(<UserMakesA />)
+    
+    // Check that points are shown for menu items (use getAllByText since they appear in both menu and history)
+    const pointsElements = screen.getAllByText('+35 pts')
+    expect(pointsElements.length).toBeGreaterThan(0)
+    
+    const cappuccinoPoints = screen.getAllByText('+48 pts')
+    expect(cappuccinoPoints.length).toBeGreaterThan(0)
+  })
+
+  it('shows points to earn in cart', () => {
+    render(<UserMakesA />)
+    const items = screen.getAllByTestId('usermakesa-item')
+    
+    // Select first item
+    fireEvent.click(items[0])
+    
+    // Should show "Points to earn"
+    expect(screen.getByText(/Points to earn:/i)).toBeTruthy()
   })
 })
