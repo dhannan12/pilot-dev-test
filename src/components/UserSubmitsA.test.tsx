@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, fireEvent } from '@testing-library/react'
 import { describe, it, expect } from 'vitest'
 import UserSubmitsA from './UserSubmitsA'
 
@@ -8,16 +8,22 @@ describe('UserSubmitsA', () => {
     expect(document.body).toBeTruthy()
   })
 
-  it('displays the form title', () => {
+  it('displays the review submission form', () => {
     render(<UserSubmitsA />)
-    expect(screen.getByText('Submit a Restaurant Review')).toBeTruthy()
+    expect(screen.getByText('Submit a Review')).toBeTruthy()
+    expect(screen.getByLabelText(/Restaurant/)).toBeTruthy()
+    expect(screen.getByLabelText(/Rating/)).toBeTruthy()
+    expect(screen.getByLabelText(/Review Title/)).toBeTruthy()
+    expect(screen.getByLabelText(/Your Review/)).toBeTruthy()
+    expect(screen.getByLabelText(/Your Name/)).toBeTruthy()
   })
 
-  it('displays mock review data', () => {
+  it('displays mock reviews', () => {
     render(<UserSubmitsA />)
-    expect(screen.getByText(/Sarah O'Connor/i)).toBeTruthy()
-    expect(screen.getAllByText(/The Wild Atlantic Bistro/i).length).toBeGreaterThan(0)
-    expect(screen.getByText(/Absolutely fantastic seafood/i)).toBeTruthy()
+    expect(screen.getByText('Recent Reviews')).toBeTruthy()
+    expect(screen.getByText('Outstanding dining experience!')).toBeTruthy()
+    expect(screen.getByText('The Hungry Wolf')).toBeTruthy()
+    expect(screen.getByText(/Mary O'Connor/)).toBeTruthy()
   })
 
   it('has required data-testid attributes', () => {
@@ -26,40 +32,60 @@ describe('UserSubmitsA', () => {
     // Main wrapper
     expect(document.querySelector('[data-testid="usersubmitsa"]')).toBeTruthy()
     
-    // Form inputs
+    // Form elements
     expect(document.querySelector('[data-testid="usersubmitsa-restaurant"]')).toBeTruthy()
     expect(document.querySelector('[data-testid="usersubmitsa-rating"]')).toBeTruthy()
-    expect(document.querySelector('[data-testid="usersubmitsa-reviewtext"]')).toBeTruthy()
+    expect(document.querySelector('[data-testid="usersubmitsa-title"]')).toBeTruthy()
+    expect(document.querySelector('[data-testid="usersubmitsa-review"]')).toBeTruthy()
     expect(document.querySelector('[data-testid="usersubmitsa-name"]')).toBeTruthy()
-    expect(document.querySelector('[data-testid="usersubmitsa-email"]')).toBeTruthy()
-    
-    // Submit button
     expect(document.querySelector('[data-testid="usersubmitsa-submit"]')).toBeTruthy()
     
-    // List container and items
+    // List elements
     expect(document.querySelector('[data-testid="usersubmitsa-list"]')).toBeTruthy()
     expect(document.querySelector('[data-testid="usersubmitsa-item"]')).toBeTruthy()
   })
 
-  it('renders all form fields', () => {
+  it('allows user to fill out the form', () => {
     render(<UserSubmitsA />)
     
-    expect(screen.getByLabelText(/Select Restaurant/i)).toBeTruthy()
-    expect(screen.getByLabelText(/Rating/i)).toBeTruthy()
-    expect(screen.getByLabelText(/Your Review/i)).toBeTruthy()
-    expect(screen.getByLabelText(/Your Name/i)).toBeTruthy()
-    expect(screen.getByLabelText(/Your Email/i)).toBeTruthy()
-    expect(screen.getByText('Submit Review')).toBeTruthy()
+    const restaurantSelect = screen.getByTestId('usersubmitsa-restaurant') as HTMLSelectElement
+    const ratingInput = screen.getByTestId('usersubmitsa-rating') as HTMLInputElement
+    const titleInput = screen.getByTestId('usersubmitsa-title') as HTMLInputElement
+    const reviewTextarea = screen.getByTestId('usersubmitsa-review') as HTMLTextAreaElement
+    const nameInput = screen.getByTestId('usersubmitsa-name') as HTMLInputElement
+    
+    fireEvent.change(restaurantSelect, { target: { value: '1' } })
+    fireEvent.change(ratingInput, { target: { value: '4' } })
+    fireEvent.change(titleInput, { target: { value: 'Great food!' } })
+    fireEvent.change(reviewTextarea, { target: { value: 'Really enjoyed the meal.' } })
+    fireEvent.change(nameInput, { target: { value: 'John Doe' } })
+    
+    expect(restaurantSelect.value).toBe('1')
+    expect(ratingInput.value).toBe('4')
+    expect(titleInput.value).toBe('Great food!')
+    expect(reviewTextarea.value).toBe('Really enjoyed the meal.')
+    expect(nameInput.value).toBe('John Doe')
   })
 
-  it('displays recent reviews section', () => {
+  it('submits a new review', () => {
     render(<UserSubmitsA />)
-    expect(screen.getByText('Recent Reviews')).toBeTruthy()
-  })
-
-  it('renders at least 5 mock reviews', () => {
-    render(<UserSubmitsA />)
-    const items = document.querySelectorAll('[data-testid="usersubmitsa-item"]')
-    expect(items.length).toBeGreaterThanOrEqual(5)
+    
+    // Fill out the form
+    fireEvent.change(screen.getByTestId('usersubmitsa-restaurant'), { target: { value: '1' } })
+    fireEvent.change(screen.getByTestId('usersubmitsa-rating'), { target: { value: '5' } })
+    fireEvent.change(screen.getByTestId('usersubmitsa-title'), { target: { value: 'Amazing experience' } })
+    fireEvent.change(screen.getByTestId('usersubmitsa-review'), { target: { value: 'The food was fantastic!' } })
+    fireEvent.change(screen.getByTestId('usersubmitsa-name'), { target: { value: 'Test User' } })
+    
+    // Submit the form
+    const submitButton = screen.getByTestId('usersubmitsa-submit')
+    fireEvent.click(submitButton)
+    
+    // Check for success message
+    expect(screen.getByText(/Review submitted successfully/)).toBeTruthy()
+    
+    // Check if the new review appears in the list
+    expect(screen.getByText('Amazing experience')).toBeTruthy()
+    expect(screen.getByText('The food was fantastic!')).toBeTruthy()
   })
 })
