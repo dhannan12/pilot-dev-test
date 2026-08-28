@@ -1,292 +1,218 @@
 /**
- * UserViewsA — Product page component displaying product details without sizing information
+ * UserViewsA — Sales page displaying eligible products with discounts
  *
- * Features: product image gallery, price display, color selection, quantity selector, add to cart
+ * Features: product grid, sale badges, price display, add-to-cart actions, category filter
  *
- * Ticket: SCRUM-1244 | Branch: proto/SCRUM-1242
+ * Ticket: SCRUM-1245 | Branch: proto/SCRUM-1242
  */
 
 import React, { useState } from 'react'
 
 interface Product {
-  id: string
+  id: number
   name: string
-  price: number
+  category: string
+  originalPrice: number
+  salePrice: number
+  discount: number
+  image: string
+  eligible: boolean
   description: string
-  images: string[]
-  colors: Array<{ name: string; hex: string }>
-  material: string
-  care: string[]
-  inStock: boolean
 }
 
 const MOCK_PRODUCTS: Product[] = [
   {
-    id: 'prod-001',
-    name: 'Classic Cotton T-Shirt',
-    price: 29.99,
-    description: 'A timeless wardrobe essential crafted from premium 100% organic cotton. This versatile t-shirt features a comfortable relaxed fit and durable construction that maintains its shape wash after wash.',
-    images: [
-      'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=800',
-      'https://images.unsplash.com/photo-1583743814966-8936f5b7be1a?w=800',
-      'https://images.unsplash.com/photo-1581655353564-df123a1eb820?w=800'
-    ],
-    colors: [
-      { name: 'White', hex: '#FFFFFF' },
-      { name: 'Black', hex: '#000000' },
-      { name: 'Navy', hex: '#1E3A8A' }
-    ],
-    material: '100% Organic Cotton',
-    care: ['Machine wash cold', 'Tumble dry low', 'Do not bleach', 'Iron on low heat'],
-    inStock: true
+    id: 1,
+    name: 'Premium Cotton T-Shirt',
+    category: 'Clothing',
+    originalPrice: 49.99,
+    salePrice: 34.99,
+    discount: 30,
+    image: 'https://via.placeholder.com/300x300?text=T-Shirt',
+    eligible: true,
+    description: 'Comfortable premium cotton t-shirt in multiple colors',
   },
   {
-    id: 'prod-002',
-    name: 'Denim Jacket',
-    price: 89.99,
-    description: 'A classic denim jacket with a modern twist. Features button closure, chest pockets, and a comfortable fit perfect for layering. Made from premium denim that gets better with age.',
-    images: [
-      'https://images.unsplash.com/photo-1576995853123-5a10305d93c0?w=800',
-      'https://images.unsplash.com/photo-1551028719-00167b16eac5?w=800',
-      'https://images.unsplash.com/photo-1601333144130-8cbb312386b6?w=800'
-    ],
-    colors: [
-      { name: 'Light Wash', hex: '#A7C7E7' },
-      { name: 'Dark Wash', hex: '#1C3A5B' },
-      { name: 'Black', hex: '#1A1A1A' }
-    ],
-    material: '98% Cotton, 2% Elastane',
-    care: ['Machine wash cold', 'Hang to dry', 'Do not bleach', 'Iron if needed'],
-    inStock: true
+    id: 2,
+    name: 'Denim Jeans Classic Fit',
+    category: 'Clothing',
+    originalPrice: 89.99,
+    salePrice: 62.99,
+    discount: 30,
+    image: 'https://via.placeholder.com/300x300?text=Jeans',
+    eligible: true,
+    description: 'Classic fit denim jeans with stretch comfort',
   },
   {
-    id: 'prod-003',
-    name: 'Wool Blend Sweater',
-    price: 69.99,
-    description: 'Stay warm and stylish with this cozy wool blend sweater. Features a classic crew neck design and ribbed cuffs for a secure fit. Perfect for cooler weather.',
-    images: [
-      'https://images.unsplash.com/photo-1576566588028-4147f3842f27?w=800',
-      'https://images.unsplash.com/photo-1620799140408-edc6dcb6d633?w=800',
-      'https://images.unsplash.com/photo-1620799139834-6b8f844fbe61?w=800'
-    ],
-    colors: [
-      { name: 'Charcoal', hex: '#36454F' },
-      { name: 'Cream', hex: '#FFFDD0' },
-      { name: 'Forest Green', hex: '#228B22' }
-    ],
-    material: '70% Wool, 30% Acrylic',
-    care: ['Hand wash only', 'Lay flat to dry', 'Do not wring', 'Dry clean recommended'],
-    inStock: true
+    id: 3,
+    name: 'Leather Sneakers',
+    category: 'Shoes',
+    originalPrice: 129.99,
+    salePrice: 90.99,
+    discount: 30,
+    image: 'https://via.placeholder.com/300x300?text=Sneakers',
+    eligible: true,
+    description: 'Premium leather sneakers for everyday wear',
   },
   {
-    id: 'prod-004',
-    name: 'Linen Button-Up Shirt',
-    price: 54.99,
-    description: 'Breathable and lightweight linen shirt perfect for warm weather. Features a relaxed fit, button-front closure, and a versatile style that works for both casual and semi-formal occasions.',
-    images: [
-      'https://images.unsplash.com/photo-1596755094514-f87e34085b2c?w=800',
-      'https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?w=800',
-      'https://images.unsplash.com/photo-1603252109303-2751441dd157?w=800'
-    ],
-    colors: [
-      { name: 'White', hex: '#FFFFFF' },
-      { name: 'Sky Blue', hex: '#87CEEB' },
-      { name: 'Sand', hex: '#C2B280' }
-    ],
-    material: '100% European Linen',
-    care: ['Machine wash cold', 'Line dry', 'Iron while damp', 'Do not bleach'],
-    inStock: true
+    id: 4,
+    name: 'Winter Jacket',
+    category: 'Outerwear',
+    originalPrice: 199.99,
+    salePrice: 139.99,
+    discount: 30,
+    image: 'https://via.placeholder.com/300x300?text=Jacket',
+    eligible: true,
+    description: 'Warm winter jacket with waterproof exterior',
   },
   {
-    id: 'prod-005',
-    name: 'Fleece Hoodie',
-    price: 49.99,
-    description: 'Ultimate comfort meets everyday style in this premium fleece hoodie. Features a drawstring hood, kangaroo pocket, and soft brushed interior for maximum coziness.',
-    images: [
-      'https://images.unsplash.com/photo-1556821840-3a63f95609a7?w=800',
-      'https://images.unsplash.com/photo-1620799140188-3b2a02fd9a77?w=800',
-      'https://images.unsplash.com/photo-1620799139507-2a76f79a2f4d?w=800'
-    ],
-    colors: [
-      { name: 'Heather Grey', hex: '#BCC6CC' },
-      { name: 'Black', hex: '#000000' },
-      { name: 'Burgundy', hex: '#800020' }
-    ],
-    material: '80% Cotton, 20% Polyester',
-    care: ['Machine wash cold', 'Tumble dry low', 'Do not iron', 'Do not dry clean'],
-    inStock: false
-  }
+    id: 5,
+    name: 'Canvas Backpack',
+    category: 'Accessories',
+    originalPrice: 69.99,
+    salePrice: 48.99,
+    discount: 30,
+    image: 'https://via.placeholder.com/300x300?text=Backpack',
+    eligible: true,
+    description: 'Durable canvas backpack with laptop compartment',
+  },
+  {
+    id: 6,
+    name: 'Wool Scarf',
+    category: 'Accessories',
+    originalPrice: 39.99,
+    salePrice: 27.99,
+    discount: 30,
+    image: 'https://via.placeholder.com/300x300?text=Scarf',
+    eligible: true,
+    description: 'Soft wool scarf available in multiple patterns',
+  },
+  {
+    id: 7,
+    name: 'Running Shoes',
+    category: 'Shoes',
+    originalPrice: 149.99,
+    salePrice: 104.99,
+    discount: 30,
+    image: 'https://via.placeholder.com/300x300?text=Running+Shoes',
+    eligible: true,
+    description: 'Lightweight running shoes with cushioned sole',
+  },
 ]
 
 export default function UserViewsA() {
-  const [selectedProduct] = useState<Product>(MOCK_PRODUCTS[0])
-  const [selectedImageIndex, setSelectedImageIndex] = useState(0)
-  const [selectedColor, setSelectedColor] = useState(selectedProduct.colors[0].name)
-  const [quantity, setQuantity] = useState(1)
+  const [selectedCategory, setSelectedCategory] = useState<string>('All')
 
-  const handleQuantityChange = (delta: number) => {
-    setQuantity(prev => Math.max(1, prev + delta))
-  }
+  const categories = ['All', ...Array.from(new Set(MOCK_PRODUCTS.map(p => p.category)))]
+  
+  const filteredProducts = selectedCategory === 'All' 
+    ? MOCK_PRODUCTS.filter(p => p.eligible)
+    : MOCK_PRODUCTS.filter(p => p.eligible && p.category === selectedCategory)
 
   return (
-    <div data-testid="userviewsa" className="min-h-screen bg-gray-50 py-8 px-4">
-      <div className="max-w-7xl mx-auto">
-        <div className="bg-white rounded-lg shadow-md overflow-hidden">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 p-6">
-            
-            {/* Image Gallery Section */}
-            <div data-testid="userviewsa-gallery" className="space-y-4">
-              <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden">
-                <img
-                  src={selectedProduct.images[selectedImageIndex]}
-                  alt={selectedProduct.name}
-                  className="w-full h-full object-cover"
-                  data-testid="userviewsa-main-image"
-                />
-              </div>
-              
-              <div className="flex gap-2" data-testid="userviewsa-thumbnails">
-                {selectedProduct.images.map((image, index) => (
-                  <button
-                    key={index}
-                    onClick={() => setSelectedImageIndex(index)}
-                    className={`w-20 h-20 rounded-md overflow-hidden border-2 ${
-                      selectedImageIndex === index ? 'border-blue-600' : 'border-gray-200'
-                    }`}
-                    data-testid={`userviewsa-thumbnail-${index}`}
-                  >
-                    <img
-                      src={image}
-                      alt={`${selectedProduct.name} view ${index + 1}`}
-                      className="w-full h-full object-cover"
-                    />
-                  </button>
-                ))}
-              </div>
-            </div>
+    <div data-testid="userviewsa" className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <div className="bg-gradient-to-r from-red-600 to-red-700 text-white py-12 px-4">
+        <div className="max-w-7xl mx-auto">
+          <h1 className="text-4xl font-bold mb-2">Summer Sale</h1>
+          <p className="text-xl">Up to 30% off on selected items</p>
+        </div>
+      </div>
 
-            {/* Product Details Section */}
-            <div className="space-y-6">
-              <div>
-                <h1 data-testid="userviewsa-title" className="text-3xl font-bold text-gray-900">
-                  {selectedProduct.name}
-                </h1>
-                <div className="mt-2 flex items-center gap-2">
-                  <span data-testid="userviewsa-price" className="text-2xl font-semibold text-gray-900">
-                    ${selectedProduct.price.toFixed(2)}
-                  </span>
-                  {selectedProduct.inStock ? (
-                    <span data-testid="userviewsa-stock-status" className="text-sm text-green-600 font-medium">
-                      In Stock
-                    </span>
-                  ) : (
-                    <span data-testid="userviewsa-stock-status" className="text-sm text-red-600 font-medium">
-                      Out of Stock
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              <p data-testid="userviewsa-description" className="text-gray-700 leading-relaxed">
-                {selectedProduct.description}
-              </p>
-
-              {/* Color Selection */}
-              <div>
-                <label className="block text-sm font-medium text-gray-900 mb-3">
-                  Color: <span className="font-semibold">{selectedColor}</span>
-                </label>
-                <div className="flex gap-3" data-testid="userviewsa-color-options">
-                  {selectedProduct.colors.map((color) => (
-                    <button
-                      key={color.name}
-                      onClick={() => setSelectedColor(color.name)}
-                      className={`w-10 h-10 rounded-full border-2 ${
-                        selectedColor === color.name ? 'border-blue-600 ring-2 ring-blue-200' : 'border-gray-300'
-                      }`}
-                      style={{ backgroundColor: color.hex }}
-                      title={color.name}
-                      data-testid={`userviewsa-color-${color.name.toLowerCase().replace(/\s+/g, '-')}`}
-                    />
-                  ))}
-                </div>
-              </div>
-
-              {/* Quantity Selector */}
-              <div>
-                <label className="block text-sm font-medium text-gray-900 mb-3">
-                  Quantity
-                </label>
-                <div className="flex items-center gap-3">
-                  <button
-                    onClick={() => handleQuantityChange(-1)}
-                    disabled={quantity <= 1}
-                    className="w-10 h-10 rounded-md border border-gray-300 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed font-semibold"
-                    data-testid="userviewsa-quantity-decrease"
-                  >
-                    −
-                  </button>
-                  <input
-                    type="number"
-                    value={quantity}
-                    readOnly
-                    className="w-16 h-10 text-center border border-gray-300 rounded-md"
-                    data-testid="userviewsa-quantity-input"
-                  />
-                  <button
-                    onClick={() => handleQuantityChange(1)}
-                    className="w-10 h-10 rounded-md border border-gray-300 bg-white hover:bg-gray-50 font-semibold"
-                    data-testid="userviewsa-quantity-increase"
-                  >
-                    +
-                  </button>
-                </div>
-              </div>
-
-              {/* Add to Cart Button */}
+      {/* Main Content */}
+      <div className="max-w-7xl mx-auto px-4 py-8">
+        {/* Category Filter */}
+        <div className="mb-8">
+          <h2 className="text-lg font-semibold mb-4 text-gray-800">Filter by Category</h2>
+          <div className="flex flex-wrap gap-2">
+            {categories.map(category => (
               <button
-                disabled={!selectedProduct.inStock}
-                className="w-full py-3 px-6 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
-                data-testid="userviewsa-add-to-cart"
+                key={category}
+                data-testid={`userviewsa-filter-${category.toLowerCase()}`}
+                onClick={() => setSelectedCategory(category)}
+                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                  selectedCategory === category
+                    ? 'bg-red-600 text-white'
+                    : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-100'
+                }`}
               >
-                {selectedProduct.inStock ? 'Add to Cart' : 'Out of Stock'}
+                {category}
               </button>
-
-              {/* Material and Care Information */}
-              <div className="border-t pt-6 space-y-4">
-                <div>
-                  <h3 className="text-sm font-semibold text-gray-900 mb-2">Material</h3>
-                  <p data-testid="userviewsa-material" className="text-sm text-gray-700">
-                    {selectedProduct.material}
-                  </p>
-                </div>
-
-                <div>
-                  <h3 className="text-sm font-semibold text-gray-900 mb-2">Care Instructions</h3>
-                  <ul data-testid="userviewsa-care-list" className="space-y-1">
-                    {selectedProduct.care.map((instruction, index) => (
-                      <li
-                        key={index}
-                        data-testid="userviewsa-care-item"
-                        className="text-sm text-gray-700 flex items-center gap-2"
-                      >
-                        <span className="w-1.5 h-1.5 bg-gray-400 rounded-full"></span>
-                        {instruction}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </div>
-            </div>
+            ))}
           </div>
         </div>
 
-        {/* Note about sizing */}
-        <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-          <p data-testid="userviewsa-sizing-note" className="text-sm text-yellow-800">
-            <strong>Note:</strong> Sizing information is currently unavailable for this product. Please contact customer service for assistance.
+        {/* Product Count */}
+        <div className="mb-6">
+          <p className="text-gray-600">
+            Showing <span className="font-semibold text-gray-900">{filteredProducts.length}</span> eligible products
           </p>
         </div>
+
+        {/* Products Grid */}
+        <div data-testid="userviewsa-list" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          {filteredProducts.map(product => (
+            <div
+              key={product.id}
+              data-testid="userviewsa-item"
+              className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-shadow"
+            >
+              {/* Product Image */}
+              <div className="relative">
+                <img
+                  src={product.image}
+                  alt={product.name}
+                  className="w-full h-64 object-cover"
+                />
+                {product.discount > 0 && (
+                  <div className="absolute top-2 right-2 bg-red-600 text-white px-3 py-1 rounded-full text-sm font-bold">
+                    -{product.discount}%
+                  </div>
+                )}
+              </div>
+
+              {/* Product Details */}
+              <div className="p-4">
+                <div className="mb-2">
+                  <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                    {product.category}
+                  </span>
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                  {product.name}
+                </h3>
+                <p className="text-sm text-gray-600 mb-4 line-clamp-2">
+                  {product.description}
+                </p>
+
+                {/* Pricing */}
+                <div className="flex items-baseline gap-2 mb-4">
+                  <span className="text-2xl font-bold text-red-600">
+                    ${product.salePrice.toFixed(2)}
+                  </span>
+                  <span className="text-sm text-gray-500 line-through">
+                    ${product.originalPrice.toFixed(2)}
+                  </span>
+                </div>
+
+                {/* Add to Cart Button */}
+                <button
+                  data-testid="userviewsa-add-to-cart"
+                  className="w-full bg-red-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-red-700 transition-colors"
+                >
+                  Add to Cart
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Empty State */}
+        {filteredProducts.length === 0 && (
+          <div className="text-center py-12">
+            <p className="text-gray-500 text-lg">No eligible products found in this category</p>
+          </div>
+        )}
       </div>
     </div>
   )
