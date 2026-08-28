@@ -8,58 +8,54 @@ describe('UserChecksThe', () => {
     expect(document.body).toBeTruthy()
   })
 
-  it('displays mock data', () => {
+  it('displays new arrivals heading', () => {
     render(<UserChecksThe />)
-    
-    // Check for product names
+    expect(screen.getByText('New Arrivals')).toBeTruthy()
+  })
+
+  it('displays mock product data', () => {
+    render(<UserChecksThe />)
+    expect(screen.getByText('Summer Floral Dress')).toBeTruthy()
     expect(screen.getByText('Classic Denim Jacket')).toBeTruthy()
-    expect(screen.getByText('Cotton T-Shirt')).toBeTruthy()
-    expect(screen.getByText('Leather Boots')).toBeTruthy()
-    expect(screen.getByText('Wool Sweater')).toBeTruthy()
-    expect(screen.getByText('Slim Fit Jeans')).toBeTruthy()
-    
-    // Check for discount badges (using getAllByText for duplicates)
-    const discountBadges = screen.getAllByText(/% OFF/)
-    expect(discountBadges.length).toBeGreaterThanOrEqual(5)
-    expect(screen.getByText('15% OFF')).toBeTruthy()
-    expect(screen.getByText('30% OFF')).toBeTruthy()
+    expect(screen.getByText('Striped Cotton T-Shirt')).toBeTruthy()
+  })
+
+  it('shows product count', () => {
+    render(<UserChecksThe />)
+    expect(screen.getByText(/Showing \d+ products?/)).toBeTruthy()
   })
 
   it('has required data-testid attributes', () => {
     render(<UserChecksThe />)
-    
-    // Verify key testids exist — Playwright QA depends on these
-    const mainWrapper = document.querySelector('[data-testid="userchecksthe"]')
-    expect(mainWrapper).toBeTruthy()
-    
-    const productList = document.querySelector('[data-testid="userchecksthe-list"]')
-    expect(productList).toBeTruthy()
-    
-    const productItems = document.querySelectorAll('[data-testid="userchecksthe-item"]')
-    expect(productItems.length).toBeGreaterThan(0)
-    
-    const summary = document.querySelector('[data-testid="userchecksthe-summary"]')
-    expect(summary).toBeTruthy()
-    
-    const checkoutButton = document.querySelector('[data-testid="userchecksthe-checkout"]')
-    expect(checkoutButton).toBeFalsy() // Should not be visible when no items selected
-    
-    const clearButton = document.querySelector('[data-testid="userchecksthe-clear"]')
-    expect(clearButton).toBeFalsy() // Should not be visible when no items selected
+    // Main wrapper
+    expect(document.querySelector('[data-testid="userchecksthe"]')).toBeTruthy()
+    // List container
+    expect(document.querySelector('[data-testid="userchecksthe-list"]')).toBeTruthy()
+    // List items
+    expect(document.querySelectorAll('[data-testid="userchecksthe-item"]').length).toBeGreaterThan(0)
+    // Filter controls
+    expect(document.querySelector('[data-testid="userchecksthe-category"]')).toBeTruthy()
+    expect(document.querySelector('[data-testid="userchecksthe-sort"]')).toBeTruthy()
+    // Buttons
+    expect(document.querySelector('[data-testid="userchecksthe-reset"]')).toBeTruthy()
+    expect(document.querySelector('[data-testid="userchecksthe-view"]')).toBeTruthy()
   })
 
-  it('displays price information correctly', () => {
+  it('renders at least 5 products', () => {
     render(<UserChecksThe />)
-    
-    // When no products are selected, should show empty state
-    expect(screen.getByText(/No products selected/)).toBeTruthy()
-    expect(screen.getByText(/Click on products to add them to your cart/)).toBeTruthy()
+    const items = document.querySelectorAll('[data-testid="userchecksthe-item"]')
+    expect(items.length).toBeGreaterThanOrEqual(5)
   })
 
-  it('shows discount information section', () => {
+  it('displays category filter options', () => {
     render(<UserChecksThe />)
-    
-    expect(screen.getByText(/Discount Information/)).toBeTruthy()
-    expect(screen.getByText(/All prices shown include applicable discounts/)).toBeTruthy()
+    const categorySelect = screen.getByTestId('userchecksthe-category')
+    expect(categorySelect).toBeTruthy()
+  })
+
+  it('displays sort filter options', () => {
+    render(<UserChecksThe />)
+    const sortSelect = screen.getByTestId('userchecksthe-sort')
+    expect(sortSelect).toBeTruthy()
   })
 })

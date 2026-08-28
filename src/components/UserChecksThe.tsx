@@ -1,9 +1,9 @@
 /**
- * UserChecksThe — Shows product prices with discounts and calculates totals
+ * UserChecksThe — Displays catalog of new arrival products with filtering
  *
- * Features: product list, discount display, price calculation, selection, total summary
+ * Features: product grid, category filter, sort options, product cards, price display
  *
- * Ticket: SCRUM-1247 | Branch: proto/SCRUM-1242
+ * Ticket: SCRUM-1250 | Branch: proto/SCRUM-1242
  */
 
 import React, { useState } from 'react'
@@ -11,242 +11,232 @@ import React, { useState } from 'react'
 interface Product {
   id: number
   name: string
-  originalPrice: number
-  discountPercent: number
   category: string
+  price: number
   imageUrl: string
+  arrivalDate: string
+  inStock: boolean
 }
 
 const mockProducts: Product[] = [
   {
     id: 1,
-    name: 'Classic Denim Jacket',
-    originalPrice: 89.99,
-    discountPercent: 20,
-    category: 'Jackets',
-    imageUrl: 'https://via.placeholder.com/150/4A90E2/ffffff?text=Denim+Jacket'
+    name: 'Summer Floral Dress',
+    category: 'Dresses',
+    price: 79.99,
+    imageUrl: 'https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=400',
+    arrivalDate: '2026-08-25',
+    inStock: true
   },
   {
     id: 2,
-    name: 'Cotton T-Shirt',
-    originalPrice: 24.99,
-    discountPercent: 15,
-    category: 'Shirts',
-    imageUrl: 'https://via.placeholder.com/150/7ED321/ffffff?text=T-Shirt'
+    name: 'Classic Denim Jacket',
+    category: 'Outerwear',
+    price: 129.99,
+    imageUrl: 'https://images.unsplash.com/photo-1551028719-00167b16eac5?w=400',
+    arrivalDate: '2026-08-24',
+    inStock: true
   },
   {
     id: 3,
-    name: 'Leather Boots',
-    originalPrice: 149.99,
-    discountPercent: 30,
-    category: 'Footwear',
-    imageUrl: 'https://via.placeholder.com/150/BD10E0/ffffff?text=Boots'
+    name: 'Striped Cotton T-Shirt',
+    category: 'Tops',
+    price: 34.99,
+    imageUrl: 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=400',
+    arrivalDate: '2026-08-26',
+    inStock: true
   },
   {
     id: 4,
-    name: 'Wool Sweater',
-    originalPrice: 64.99,
-    discountPercent: 25,
-    category: 'Sweaters',
-    imageUrl: 'https://via.placeholder.com/150/F5A623/ffffff?text=Sweater'
+    name: 'High-Waisted Jeans',
+    category: 'Bottoms',
+    price: 89.99,
+    imageUrl: 'https://images.unsplash.com/photo-1541099649105-f69ad21f3246?w=400',
+    arrivalDate: '2026-08-27',
+    inStock: false
   },
   {
     id: 5,
-    name: 'Slim Fit Jeans',
-    originalPrice: 79.99,
-    discountPercent: 10,
-    category: 'Pants',
-    imageUrl: 'https://via.placeholder.com/150/50E3C2/ffffff?text=Jeans'
+    name: 'Leather Ankle Boots',
+    category: 'Shoes',
+    price: 159.99,
+    imageUrl: 'https://images.unsplash.com/photo-1543163521-1bf539c55dd2?w=400',
+    arrivalDate: '2026-08-23',
+    inStock: true
   },
   {
     id: 6,
-    name: 'Summer Dress',
-    originalPrice: 54.99,
-    discountPercent: 35,
-    category: 'Dresses',
-    imageUrl: 'https://via.placeholder.com/150/E94B3C/ffffff?text=Dress'
+    name: 'Silk Scarf Collection',
+    category: 'Accessories',
+    price: 49.99,
+    imageUrl: 'https://images.unsplash.com/photo-1601924994987-69e26d50dc26?w=400',
+    arrivalDate: '2026-08-28',
+    inStock: true
   },
   {
     id: 7,
-    name: 'Casual Sneakers',
-    originalPrice: 69.99,
-    discountPercent: 20,
-    category: 'Footwear',
-    imageUrl: 'https://via.placeholder.com/150/417505/ffffff?text=Sneakers'
+    name: 'Wool Blend Cardigan',
+    category: 'Tops',
+    price: 94.99,
+    imageUrl: 'https://images.unsplash.com/photo-1434389677669-e08b4cac3105?w=400',
+    arrivalDate: '2026-08-22',
+    inStock: true
+  },
+  {
+    id: 8,
+    name: 'Pleated Midi Skirt',
+    category: 'Bottoms',
+    price: 69.99,
+    imageUrl: 'https://images.unsplash.com/photo-1583496661160-fb5886a0aaaa?w=400',
+    arrivalDate: '2026-08-26',
+    inStock: true
   }
 ]
 
 export default function UserChecksThe() {
-  const [selectedProducts, setSelectedProducts] = useState<Set<number>>(new Set())
+  const [selectedCategory, setSelectedCategory] = useState<string>('All')
+  const [sortBy, setSortBy] = useState<string>('newest')
 
-  const calculateDiscountedPrice = (originalPrice: number, discountPercent: number): number => {
-    return originalPrice * (1 - discountPercent / 100)
-  }
+  const categories = ['All', 'Dresses', 'Outerwear', 'Tops', 'Bottoms', 'Shoes', 'Accessories']
 
-  const toggleProductSelection = (productId: number) => {
-    const newSelection = new Set(selectedProducts)
-    if (newSelection.has(productId)) {
-      newSelection.delete(productId)
-    } else {
-      newSelection.add(productId)
-    }
-    setSelectedProducts(newSelection)
-  }
-
-  const calculateTotal = () => {
-    let originalTotal = 0
-    let discountedTotal = 0
-
-    mockProducts.forEach(product => {
-      if (selectedProducts.has(product.id)) {
-        originalTotal += product.originalPrice
-        discountedTotal += calculateDiscountedPrice(product.originalPrice, product.discountPercent)
+  const filteredProducts = mockProducts
+    .filter(product => selectedCategory === 'All' || product.category === selectedCategory)
+    .sort((a, b) => {
+      if (sortBy === 'newest') {
+        return new Date(b.arrivalDate).getTime() - new Date(a.arrivalDate).getTime()
+      } else if (sortBy === 'price-low') {
+        return a.price - b.price
+      } else if (sortBy === 'price-high') {
+        return b.price - a.price
       }
+      return 0
     })
 
-    return { originalTotal, discountedTotal, savings: originalTotal - discountedTotal }
-  }
-
-  const totals = calculateTotal()
-
   return (
-    <div data-testid="userchecksthe" className="min-h-screen bg-gray-50 py-8 px-4">
-      <div className="max-w-6xl mx-auto">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Check Product Prices</h1>
-        <p className="text-gray-600 mb-8">Select products to see total price with discounts applied</p>
-
-        <div className="grid md:grid-cols-2 gap-6">
-          {/* Product List */}
-          <div>
-            <h2 className="text-xl font-semibold text-gray-800 mb-4">Available Products</h2>
-            <div data-testid="userchecksthe-list" className="space-y-4">
-              {mockProducts.map(product => {
-                const discountedPrice = calculateDiscountedPrice(product.originalPrice, product.discountPercent)
-                const isSelected = selectedProducts.has(product.id)
-
-                return (
-                  <div
-                    key={product.id}
-                    data-testid="userchecksthe-item"
-                    onClick={() => toggleProductSelection(product.id)}
-                    className={`bg-white rounded-lg shadow-md p-4 cursor-pointer transition-all hover:shadow-lg ${
-                      isSelected ? 'ring-2 ring-blue-500' : ''
-                    }`}
-                  >
-                    <div className="flex items-start gap-4">
-                      <div className="flex-shrink-0">
-                        <img
-                          src={product.imageUrl}
-                          alt={product.name}
-                          className="w-20 h-20 rounded-md object-cover"
-                        />
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex items-start justify-between">
-                          <div>
-                            <h3 className="font-semibold text-gray-900">{product.name}</h3>
-                            <p className="text-sm text-gray-500">{product.category}</p>
-                          </div>
-                          <input
-                            type="checkbox"
-                            data-testid={`userchecksthe-checkbox-${product.id}`}
-                            checked={isSelected}
-                            onChange={() => toggleProductSelection(product.id)}
-                            className="w-5 h-5 text-blue-600 rounded"
-                            onClick={(e) => e.stopPropagation()}
-                          />
-                        </div>
-                        <div className="mt-2">
-                          <div className="flex items-center gap-2">
-                            <span className="text-lg font-bold text-green-600">
-                              ${discountedPrice.toFixed(2)}
-                            </span>
-                            <span className="text-sm text-gray-400 line-through">
-                              ${product.originalPrice.toFixed(2)}
-                            </span>
-                            <span className="text-xs font-semibold text-white bg-red-500 px-2 py-1 rounded">
-                              {product.discountPercent}% OFF
-                            </span>
-                          </div>
-                          <p className="text-xs text-green-600 mt-1">
-                            Save ${(product.originalPrice - discountedPrice).toFixed(2)}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-          </div>
-
-          {/* Total Summary */}
-          <div>
-            <h2 className="text-xl font-semibold text-gray-800 mb-4">Price Summary</h2>
-            <div data-testid="userchecksthe-summary" className="bg-white rounded-lg shadow-md p-6 sticky top-8">
-              {selectedProducts.size === 0 ? (
-                <div className="text-center py-8">
-                  <p className="text-gray-400">No products selected</p>
-                  <p className="text-sm text-gray-500 mt-2">Click on products to add them to your cart</p>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  <div>
-                    <p className="text-sm text-gray-600">Selected Items</p>
-                    <p className="text-2xl font-bold text-gray-900">{selectedProducts.size} products</p>
-                  </div>
-
-                  <div className="border-t pt-4 space-y-2">
-                    <div className="flex justify-between items-center">
-                      <span className="text-gray-600">Original Price:</span>
-                      <span className="text-gray-400 line-through">
-                        ${totals.originalTotal.toFixed(2)}
-                      </span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-gray-600">Discount Savings:</span>
-                      <span className="text-green-600 font-semibold">
-                        -${totals.savings.toFixed(2)}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="border-t pt-4">
-                    <div className="flex justify-between items-center">
-                      <span className="text-lg font-semibold text-gray-900">Total Price:</span>
-                      <span className="text-2xl font-bold text-green-600">
-                        ${totals.discountedTotal.toFixed(2)}
-                      </span>
-                    </div>
-                  </div>
-
-                  <button
-                    data-testid="userchecksthe-checkout"
-                    className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors mt-4"
-                  >
-                    Proceed to Checkout
-                  </button>
-
-                  <button
-                    data-testid="userchecksthe-clear"
-                    onClick={() => setSelectedProducts(new Set())}
-                    className="w-full bg-gray-200 text-gray-700 py-2 rounded-lg font-medium hover:bg-gray-300 transition-colors"
-                  >
-                    Clear Selection
-                  </button>
-                </div>
-              )}
-            </div>
-
-            {/* Additional Info */}
-            <div className="mt-4 bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <h3 className="font-semibold text-blue-900 mb-2">💰 Discount Information</h3>
-              <p className="text-sm text-blue-800">
-                All prices shown include applicable discounts. Save more by buying multiple items!
-              </p>
-            </div>
-          </div>
+    <div data-testid="userchecksthe" className="min-h-screen bg-gray-50 p-6">
+      <div className="max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="mb-8">
+          <h1 className="text-4xl font-bold text-gray-900 mb-2">New Arrivals</h1>
+          <p className="text-gray-600">Discover the latest additions to our collection</p>
         </div>
+
+        {/* Filters */}
+        <div className="bg-white rounded-lg shadow-sm p-4 mb-6 flex flex-wrap gap-4 items-center">
+          <div className="flex items-center gap-2">
+            <label htmlFor="category-filter" className="text-sm font-medium text-gray-700">
+              Category:
+            </label>
+            <select
+              id="category-filter"
+              data-testid="userchecksthe-category"
+              value={selectedCategory}
+              onChange={(e) => setSelectedCategory(e.target.value)}
+              className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              {categories.map(cat => (
+                <option key={cat} value={cat}>{cat}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <label htmlFor="sort-filter" className="text-sm font-medium text-gray-700">
+              Sort by:
+            </label>
+            <select
+              id="sort-filter"
+              data-testid="userchecksthe-sort"
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="newest">Newest First</option>
+              <option value="price-low">Price: Low to High</option>
+              <option value="price-high">Price: High to Low</option>
+            </select>
+          </div>
+
+          <button
+            data-testid="userchecksthe-reset"
+            onClick={() => {
+              setSelectedCategory('All')
+              setSortBy('newest')
+            }}
+            className="ml-auto text-sm text-blue-600 hover:text-blue-800 font-medium"
+          >
+            Reset Filters
+          </button>
+        </div>
+
+        {/* Product Count */}
+        <div className="mb-4">
+          <p className="text-sm text-gray-600">
+            Showing {filteredProducts.length} {filteredProducts.length === 1 ? 'product' : 'products'}
+          </p>
+        </div>
+
+        {/* Product Grid */}
+        <div data-testid="userchecksthe-list" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          {filteredProducts.map(product => (
+            <div
+              key={product.id}
+              data-testid="userchecksthe-item"
+              className="bg-white rounded-lg shadow-sm overflow-hidden hover:shadow-lg transition-shadow"
+            >
+              <div className="aspect-square bg-gray-200 overflow-hidden">
+                <img
+                  src={product.imageUrl}
+                  alt={product.name}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              <div className="p-4">
+                <div className="flex items-start justify-between mb-2">
+                  <h3 className="font-semibold text-gray-900 text-lg">{product.name}</h3>
+                  {!product.inStock && (
+                    <span className="text-xs text-red-600 font-medium">Out of Stock</span>
+                  )}
+                </div>
+                <p className="text-sm text-gray-600 mb-3">{product.category}</p>
+                <div className="flex items-center justify-between">
+                  <span className="text-xl font-bold text-gray-900">${product.price.toFixed(2)}</span>
+                  <span className="text-xs text-gray-500">
+                    Added {new Date(product.arrivalDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                  </span>
+                </div>
+                <button
+                  data-testid="userchecksthe-view"
+                  className={`mt-4 w-full py-2 px-4 rounded-md font-medium text-sm transition-colors ${
+                    product.inStock
+                      ? 'bg-blue-600 text-white hover:bg-blue-700'
+                      : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                  }`}
+                  disabled={!product.inStock}
+                >
+                  {product.inStock ? 'View Details' : 'Out of Stock'}
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Empty State */}
+        {filteredProducts.length === 0 && (
+          <div className="text-center py-12">
+            <p className="text-gray-500 text-lg">No products found matching your filters.</p>
+            <button
+              data-testid="userchecksthe-clear"
+              onClick={() => {
+                setSelectedCategory('All')
+                setSortBy('newest')
+              }}
+              className="mt-4 text-blue-600 hover:text-blue-800 font-medium"
+            >
+              Clear filters
+            </button>
+          </div>
+        )}
       </div>
     </div>
   )
