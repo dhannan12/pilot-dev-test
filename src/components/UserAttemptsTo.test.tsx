@@ -1,5 +1,5 @@
 import { render, screen, fireEvent } from '@testing-library/react'
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect } from 'vitest'
 import UserAttemptsTo from './UserAttemptsTo'
 
 describe('UserAttemptsTo', () => {
@@ -8,125 +8,93 @@ describe('UserAttemptsTo', () => {
     expect(document.body).toBeTruthy()
   })
 
-  it('displays mock data services', () => {
+  it('displays mock tradespeople data', () => {
     render(<UserAttemptsTo />)
-    expect(screen.getByText('Find Local Plumbers')).toBeTruthy()
-    expect(screen.getByText('Electrician Services')).toBeTruthy()
-    expect(screen.getByText('HVAC Specialists')).toBeTruthy()
-    expect(screen.getByText('General Contractors')).toBeTruthy()
-    expect(screen.getByText('Landscaping Services')).toBeTruthy()
+    expect(screen.getByText('John Smith')).toBeTruthy()
+    expect(screen.getByText('Sarah Johnson')).toBeTruthy()
+    expect(screen.getByText('Mike Chen')).toBeTruthy()
+    expect(screen.getByText('Emily Davis')).toBeTruthy()
+    expect(screen.getByText('Robert Taylor')).toBeTruthy()
   })
 
   it('has required data-testid attributes', () => {
     render(<UserAttemptsTo />)
     
-    // Main wrapper
+    // Verify key testids exist — Playwright QA depends on these
     expect(screen.getByTestId('userattemptsto')).toBeTruthy()
-    
-    // Location input
-    expect(screen.getByTestId('userattemptsto-location')).toBeTruthy()
-    
-    // Service list and items
+    expect(screen.getByTestId('userattemptsto-area')).toBeTruthy()
+    expect(screen.getByTestId('userattemptsto-submit')).toBeTruthy()
     expect(screen.getByTestId('userattemptsto-list')).toBeTruthy()
-    expect(screen.getAllByTestId('userattemptsto-item').length).toBeGreaterThan(0)
     
-    // Access buttons
-    expect(screen.getAllByTestId('userattemptsto-access').length).toBeGreaterThan(0)
+    const items = screen.getAllByTestId('userattemptsto-item')
+    expect(items.length).toBeGreaterThan(0)
   })
 
-  it('shows error when accessing service without location', () => {
+  it('filters tradespeople by valid service area', () => {
     render(<UserAttemptsTo />)
     
-    // Click first "Access Service" button without entering location
-    const accessButtons = screen.getAllByTestId('userattemptsto-access')
-    fireEvent.click(accessButtons[0])
+    const input = screen.getByTestId('userattemptsto-area') as HTMLInputElement
+    const filterButton = screen.getByTestId('userattemptsto-submit')
     
-    // Error should be displayed
-    const error = screen.getByTestId('userattemptsto-error')
-    expect(error).toBeTruthy()
-    expect(error.textContent).toContain('Please provide a valid location')
+    fireEvent.change(input, { target: { value: 'Downtown' } })
+    fireEvent.click(filterButton)
+    
+    // Should show filtered results
+    expect(screen.getByText(/Found/)).toBeTruthy()
+    expect(screen.getByText('John Smith')).toBeTruthy()
+    expect(screen.getByText('Sarah Johnson')).toBeTruthy()
   })
 
-  it('shows error for invalid location (too short)', () => {
+  it('shows error when filtering by invalid service area', () => {
     render(<UserAttemptsTo />)
     
-    // Enter very short location
-    const locationInput = screen.getByTestId('userattemptsto-location')
-    fireEvent.change(locationInput, { target: { value: 'NY' } })
+    const input = screen.getByTestId('userattemptsto-area') as HTMLInputElement
+    const filterButton = screen.getByTestId('userattemptsto-submit')
     
-    // Try to access service
-    const accessButtons = screen.getAllByTestId('userattemptsto-access')
-    fireEvent.click(accessButtons[0])
+    fireEvent.change(input, { target: { value: 'Invalid Area' } })
+    fireEvent.click(filterButton)
     
-    // Error should be displayed
-    const error = screen.getByTestId('userattemptsto-error')
-    expect(error).toBeTruthy()
-    expect(error.textContent).toContain('at least 3 characters')
+    // Should show error message
+    const errorElement = screen.getByTestId('userattemptsto-error')
+    expect(errorElement).toBeTruthy()
+    expect(screen.getByText(/Service Area Not Found/)).toBeTruthy()
+    expect(screen.getByText(/outside our defined service areas/)).toBeTruthy()
   })
 
-  it('allows access with valid location', () => {
-    // Mock alert
-    const alertMock = vi.spyOn(window, 'alert').mockImplementation(() => {})
-    
+  it('resets filter when reset button is clicked', () => {
     render(<UserAttemptsTo />)
     
-    // Enter valid location
-    const locationInput = screen.getByTestId('userattemptsto-location')
-    fireEvent.change(locationInput, { target: { value: 'New York, NY' } })
+    const input = screen.getByTestId('userattemptsto-area') as HTMLInputElement
+    const filterButton = screen.getByTestId('userattemptsto-submit')
+    const resetButton = screen.getByTestId('userattemptsto-reset')
     
-    // Try to access service
-    const accessButtons = screen.getAllByTestId('userattemptsto-access')
-    fireEvent.click(accessButtons[0])
+    // Apply filter
+    fireEvent.change(input, { target: { value: 'Downtown' } })
+    fireEvent.click(filterButton)
     
-    // Alert should be called (simulating success)
-    expect(alertMock).toHaveBeenCalled()
+    // Reset
+    fireEvent.click(resetButton)
     
-    alertMock.mockRestore()
+    // Should show all tradespeople again
+    expect(input.value).toBe('')
+    expect(screen.getByText('John Smith')).toBeTruthy()
+    expect(screen.getByText('Robert Taylor')).toBeTruthy()
   })
 
-  it('shows clear button when location is entered', () => {
+  it('allows clicking on predefined area tags', () => {
     render(<UserAttemptsTo />)
     
-    // Initially, clear button should not exist
-    expect(screen.queryByTestId('userattemptsto-clear')).toBeNull()
+    const areaTag = screen.getAllByTestId('userattemptsto-area-tag')[0]
+    fireEvent.click(areaTag)
     
-    // Enter location
-    const locationInput = screen.getByTestId('userattemptsto-location')
-    fireEvent.change(locationInput, { target: { value: 'Boston' } })
-    
-    // Clear button should now be visible
-    expect(screen.getByTestId('userattemptsto-clear')).toBeTruthy()
+    const input = screen.getByTestId('userattemptsto-area') as HTMLInputElement
+    expect(input.value).toBeTruthy()
   })
 
-  it('clears location when clear button is clicked', () => {
+  it('displays contact buttons for each tradesperson', () => {
     render(<UserAttemptsTo />)
     
-    // Enter location
-    const locationInput = screen.getByTestId('userattemptsto-location') as HTMLInputElement
-    fireEvent.change(locationInput, { target: { value: 'Boston' } })
-    expect(locationInput.value).toBe('Boston')
-    
-    // Click clear button
-    const clearButton = screen.getByTestId('userattemptsto-clear')
-    fireEvent.click(clearButton)
-    
-    // Location should be cleared
-    expect(locationInput.value).toBe('')
-  })
-
-  it('clears error when user starts typing', () => {
-    render(<UserAttemptsTo />)
-    
-    // Trigger error first
-    const accessButtons = screen.getAllByTestId('userattemptsto-access')
-    fireEvent.click(accessButtons[0])
-    expect(screen.getByTestId('userattemptsto-error')).toBeTruthy()
-    
-    // Start typing
-    const locationInput = screen.getByTestId('userattemptsto-location')
-    fireEvent.change(locationInput, { target: { value: 'Los Angeles' } })
-    
-    // Error should be cleared
-    expect(screen.queryByTestId('userattemptsto-error')).toBeNull()
+    const contactButtons = screen.getAllByTestId('userattemptsto-contact')
+    expect(contactButtons.length).toBeGreaterThan(0)
   })
 })
